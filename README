@@ -1,4 +1,20 @@
-Writen to work with root 6
+Written to work with root 6
+
+The following root add on library contains various analysis tools.
+The primary tools are:
+-jgating_tool
+A graphical slicer and background subtraction tool for TH2 and TH3 histograms. Has tooltips but no help file yet.
+-UltraFitEnv
+A graphical enviroment to manage the fitting and saving of fit results for TH1 histograms. A full helpfile is included in the tool.
+-jEnv
+A graphical session manager toolbar to handle passing/selecting histograms with no typing.
+
+Various histogram presentation formating and automated fitting (for peaks and efficiency curves) macros are also included and may be documented later
+
+
+Instructions for use:
+
+Unsure ROOT 6 is installed and sourced
 
 make
 
@@ -11,3 +27,6 @@ When running a root interactive session type "new jEnv();" to open the interacti
 OR create instances of the following classes to use the interactive tools
 jgating_tool();
 UltraFitEnv();
+Both should grab the most recently drawn histogram or can be passed a pointer as an argument
+
+
