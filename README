@@ -1,0 +1,13 @@
+Writen to work with root 6
+
+make
+
+add source bin/thisjlib.sh to your bashrc
+
+run "root -l bin/root_start.C" or
+add "gSystem->Load("libJanalysistools.so")" to your ROOT start up script.
+
+When running a root interactive session type "new jEnv();" to open the interactive toolbar to access analysis tools.
+OR create instances of the following classes to use the interactive tools
+jgating_tool();
+UltraFitEnv();

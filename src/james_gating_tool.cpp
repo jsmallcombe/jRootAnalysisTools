@@ -1,0 +1,598 @@
+//
+//
+//	James gating GUI tool 1.2
+// 	27/10/16		16/10/2015
+//	james.smallcombe@outlook.com
+//
+//
+
+#include "james_gating_tool.h"
+#include "james_gpad_tools.h"
+
+
+ClassImp(jgating_tool);
+
+int jgating_tool::jgating_tool_iterator = 0;
+
+
+jgating_tool::jgating_tool(const char * input) : jgating_tool(gROOT->FindObject(input)){}
+
+jgating_tool::jgating_tool(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame) ,gJframe1(0),fCheck0(0),fCheck1(0),fFitFcn(0),peaknumremove(0),fTip(0),fFitPanel(0){
+TVirtualPad* hold=gPad;
+
+	if(!input)return;
+	
+	bool Bthree=input->IsA()->InheritsFrom("TH3");
+	bool Btwo=input->IsA()->InheritsFrom("TH2");
+	if(Bthree||Btwo){//Main IF histogram loop
+		
+		SetCleanup(kDeepCleanup);	
+	  	
+		//    //--- layout for the frame:
+		
+		TGLayoutHints* ffExpand = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
+		TGLayoutHints* ffExpandY = new TGLayoutHints(kLHintsExpandY, 0, 0, 0, 0);
+		TGLayoutHints* ffCenX = new TGLayoutHints(kLHintsCenterX, 3, 3, 3, 3);
+		TGLayoutHints* ffCenY = new TGLayoutHints(kLHintsCenterY, 3, 3, 3, 3);
+		TGLayoutHints* ffCenTop = new TGLayoutHints(kLHintsTop | kLHintsCenterX, 3, 3, 3, 3);
+		TGLayoutHints* ffSpeBuf = new TGLayoutHints(kLHintsTop | kLHintsCenterX, 0, 0,10,10);
+	
+		SetWindowName(input->GetName());		
+		TH1* pass=(TH1*)input;
+		
+		//If TH3 extra gate panel
+	
+		if(Bthree){
+			gJframe1 = new j_gating_frame(this,pass,make_iterator());
+			gJframe1->Connect("OutputReady()", "jgating_tool", this,"DoUpdate2D()");
+			AddFrame(gJframe1,ffExpand);	
+			pass=(TH1*)gJframe1->output_hist_point_2d;
+		}
+		
+		//TH3 or TH2 gate panel
+		
+		gJframe2 = new j_gating_frame(this,pass,make_iterator());
+
+		gJframe2->Connect("OutputReady()", "jgating_tool", this,"DoUpdate()");
+		
+		//Results panel
+		
+		resultframe = new TGVerticalFrame(this, 0, 0, 0);   
+
+		TGHorizontalFrame* buttonframe = new TGHorizontalFrame(resultframe, 0, 0, 0); 
+		fBgroup1 = new TGButtonGroup(buttonframe,"Show Extra",kChildFrame);// Another button group
+			fRButton1 = new TGRadioButton(fBgroup1,"    ");
+			fRButton1->SetToolTipText("Normal View Mode");
+			fRButton2 = new TGRadioButton(fBgroup1,"Projection ");
+			fRButton2->SetToolTipText("Show Projection\n Show a scaled version of the full\n un-gated projection for this axis.");
+			fRButton3 = new TGRadioButton(fBgroup1,"Background ");
+			fRButton3->SetToolTipText("Show Background\n Show the background spectrum currently\n being subtracted (actual size).");
+		fRButton1->SetState(kButtonDown);
+		fBgroup1->Show();
+		fBgroup1->Connect(" Clicked(Int_t)", "jgating_tool", this,"DoUpdate()");
+		
+		if(Bthree){
+			fCheck0 = new TGCheckButton(buttonframe,"2D ");
+			fCheck0->SetState(kButtonUp);
+			fCheck0->Connect(" Clicked()", "jgating_tool", this,"DoUpdate2D()");
+			fCheck0->SetToolTipText("2D Only\n Do not perform the second axis subtraction.\n Instead view TH2 matrix results from the first.");
+		}
+		
+		fCanvas1 = new TRootEmbeddedCanvas(("Embedded"+make_iterator()).c_str(), resultframe, 600, 400);
+		fCanvas1->GetCanvas()->SetName(("ResultCan"+make_iterator()).c_str());
+		
+		fCanvas1->GetCanvas()->SetFillColor(33);
+		fCanvas1->GetCanvas()->SetFrameFillColor(41);
+		fCanvas1->GetCanvas()->SetBorderMode(0);
+		fCanvas1->GetCanvas()->SetMargin(0.1,0.01,0.05,0.01);	
+		fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jgating_tool", this,"ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*)");
+		fCanvas1->GetCanvas()->Connect("RangeChanged()", "jgating_tool", this, "NewAxisDrawn()");
+	
+		//New stuff for the saving of histograms
+		
+		saveadd=0;
+		saveaddsave=0;
+		savehists.clear();
+		savechecks.clear();
+		savebutton.clear();
+		
+		TGTextButton* ftbutton = new TGTextButton(buttonframe,"Fit Panel");
+		ftbutton->Connect("Clicked()","jgating_tool",this,"FitPanel()");
+		ftbutton->SetToolTipText("Open Fit Tool\n Open an instance of J-fit panel,\n initially connected to result canvas.");
+		TGTextButton* spbutton = new TGTextButton(buttonframe,"Save Panel");
+		spbutton->Connect("Clicked()","jgating_tool",this,"SavePanel()");
+		spbutton->SetToolTipText("Show Save Panel\n Open side-panel for holding gating results\n  in memory to enable on-the-fly summing.");
+		
+		fCheck1 = new TGCheckButton(buttonframe,"Hide Ers");
+		fCheck1->SetState(kButtonDown);
+		fCheck1->Connect(" Clicked()", "jgating_tool", this,"DoUpdate()");
+		fCheck1->SetToolTipText("Hide Bin Errors on drawn histograms");
+		
+		
+		saveframe= new TGVerticalFrame(this, 0, 0, 0); 
+		
+		TGButtonGroup* savecontrolbut = new TGButtonGroup(saveframe,"",kHorizontalFrame);
+// 		TGButtonGroup* savecontrolbut = new TGButtonGroup(saveframe,1,2);
+		TGTextButton* plushist = new TGTextButton(savecontrolbut,"+");
+		plushist->Connect("Clicked()","jgating_tool",this,"AddStoreHistogram()");
+		plushist->SetToolTipText("Add an additional saved\n histogram slot.");
+		plushist = new TGTextButton(savecontrolbut,"Draw");
+		plushist->Connect("Clicked()","jgating_tool",this,"DrawSaved()");
+		plushist->SetToolTipText("Draw a sum of currently\n selected saved Histograms.");
+		savecontrolbut->Show();
+		
+		plushist = new TGTextButton(saveframe,"Clear");
+		plushist->Connect("Clicked()","jgating_tool",this,"CSaveButton()");
+		plushist->SetToolTipText("Clear all locally saved\n gated histograms.");	
+		
+// 		TGHorizontalFrame* inbetw= new TGHorizontalFrame(saveframe, 0, 0, 0);
+// 		savebuttons = new TGButtonGroup(inbetw,"",kVerticalFrame);
+		savebuttons = new TGButtonGroup(saveframe,15,2);
+		savebuttons->Connect(" Clicked(Int_t)", "jgating_tool", this,"StoreHistograms(Int_t)");//Link test signal to its	
+		AddStoreHistogram();
+		AddStoreHistogram();
+		
+
+		AddFrame(gJframe2,ffExpand);
+		buttonframe->AddFrame(fBgroup1, ffCenX);
+		if(Bthree)buttonframe->AddFrame(fCheck0, ffCenY);
+		buttonframe->AddFrame(ftbutton, ffCenY);
+		buttonframe->AddFrame(spbutton, ffCenY);
+		buttonframe->AddFrame(fCheck1, ffCenY);
+		resultframe->AddFrame(buttonframe, ffCenX);
+		resultframe->AddFrame(fCanvas1, ffExpand);
+		AddFrame(resultframe,ffExpand);
+		saveframe->AddFrame(savecontrolbut,ffSpeBuf);
+		saveframe->AddFrame(plushist,ffSpeBuf);//
+		saveframe->AddFrame(savebuttons,ffCenTop);//
+		AddFrame(saveframe,ffExpandY);	
+			
+		// create the tooltip with a timeout of 250 ms
+		fTip = new TGToolTip(gClient->GetRoot(), fCanvas1, "", 250);
+
+		MapSubwindows();
+		Resize(GetDefaultSize());
+		MapWindow();
+
+		HideFrame(saveframe);
+		gJframe2->HideFrame(gJframe2->fHframe4);
+		if(Bthree)gJframe1->HideFrame(gJframe1->fHframe4);
+		
+		DoUpdate();
+	}//Main IF histogram loop
+	
+gPad=hold;
+}
+
+
+//______________________________________________________________________________
+jgating_tool::~jgating_tool()
+{
+	if(fTip){fTip->Hide();delete fTip;}
+	if(fFitPanel){delete fFitPanel;}
+	
+   // Clean up
+   Cleanup();
+}
+
+//______________________________________________________________________________
+// void jgating_tool::DoClose()
+// {
+//    // Called when window is closed via the window manager
+//    
+//    cout<<endl<<"DOO0000000OM"<<endl;
+//    delete this;
+// }
+
+void jgating_tool::DoUpdate2D(){TVirtualPad* hold=gPad;
+	if(!gJframe1)return;
+	gJframe1->hidebinerrors=fCheck1->GetState();
+	if(fCheck0->GetState()){
+		HideFrame(gJframe2);
+		fCanvas1->GetCanvas()->cd();
+		if(fRButton2->GetState()){
+			gJframe1->full_2d->Draw("colz");
+		}else if(fRButton3->GetState()){
+			TH2F* raw = gJframe1->Raw2DGateRequest();
+			raw->Add(gJframe1->output_hist_point_2d,-1);
+			raw->SetStats(0);
+			raw->SetTitle("");
+			raw->DrawCopy("colz");
+			delete raw;
+		}else{
+			gJframe1->output_hist_point_2d->Draw("colz");
+		}
+
+		fCanvas1->GetCanvas()->Modified();
+		fCanvas1->GetCanvas()->Update();
+	}else{
+		gJframe2->hidebinerrors=fCheck1->GetState();
+		ShowFrame(gJframe2);
+		gJframe2->UpdateInput(gJframe1->output_hist_point_2d);
+	}
+gPad=hold;
+}
+
+
+void jgating_tool::DoUpdate(){TVirtualPad* hold=gPad;
+	gJframe2->hidebinerrors=fCheck1->GetState();
+
+	if(fCheck0){
+		if(fCheck0->GetState()){//Dangerously close to awful loop behaviour
+			DoUpdate2D();
+			return;
+		}
+	}
+
+	ShowFrame(gJframe2);
+	
+	fCanvas1->GetCanvas()->cd();
+	if(fCheck1->GetState())gJframe2->output_hist_point->Draw("hist");
+	else gJframe2->output_hist_point->Draw();
+	
+	if(fRButton2->GetState()){
+		gJframe2->free_hist->Reset();
+		gJframe2->free_hist->Add(gJframe2->full,gJframe2->output_hist_point->Integral()/gJframe2->full->Integral());
+	}
+	if(fRButton3->GetState()){
+		gJframe2->free_hist->Add(gJframe2->gate_hist,gJframe2->output_hist_point,1,-1);
+	}
+	if(!fRButton1->GetState()){
+		gJframe2->free_hist->Sumw2(kFALSE);
+		gJframe2->free_hist->Draw("same");
+	}
+	
+	fCanvas1->GetCanvas()->Modified();
+	fCanvas1->GetCanvas()->Update();
+	
+gPad=hold;
+}
+
+
+string jgating_tool::make_iterator(){
+	stringstream ss;
+	ss << jgating_tool_iterator;
+	jgating_tool_iterator++;
+	return ss.str();
+}
+
+
+
+
+
+// Just a basic little no frills, minimal input peak fitter for standard size y/e peaks
+// Added it in to help with quick peak identification
+void jgating_tool::ClickedFinalCanvas(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
+{TVirtualPad* hold=gPad;
+	if (event == kMouseLeave){fTip->Hide(); return;}
+
+	double x =fCanvas1->GetCanvas()->PixeltoX(px);
+	
+	//Update the tooltip
+	fTip->Hide();
+	fTip->SetText(TString::Format("%.1f",x));
+	fTip->SetPosition(px+15, py-15);
+	fTip->Reset();
+	
+	if ( event == kButton1Double) {
+		fCanvas1->GetCanvas()->cd();
+		
+		//Click is given in pixel coordinates
+	
+		TH1 *h=gJframe2->output_hist_point;
+		if(saveaddsave)if(fCanvas1->GetCanvas()->GetListOfPrimitives()->FindObject(saveaddsave))h=saveaddsave;
+		
+		TF1* Quick=UserQuickSingleGausAutoFitE(h,x,x-20,x+20,1);//Free & linear back
+
+		if(fFitFcn)fCanvas1->GetCanvas()->GetListOfPrimitives()->Remove(fFitFcn);
+		fFitFcn=Quick->DrawCopy("same");
+
+		// Print the text on the canvas
+		double cent=Quick->GetParameter(1);
+		stringstream ss;
+		ss<<round(cent*10)/10;
+		
+		delete Quick;
+		
+		TText peaknum;
+		peaknum.SetTextAlign(22);
+		peaknum.SetTextSize(0.035);
+		
+		double shif=(h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetLast())-h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetFirst()))*0.05;
+		//GetXmin() doesnt account for zooming
+		
+		if(peaknumremove)fCanvas1->GetCanvas()->GetListOfPrimitives()->Remove(peaknumremove);//Remove if its there else ignored
+		peaknumremove=peaknum.DrawText(cent+shif,h->GetBinContent(h->FindBin(cent))*0.95,ss.str().c_str());
+
+		fCanvas1->GetCanvas()->Modified();
+		fCanvas1->GetCanvas()->Update();
+	}
+	
+gPad=hold;
+}
+
+void jgating_tool::SavePanel(){
+	if(IsVisible(saveframe)){
+		HideFrame(saveframe);
+	}else{
+		ShowFrame(saveframe);
+	}
+}
+
+void jgating_tool::FitPanel(){
+	if(fFitPanel)fFitPanel->ConnectNewCanvas(fCanvas1->GetCanvas());
+	else {
+		fFitPanel=new UltraFitEnv(0,fCanvas1->GetCanvas());
+		fFitPanel->Connect("Destroyed()", "jgating_tool", this,"FitPanelClose()");
+	}
+}
+
+void jgating_tool::AddStoreHistogram(){
+	if(savehists.size()<15){
+		stringstream ss;
+		ss<<" Save"<<(savehists.size()+1)<<" ";
+		savebutton.push_back(new TGTextButton(savebuttons,ss.str().c_str()));
+		
+		savebutton[savebutton.size()-1]->SetToolTipText("Save current gating\n result histogram.");
+		savechecks.push_back(new TGCheckButton(savebuttons,""));
+		savechecks[savechecks.size()-1]->SetEnabled(false);
+		savechecks[savechecks.size()-1]->SetToolTipText("Include this saved histogram\n when drawing sum.");
+		savehists.push_back(0);
+		savebuttons->Show();
+		saveframe->MapSubwindows();saveframe->Resize(saveframe->GetDefaultSize());saveframe->MapWindow();
+	}
+}
+
+
+void jgating_tool::StoreHistograms(Int_t i){
+	if(i%2){
+		uint select=i/2;
+	// 	cout<<endl<<endl<<i<<endl<<endl;
+		if(select<savehists.size()){
+			if(savehists[select])delete savehists[select];savehists[select]=0;
+			savehists[select]=(TH1F*)gJframe2->output_hist_point->Clone(("savedhist"+make_iterator()).c_str());
+			if(!savechecks[select]->IsEnabled())savechecks[select]->SetEnabled();
+			
+			stringstream ss;ss<<" "<<gJframe2->GateCentre<<" ";
+			savebutton[select]->SetText(ss.str().c_str());
+		}
+	}
+}
+
+void jgating_tool::DrawSaved(){
+	if(saveadd)delete saveadd;
+	saveadd=0;
+	for(uint i=0;i<savehists.size();i++){
+		if(savehists[i]&&savechecks[i]->GetState()==EButtonState::kButtonDown){
+			if(saveadd){
+				if(saveadd->GetNbinsX()==savehists[i]->GetNbinsX())
+					saveadd->Add(savehists[i]);
+			}else{
+				saveadd=(TH1F*)savehists[i]->Clone(("savedhist"+make_iterator()).c_str());
+			}
+		}
+	}
+	if(saveadd){
+		TVirtualPad* hold=gPad;
+		fCanvas1->GetCanvas()->cd();
+		saveaddsave=(TH1F*)saveadd->DrawCopy();
+		fCanvas1->GetCanvas()->Modified();
+		fCanvas1->GetCanvas()->Update();
+		gPad=hold;
+	}
+}
+
+//Doesnt actually clear anything, you just cant select them
+void jgating_tool::CSaveButton(){
+	for(uint i=0;i<savehists.size();i++){
+		savechecks[i]->SetState(kButtonUp);
+		savechecks[i]->SetState(kButtonDisabled);
+		stringstream ss;
+		ss<<" Save"<<(i+1)<<" ";
+		savebutton[i]->SetText(ss.str().c_str());
+	}
+}
+
+void jgating_tool::NewAxisDrawn() //adjust sliders and control values for new axis
+{
+	if(fFitFcn&&fCanvas1->GetCanvas()->GetListOfPrimitives()->FindObject(peaknumremove)){
+		TH1 *h=gJframe2->output_hist_point;
+		if(saveaddsave)if(fCanvas1->GetCanvas()->GetListOfPrimitives()->FindObject(saveaddsave))h=saveaddsave;
+		double cent=fFitFcn->GetParameter(1);
+		double shif=(h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetLast())-h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetFirst()))*0.05;
+		peaknumremove->SetX(cent+shif);
+		fCanvas1->GetCanvas()->Modified();
+		fCanvas1->GetCanvas()->Update();
+	}
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////  MINIMALIST TH3 SLICER  /////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+int minimalist_th3slice::minimalist_th3slice_iterator = 0;
+
+//______________________________________________________________________________
+minimalist_th3slice::minimalist_th3slice() : TGMainFrame(gClient->GetRoot(), 100, 100),slice(0),proj(0){this->initialise();}
+
+minimalist_th3slice::minimalist_th3slice(TH3* input) : TGMainFrame(gClient->GetRoot(), 100, 100),slice(0),proj(0)
+{
+	this->initialise();
+	*this=input;	
+}
+
+void minimalist_th3slice::initialise(){
+	SetCleanup(kDeepCleanup);//Sets this MainFrame to clean all subframes
+	
+	iterator=make_iterator();
+	
+	xyz=3;
+	bin=0;
+		
+	fHframe0 = new TGHorizontalFrame(this, 0, 0, 0);// Create a new horizontally alighed frame for some control widgets
+		miniframe = new TGVerticalFrame(fHframe0, 0, 0, 0);
+
+			fCanvas1 = new TRootEmbeddedCanvas(("Embedded"+make_iterator()).c_str(), miniframe, 600, 400);
+			fCanvas1->GetCanvas()->SetName(("ResultCan"+make_iterator()).c_str());
+			fCanvas1->GetCanvas()->SetBorderMode(0);
+			fCanvas1->GetCanvas()->SetMargin(0.1,0.02,0.05,0.02);	
+			fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "minimalist_th3slice", this,"DoUpdate(Int_t,Int_t,Int_t,TObject*)");	
+
+			fBgroup1 = new TGButtonGroup(miniframe,"Projection",kChildFrame);//create a group of buttons belonging (point) to the parent frame
+			fRButton1 = new TGRadioButton(fBgroup1,new TGHotString("&X "));//create buttons belonging to the group
+			fRButton2 = new TGRadioButton(fBgroup1,new TGHotString("&Y "));
+			fRButton3 = new TGRadioButton(fBgroup1,new TGHotString("&Z"));
+			fBgroup1->SetButton(xyz);//Set which is pressed
+			fBgroup1->Show();//Display/Add all the buttons
+			fBgroup1->Connect(" Clicked(Int_t)", "minimalist_th3slice", this,"ChangeProjection(Int_t)");//Link test signal to its    int gate_down,gate_up; (method fn) 
+			
+		miniframe1 = new TGVerticalFrame(fHframe0, 0, 0, 0);
+			fCanvas2 = new TRootEmbeddedCanvas("Canvas2", miniframe1, 600, 400);
+			fCanvas2->GetCanvas()->SetBorderMode(0);
+			fCanvas2->GetCanvas()->SetMargin(0.1,0.1,0.05,0.02);	
+			
+			fCheck0 = new TGCheckButton(miniframe1,"Titles and Stats");
+			fCheck0->SetState(kButtonUp);
+			fCheck0->SetToolTipText("Titles and Stats");	
+	
+	//
+	//	ADD ALL THE GUI COMPONETS TOGETHER
+	//		
+	
+	//    //--- layout for the frame:
+	TGLayoutHints* fLcan = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 0, 0);
+	TGLayoutHints* fBfly4 = new TGLayoutHints(kLHintsTop | kLHintsCenterX, 5, 5, 3, 3);
+	// 
+
+	// Add control widgets to their parent frames lists
+			miniframe->AddFrame(fCanvas1, fLcan);
+			miniframe->AddFrame(fBgroup1, fBfly4);
+		fHframe0->AddFrame(miniframe, fLcan);
+			miniframe1->AddFrame(fCanvas2, fLcan);
+			miniframe1->AddFrame(fCheck0, fBfly4);
+		fHframe0->AddFrame(miniframe1, fLcan);
+	this->AddFrame(fHframe0, fLcan);
+	// Add the control widget frames to the mainframe
+
+	MapSubwindows();
+	Resize(GetDefaultSize());
+	MapWindow();	
+}
+
+minimalist_th3slice& minimalist_th3slice::operator= (TH3* input){   
+	
+	raw_3d=input;
+	while(raw_3d->GetXaxis()->GetNbins()>1000)raw_3d->RebinX();
+	while(raw_3d->GetYaxis()->GetNbins()>1000)raw_3d->RebinY();
+	while(raw_3d->GetZaxis()->GetNbins()>1000)raw_3d->RebinZ();
+
+	bin=0;
+	
+	if(proj!=0)delete proj;
+	if(slice!=0)delete slice;
+	proj=0;
+	slice=0;
+		xyz=3;
+		fBgroup1->SetButton(xyz);//Set which is pressed
+		gClient->NeedRedraw(fBgroup1);
+	ChangeProjection(xyz);
+	
+	return *this;
+}
+   
+minimalist_th3slice& minimalist_th3slice::operator() (TH3* input){return *this=input;}
+
+//______________________________________________________________________________
+minimalist_th3slice::~minimalist_th3slice()
+{
+   raw_3d=0;
+   if(proj!=0)delete proj;
+   if(slice!=0)delete slice;
+   Cleanup();
+}
+
+//______________________________________________________________________________
+
+void minimalist_th3slice::ChangeProjection(Int_t in)
+{TVirtualPad* hold=gPad;
+	xyz=in;
+	if(proj!=0){delete proj;proj=0;}
+	if(slice!=0){delete slice;slice=0;}
+
+	switch (xyz) { 
+		case 1: proj=raw_3d->ProjectionX(("proj"+iterator).c_str(),1,raw_3d->GetYaxis()->GetNbins(),1,raw_3d->GetZaxis()->GetNbins());  break;
+		case 2: proj=raw_3d->ProjectionY(("proj"+iterator).c_str(),1,raw_3d->GetXaxis()->GetNbins(),1,raw_3d->GetZaxis()->GetNbins());  break;
+		default: proj=raw_3d->ProjectionZ(("proj"+iterator).c_str(),1,raw_3d->GetXaxis()->GetNbins(),1,raw_3d->GetYaxis()->GetNbins());  break;
+	}	
+			
+	fCanvas1->GetCanvas()->cd();
+	if(fCheck0->GetState())proj->SetTitle("");
+	proj->Draw();
+	fCanvas1->GetCanvas()->Modified();
+	fCanvas1->GetCanvas()->Update();
+	DoUpdate(0,0,0,fCanvas1->GetCanvas());
+	
+gPad=hold;
+}
+
+
+void minimalist_th3slice::DoUpdate(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
+{if(!proj)return;
+TVirtualPad* hold=gPad;
+
+	double x =fCanvas1->GetCanvas()->PixeltoX(px);
+	int xtemp=proj->GetXaxis()->FindFixBin(x);
+	if(xtemp!=bin && xtemp>0 && xtemp<proj->GetXaxis()->GetNbins()){
+		bin=xtemp;
+				
+		switch (xyz) { 	
+			case 1: raw_3d->GetXaxis()->SetRange(bin,bin);
+				slice=(TH2*)raw_3d->Project3D("yz"); break;
+			case 2: raw_3d->GetYaxis()->SetRange(bin,bin);
+				slice=(TH2*)raw_3d->Project3D("xz"); break;
+			default: raw_3d->GetZaxis()->SetRange(bin,bin);
+				slice=(TH2*)raw_3d->Project3D("xy"); break;
+		}
+
+		raw_3d->GetXaxis()->SetRange();
+		raw_3d->GetYaxis()->SetRange();
+		raw_3d->GetZaxis()->SetRange();
+		
+
+		fCanvas2->GetCanvas()->cd();
+		if(slice!=0){
+			if(fCheck0->GetState()){					
+				gStyle->SetOptStat(0);
+				slice->SetTitle("");
+			}else{			
+				stringstream convert; 
+				convert <<"Bin "<<bin<<" ("<<x<<")" ;
+				gStyle->SetOptStat(1);
+				slice->SetTitle(convert.str().c_str());
+			}
+			slice->Draw("colz");
+		}
+		fCanvas2->GetCanvas()->Modified();
+		fCanvas2->GetCanvas()->Update();	
+	}
+	
+gPad=hold;
+}
+
+
+
+string minimalist_th3slice::make_iterator(){
+	stringstream ss;
+	ss << minimalist_th3slice_iterator;
+	minimalist_th3slice_iterator++;
+	return ss.str();
+}

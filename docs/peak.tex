@@ -1,0 +1,221 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{xfrac}
+
+
+%opening
+\title{Decay Peak Convolution for Fitting}
+\author{J. T. Smallcombe}
+\begin{document}
+
+\maketitle
+
+\section{Decay Peak}\label{sec:decpeak}
+%\section{}
+The following function taken from Radware peak an exponential decay convolved with a Gaussian broadening.
+This function was designed for fitting the small tails caused by charge trapping in germanium detectors.
+\begin{equation}\label{eq:raw}
+f(x) = 
+\mathrm{e}^{\left(\frac{x}{\beta}\right)} 
+\cdot
+\mathrm{erfc}\left[
+\frac{x}{\sigma\sqrt{2}}
++
+\frac{\sigma}{\beta\sqrt{2}}
+\right].
+\end{equation}
+Here we have substituted $x=x-x_0$ to describe a peak centroid of 0.
+Two things must be noted:
+This function does not have unit height, it's height at 0 is give by:
+\begin{equation}
+f(0) = 
+\mathrm{erfc}\left[
+\frac{\sigma}{\beta\sqrt{2}}
+\right].
+\end{equation}
+Hence, the purpose of combining this peak with a standard Gaussian $g(x)$, a sharing parameter formula assuming unit heights of the form
+\begin{equation}\label{eq:comb1}
+y(x) = h \cdot 
+\left[
+g(x) \cdot\eta
++
+f(x)
+\cdot(1-\eta)\right]
+\end{equation}
+is not valid. Furthermore, the maximum of the peak does not occur at 0, but at some negative value determined by $\beta$ and $\sigma$.
+For the purpose of physical description of some exponential curve (a lossy process) where $x_0$ is fixed to some absolute value such as $E_\gamma$ convolved with a Gaussian resolution this is correct.
+However, we suggest here that for the purposes of fitting, $x_0$ is usually constrained by the maximum value bin,
+hence for the purposes of fitting an offset is needed.
+\begin{equation}
+y(x) = h \cdot f(\chi)
+,\;\;
+\chi\equiv x-x_{max}(\beta,\sigma).
+\end{equation}
+An exact derivation of $x_{max}$ is beyond the scope of this work and an analytical approximation of the form
+\begin{equation}\label{eq:xmax}
+x_{max}(\beta,\sigma) =
+b\left(\mathrm{e}^{-\frac{\sigma}{a}}-1\right),\;\;a(\beta),\;b(\beta),
+\end{equation}
+where $a$ and $b$ are polynomials of $\beta$ determined in the range of interest can be used.
+
+
+The integral of the peak is given by:
+\begin{equation}
+\int f(x)\;dx = 
+\beta\cdot
+\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
+\cdot
+\mathrm{erf}\left(\frac{x}{\sqrt{2}\sigma}\right)
++
+\beta\cdot
+\mathrm{e}^{\frac{x}{\beta}}
+\cdot
+\mathrm{erfc}\left(\frac{\beta x+\sigma^2}{\sqrt{2}\sigma\beta}\right).
+\end{equation}
+Not both erf and complemetery erfc are present. The area of the peak is given by:
+\begin{equation}
+A_f = \int_{-\infty}^{+\infty} f(x)\;dx =
+2\cdot \beta\cdot \mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
+\end{equation}
+The second term does not contribute as erfc$(x)$ goes to zero at $+\infty$ and e$^x$ at $-\infty$.
+Erf$(x)$ goes to plus and minus 1 at $+\infty$ and $-\infty$ respectively so the results of the $x$ integration is a factor of 2.
+The cumulative distribution function is given by:
+\begin{equation}
+\begin{split}
+\mathrm{CDF}& \propto \int_{-\infty}^{X} f\;dx \\
+&=\left[
+\beta\cdot
+\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
+\cdot
+\mathrm{erf}\left(\frac{x}{\sqrt{2}\sigma}\right)
++
+\beta\cdot
+\mathrm{e}^{\frac{x}{\beta}}
+\cdot
+\mathrm{erfc}\left(\frac{\beta x+\sigma^2}{\sqrt{2}\sigma\beta}\right)\right]_{-\infty}^{X} \\
+&=
+\beta\cdot
+\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
+\cdot
+\mathrm{erf}\left(\frac{X}{\sqrt{2}\sigma}\right)
++
+\beta\cdot
+\mathrm{e}^{\frac{X}{\beta}}
+\cdot
+\mathrm{erfc}\left(\frac{\beta X+\sigma^2}{\sqrt{2}\sigma\beta}\right) \\
+&-
+\beta\cdot
+\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
+\cdot
+\mathrm{erf}\left(\frac{-\infty}{\sqrt{2}\sigma}\right)
++
+\beta\cdot
+\mathrm{e}^{\frac{-\infty}{\beta}}
+\cdot
+\mathrm{erfc}\left(\frac{\beta -\infty+\sigma^2}{\sqrt{2}\sigma\beta}\right) \\
+&=
+\beta\cdot
+\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
+\cdot\left[
+\mathrm{erf}\left(\frac{X}{\sqrt{2}\sigma}\right)+1\right]
++
+\beta\cdot
+\mathrm{e}^{\frac{X}{\beta}}
+\cdot
+\mathrm{erfc}\left(\frac{\beta X+\sigma^2}{\sqrt{2}\sigma\beta}\right)\;. \\
+\end{split}
+\end{equation}
+Again, the second term of the integral goes to 0 at the $-\infty$ limit and erc$(-\infty)=-1$.
+Then to normalise this to 1 we should divide by the total integral to $+\infty$ i.e. the peak area $2\beta\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}$.
+\begin{equation}
+\mathrm{CDF}=
+0.5\cdot
+\left[
+1
++
+\mathrm{erf}\left(\frac{X}{\sqrt{2}\sigma}\right)
++
+\mathrm{e}^{\frac{X}{\beta}+\frac{\sigma^2}{2\beta^2}}
+\cdot
+\mathrm{erfc}\left(\frac{\beta X+\sigma^2}{\sqrt{2}\sigma\beta}\right)\right]\,. \\
+\end{equation}
+We then defined our step function $S_{f}$ as 1-CDF. The step function is already normalised to 1 so non-unity of the decay peak can be ignored.
+However, when using a sharing parameter which normalises to height (which is easiest for peak fitting) the ratio of step functions should be proportional to peak area.
+
+\section{Combining the Two Peaks}
+
+For the purposes of fitting our peaks that can range from very small loss tails, equivalent to germanium $\gamma$-ray spectra, up tails that dominate the peak, we require some further thought.
+We wish to have a single control parameter $\eta$ which can range between 1 (completely Gaussian) and 0 (completely exponential). As mentioned in Section~\ref{sec:decpeak} the preferred simple method of Equation~\ref{eq:comb1} is not ideal as the parameter $h$ is set assuming unity of the combined peak, which is not achieved initially. We reform the definition of \ref{eq:comb1} in terms of a height $h_a$ specified at a point $a$, nominally the Gaussian centroid.
+\begin{equation}
+y(x) = h_a \cdot 
+\left[
+\frac{g(x)}{g(a)} \cdot\eta
++
+\frac{f(x)}{f(a)}
+\cdot(1-\eta)\right]\,.
+\end{equation}
+If one were so inclined the formula could be re-written in terms of a new control parameter
+\begin{equation}
+y(x) = H \cdot 
+\left[
+g(x)\cdot\Gamma
++
+f(x)
+\cdot(1-\Gamma)\right]\,.
+\end{equation}
+where
+\begin{equation}
+\Gamma=\frac{\frac{\eta}{g(a)}}{\frac{\eta}{g(a)} + \frac{(1-\eta)}{f(a)}}
+\end{equation}
+and
+\begin{equation}
+H=h_a \cdot\left( \frac{\eta}{g(a)} + \frac{(1-\eta)}{f(a)}\right)\,.
+\end{equation}
+
+The combined peak area is subsequently give by:
+\begin{equation}
+A_{tot} = h_a \cdot 
+\left[
+\frac{A_g}{g(a)} \cdot\eta
++
+\frac{A_f}{f(a)}
+\cdot(1-\eta)\right]\,.
+\end{equation}
+or
+\begin{equation}
+A_{tot} = H \cdot 
+\left[
+A_g\cdot\Gamma
++
+A_f
+\cdot(1-\Gamma)\right]\,.
+\end{equation}
+
+We have already noted that for the purposes of fitting it is comfortable to define our height at the maximum of the peak rather than at the physically meaningful centroid. We know when Gaussian term dominates ($\eta=1$) the maximum is at 0 and when the exponential term dominates ($\eta=0$) the maximum is at $x_{max}$ (Equation~\ref{eq:xmax}). We make the approximation that $a$ varies linearly with $\eta$ and define $a=(1-\eta)x_{max}$. Finally, as we wish to input $x$ in terms of the peak maximum position $a$ and not the physically meaning 0 we must modify the input to the peak functions.
+\begin{equation}
+y(x) = H \cdot 
+\left[
+g(x+a)\cdot\Gamma
++
+f(x+a)
+\cdot(1-\Gamma)\right]\,.
+\end{equation}
+
+
+For the unitary background step each contribution is simply weighted by the corresponding peak's contribution to the total peak area:
+\begin{equation}
+S_{tot}(x) = \cdot 
+\left[
+S_g(x-a)\cdot\epsilon
++
+S_f(x-a)
+\cdot(1-\epsilon)\right]\,.
+\end{equation}
+where
+\begin{equation}
+\epsilon=\frac{A_g\Gamma}{A_g\Gamma + A_f(1-\Gamma)}
+\end{equation}
+
+
+\end{document}
