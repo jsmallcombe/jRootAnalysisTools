@@ -56,6 +56,7 @@
 #include "james_utility.h"
 #include "james_gpad_tools.h"
 #include "james_ultrapeak.h"
+#include "james_hist_formatting.h"
 
 // C++
 #include <iostream>
@@ -126,7 +127,7 @@ class UltraFitEnv : public TQObject
 	void HideShape();
 	
 	void Help();
-	void Save();
+	void SaveAs();
 	
 	void PassNewHist(TH1*);
 	

@@ -68,8 +68,8 @@ void UltraFitEnv::DialogBox() {
 			button = new TGTextButton(menuB," Help ");
 			button->Connect("Clicked()","UltraFitEnv",this,"Help()");
 			menuB->AddFrame(button,new TGLayoutHints(kLHintsRight,0,0,0,0));
-			button = new TGTextButton(menuB," Save ");
-			button->Connect("Clicked()","UltraFitEnv",this,"Save()");
+			button = new TGTextButton(menuB," SaveAs ");
+			button->Connect("Clicked()","UltraFitEnv",this,"SaveAs()");
 			menuB->AddFrame(button,new TGLayoutHints(kLHintsLeft,0,0,0,0));
 		cBar->AddFrame(menuB,ExpandXz);
 		
@@ -1012,75 +1012,6 @@ void UltraFitEnv::Help(){
 	hd->Popup();
 }
 
-//Mostly stolen from TRootCanvas.cxx
-
-static const char *UltraFitEnvSaveAsTypes[] = { "PDF",          "*.pdf",
-                                      "ROOT macros",  "*.C",
-                                      "ROOT files",   "*.root",
-                                      "PNG",          "*.png",
-                                      "All files",    "*",
-                                      0,              0 };
-
-void UltraFitEnv::Save(){
-	if(gHist){
-		//Save the stuff for the next loop;
-		static TString dir(".");
-		static Int_t typeidx = 2;
-		static Bool_t overwr = kFALSE;
-		
-		TGFileInfo fi;//Root class for containing save/open file info
-		
-		//initialise fi			
-		TString workdir = gSystem->WorkingDirectory();
-		fi.fFileTypes   = UltraFitEnvSaveAsTypes;
-		fi.fIniDir      = StrDup(dir);
-		fi.fFileTypeIdx = typeidx;
-		fi.fOverwrite = overwr;
-		
-		//This appears to halt the process until close
-		new TGFileDialog(gClient->GetRoot(), cBar, kFDSave, &fi);
-// 		new TGFileDialog(fClient->GetDefaultRoot(), this, kFDSave, &fi);
-
-		gSystem->ChangeDirectory(workdir.Data());
-		
-		if (!fi.fFilename) return;
-		
-		TString fn = fi.fFilename;
-		TString ft = fi.fFileTypes[fi.fFileTypeIdx+1];
-		
-		dir     = fi.fIniDir;
-		typeidx = fi.fFileTypeIdx;
-		overwr  = fi.fOverwrite;
-		
-		Bool_t  appendedType = kFALSE;
-again:
-		if (fn.EndsWith(".root") ||
-			fn.EndsWith(".C") ){
-			gHist->SaveAs(fn);
-		}else if(fn.EndsWith(".pdf") ||
-			fn.EndsWith(".png") ){
-			DrawgHist();
-			TCanvas* fCan=GetCan();
-			if(fCan)fCan->SaveAs(fn);
-		}else {//check if the type has been added to string or nor
-			if (!appendedType) {
-			if (ft.Index(".") != kNPOS) {
-				fn += ft(ft.Index("."), ft.Length());
-				appendedType = kTRUE;
-				goto again;//I didnt write this
-			}
-			}
-			Warning("ProcessMessage", "file %s cannot be saved with this extension", fi.fFilename);
-		}
-		
-		//Save the file type for the next loop;
-		for (int i=1;UltraFitEnvSaveAsTypes[i];i+=2) {
-			TString ftype = UltraFitEnvSaveAsTypes[i];
-			ftype.ReplaceAll("*.", ".");
-			if (fn.EndsWith(ftype.Data())) {
-			typeidx = i-1;
-			break;
-			}
-		}
-	}
+void UltraFitEnv::SaveAs(){
+	if(gHist)HistSaveAs(gHist,cBar);
 }

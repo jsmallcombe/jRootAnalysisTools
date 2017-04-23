@@ -26,6 +26,10 @@
 #include <TMarker.h>
 #include <TROOT.h>
 #include <TPolyLine.h>
+#include <TGFileDialog.h>
+#include <TGClient.h>
+#include <TRootEmbeddedCanvas.h>
+#include <TSystem.h>
 
 #include "james_gpad_tools.h"
 #include "james_fitting.h"
@@ -78,5 +82,6 @@ void PadNDCtoUser(vector<double>& x,vector<double>& y,TVirtualPad* pad,bool reve
 void PadNDCtoUser(double& x,double& y,TVirtualPad* pad,bool reverse=false);
 void PadNDCtoUser(double& x,double& y,double* xy,bool reverse=false);
 
+void HistSaveAs(TH1* hist, TGWindow *window);
 
 #endif // #ifdef jameshistfor_h
