@@ -388,6 +388,32 @@ void PadNDCtoUser(double& x,double& y,double* xy,bool reverse){
 }
 
 
+void HistDrawCopy(TH1* hist){
+	if(hist){
+		TVirtualPad* hold=gPad;
+		string name=hist->GetName();
+		name+="DrawCopyCan";
+		TCanvas* Can=new TCanvas(name.c_str());
+		Can->cd();
+		hist->DrawCopy("histcolz");
+		//Convoluted but allows change format of just the drawcopy without cloning
+		TH1* H=hist_capture(Can);
+		if(H)hformat(H,0);
+		Can->Modified();
+		Can->Update();
+		gPad=hold;
+	}
+}
+
+TH1* DrawCopyHistOpt(TH1* hist){
+	if(!hist)return 0;
+		TH1* h=hist->DrawCopy("histcolz");
+		TObject *obj;TIter next(hist->GetListOfFunctions());
+		while ((obj = next()))((TF1*)obj)->DrawCopy("same");//Needed because of "Hist option turns off the functions"
+	return h;	
+}
+
+
 //Mostly stolen from TRootCanvas.cxx
 static const char *HistSaveAsTypes[] = { "PDF",          "*.pdf",
                                       "ROOT macros",  "*.C",
@@ -435,7 +461,7 @@ again:
 			fn.EndsWith(".png") ){
 			TCanvas fCan;
 			fCan.cd();
-			hist->DrawCopy("histcolz");
+			DrawCopyHistOpt(hist);
 			fCan.SaveAs(fn);
 		}else {//check if the type has been added to string or nor
 			if (!appendedType) {

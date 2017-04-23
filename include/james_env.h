@@ -40,8 +40,10 @@ using namespace std;
 class CCframe : public TRootEmbeddedCanvas {
 	private:
 		TH1* current;//Never owns
+		TPad* currentpad;//Never owns
+		TCanvas* currentcan;//Never owns
 		string histname;
-		void SetNewHist(TH1* fH);
+		void SetNewHist(TH1* fH,TPad* Pad,TCanvas* Can);
 		bool pause;
 	public:
 		CCframe(const char * name = 0,const TGWindow * p = 0,UInt_t w = 10,UInt_t h = 10,UInt_t options = kSunkenFrame | kDoubleBorder,Pixel_t 	back = GetDefaultFrameBackground());
@@ -95,6 +97,8 @@ public:
 	void Browser();
 	void Gatter();
 	void ShowHide();
+	void SaveAs();
+	void DrawCpy();
 	void GrabA(Int_t,Int_t,Int_t,TObject*);
 	void GrabB(Int_t,Int_t,Int_t,TObject*);
 	void DoSlider();

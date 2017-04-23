@@ -365,7 +365,10 @@ void UltraFitEnv::DrawgHist(){
 	TCanvas* fCan=GetCan();
 	if(fCan){
 		fCan->cd();
-		gHistDrawn=gHist->DrawCopy("hist");//just one more protection of gHist
+		
+		//This is another protection of gHist
+		gHistDrawn=DrawCopyHistOpt(gHist);
+
 		if(!fCan->GetShowEventStatus())fCan->ToggleEventStatus();//info at the bottom
 		gPad->Update();	
 	}

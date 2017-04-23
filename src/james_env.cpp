@@ -1,6 +1,6 @@
 #include "james_env.h"
 
-CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t options,Pixel_t back):TRootEmbeddedCanvas(name,p,w,h,options,back),current(0){TVirtualPad* hold=gPad;
+CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t options,Pixel_t back):TRootEmbeddedCanvas(name,p,w,h,options,back),current(0),currentpad(0),currentcan(0){TVirtualPad* hold=gPad;
 	this->GetCanvas()->SetMargin(0,0,0,0);
 	TQObject::Connect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", "CCframe", this,"TrackCaptureHistogram(TPad*,TObject*,Int_t)");
 	gPad=hold;
@@ -16,8 +16,14 @@ CCframe::~CCframe(){
 
 
 void CCframe::TrackCaptureHistogram(TPad* pad,TObject* obj,Int_t event){
+	//Called by ALL TCanvas
+	TCanvas* sender=(TCanvas*)gTQSender;
+	
+	//To make this ignore certain pads
 	for(unsigned int i=0;i<CFriends.size();i++){if(pad==CFriends[i])return;}
-	if(1 == event){
+	
+	
+	if(1 == event){//Left Click
 		if(this->GetCanvas()==pad){
 			//cout<<endl<<"self click"<<endl;
 			return;
@@ -25,16 +31,20 @@ void CCframe::TrackCaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 
 		if(obj){
 			TH1* fH=0;
-			if(obj->InheritsFrom("TH1"))fH=(TH1*)obj;
-			else fH=hist_capture(pad);
-			if(fH)SetNewHist(fH);return;
+			if(obj->InheritsFrom("TH1"))fH=(TH1*)obj;//If click was exactly on a histogram?
+			else fH=hist_capture(pad);//Else find first histogram this pad has
+			
+			if(fH)SetNewHist(fH,pad,sender);
+			return;
 		}
 	}
 }
 
-void CCframe::SetNewHist(TH1* fH){
+void CCframe::SetNewHist(TH1* fH,TPad* Pad,TCanvas* Can){
 	if(fH!=current){
 		current=fH;
+		currentpad=Pad;
+		currentcan=Can;
 		histname=current->GetName();
 		TVirtualPad* hold=gPad;
 		this->GetCanvas()->cd();
@@ -61,9 +71,33 @@ void CCframe::SetNewHist(TH1* fH){
 }
 
 TH1* CCframe::Hist(){
+
 	if(current){
 		TObject* Ob = gROOT->FindObject(histname.c_str());
+// 		cout<<endl<<"Checking if histogram pointer "<<current<<" is valid: "<<Ob<<endl;
 		if(Ob)if(Ob->InheritsFrom("TH1"))return (TH1*)Ob;
+		//Often fails because FindObject has limitations in terms of directories and drawn histograms we might have grabbed.
+		//If the canvas is still drawn we might still be able to grab the histogram
+		
+		TPad* Pad=(TPad*)gROOT->GetListOfCanvases()->FindObject(currentpad);
+// 		cout<<endl<<"Checking if pad pointer "<<currentpad<<" is in gROOT->GetListOfCanvases() :"<<Pad<<endl;
+		if(Pad){
+			Ob=Pad->GetListOfPrimitives()->FindObject(current);
+			if(Ob)if(Ob->InheritsFrom("TH1"))return (TH1*)Ob;
+		}
+		
+		TCanvas* Can=(TCanvas*)gROOT->GetListOfCanvases()->FindObject(currentcan);
+// 		cout<<endl<<"Checking if canvas pointer "<<currentcan<<" is in gROOT->GetListOfCanvases() :"<<Can<<endl;
+		if(Can){
+			Ob=Can->GetListOfPrimitives()->FindObject(current);
+			if(Ob)if(Ob->InheritsFrom("TH1"))return (TH1*)Ob;
+			
+			Pad=(TPad*)Can->GetListOfPrimitives()->FindObject(currentpad);
+			if(Pad){
+				Ob=Pad->GetListOfPrimitives()->FindObject(current);
+				if(Ob)if(Ob->InheritsFrom("TH1"))return (TH1*)Ob;
+			}
+		}
 	}
 	return 0;
 }
@@ -105,6 +139,12 @@ TVirtualPad* hold=gPad;
 		TGTextButton* browser = new TGTextButton(controlframe1,"Browser");
 		browser->Connect("Clicked()","jEnv",this,"Browser()");
 		controlframe1->AddFrame(browser,ExpandX);
+		TGTextButton* Drawer = new TGTextButton(controlframe1,"DrawCopy");
+		Drawer->Connect("Clicked()","jEnv",this,"DrawCpy()");
+		controlframe1->AddFrame(Drawer,ExpandX);
+		TGTextButton* Saver = new TGTextButton(controlframe1,"SaveAs");
+		Saver->Connect("Clicked()","jEnv",this,"SaveAs()");
+		controlframe1->AddFrame(Saver,ExpandX);
 		TGTextButton* close = new TGTextButton(controlframe1,"Close");
 		close->Connect("Clicked()","jEnv",this,"DeleteWindow()");
 		controlframe1->AddFrame(close,ExpandX);
@@ -198,6 +238,16 @@ void jEnv::FitPanel(){
 void jEnv::Gatter(){
 	if(fCanvas1->Type()>1)new jgating_tool(fCanvas1->Hist());
 };
+
+
+void jEnv::DrawCpy(){
+	HistDrawCopy(fCanvas1->Hist());
+};
+
+void jEnv::SaveAs(){
+	if(fCanvas1->Type())HistSaveAs(fCanvas1->Hist(),this);
+};
+
 
 void jEnv::ShowHide(){if(!addsub)return;
 	if(IsVisible(addsub)){
