@@ -82,8 +82,13 @@ void PadNDCtoUser(vector<double>& x,vector<double>& y,TVirtualPad* pad,bool reve
 void PadNDCtoUser(double& x,double& y,TVirtualPad* pad,bool reverse=false);
 void PadNDCtoUser(double& x,double& y,double* xy,bool reverse=false);
 
-void HistDrawCopy(TH1* hist);
+//Draw a formatted copy in a new window
+void HistDrawCopy(TH1* hist,bool opt=true);//opt="hist" hide errors
+
+//Draw without errors (but with functions) in current pad
+TH1* DrawHistOpt(TH1* hist,bool copy=false);
 TH1* DrawCopyHistOpt(TH1* hist);
-void HistSaveAs(TH1* hist, TGWindow *window);
+
+void HistSaveAs(TH1* hist, TGWindow *window=0,TPad* pad=0);
 
 #endif // #ifdef jameshistfor_h

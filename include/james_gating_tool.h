@@ -57,7 +57,7 @@ private:
 	TGToolTip *fTip;
 	UltraFitEnv* fFitPanel;
 	
-	TH1F* saveadd,*saveaddsave;
+	TH1F* saveadd;
 	vector< TH1F* > savehists;
 	vector< TGCheckButton* > savechecks;
 	vector< TGTextButton* > savebutton;
@@ -72,6 +72,7 @@ public:
 	void ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*);
 	void SavePanel();
 	void FitPanel();
+	void SaveAs();
 	void FitPanelClose(){fFitPanel=0;}
 	void AddStoreHistogram();
 	void CSaveButton();

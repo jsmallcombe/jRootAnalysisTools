@@ -1016,5 +1016,5 @@ void UltraFitEnv::Help(){
 }
 
 void UltraFitEnv::SaveAs(){
-	if(gHist)HistSaveAs(gHist,cBar);
+	if(gHist)HistSaveAs(gHist,cBar,GetCan());
 }

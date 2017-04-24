@@ -82,7 +82,7 @@ TVirtualPad* hold=gPad;
 		fCanvas1->GetCanvas()->SetName(("ResultCan"+make_iterator()).c_str());
 		
 		fCanvas1->GetCanvas()->SetFillColor(33);
-		fCanvas1->GetCanvas()->SetFrameFillColor(41);
+		fCanvas1->GetCanvas()->SetFrameFillColor(kYellow-9);
 		fCanvas1->GetCanvas()->SetBorderMode(0);
 		fCanvas1->GetCanvas()->SetMargin(0.1,0.01,0.05,0.01);	
 		fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jgating_tool", this,"ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*)");
@@ -91,7 +91,6 @@ TVirtualPad* hold=gPad;
 		//New stuff for the saving of histograms
 		
 		saveadd=0;
-		saveaddsave=0;
 		savehists.clear();
 		savechecks.clear();
 		savebutton.clear();
@@ -99,9 +98,10 @@ TVirtualPad* hold=gPad;
 		TGTextButton* ftbutton = new TGTextButton(buttonframe,"Fit Panel");
 		ftbutton->Connect("Clicked()","jgating_tool",this,"FitPanel()");
 		ftbutton->SetToolTipText("Open Fit Tool\n Open an instance of J-fit panel,\n initially connected to result canvas.");
-		TGTextButton* spbutton = new TGTextButton(buttonframe,"Save Panel");
-		spbutton->Connect("Clicked()","jgating_tool",this,"SavePanel()");
-		spbutton->SetToolTipText("Show Save Panel\n Open side-panel for holding gating results\n  in memory to enable on-the-fly summing.");
+
+		TGTextButton* SAbutton = new TGTextButton(buttonframe,"SaveAs");
+		SAbutton->Connect("Clicked()","jgating_tool",this,"SaveAs()");
+		SAbutton->SetToolTipText("Save the currently drawn histogram.");
 		
 		fCheck1 = new TGCheckButton(buttonframe,"Hide Ers");
 		fCheck1->SetState(kButtonDown);
@@ -116,14 +116,16 @@ TVirtualPad* hold=gPad;
 		TGTextButton* plushist = new TGTextButton(savecontrolbut,"+");
 		plushist->Connect("Clicked()","jgating_tool",this,"AddStoreHistogram()");
 		plushist->SetToolTipText("Add an additional saved\n histogram slot.");
-		plushist = new TGTextButton(savecontrolbut,"Draw");
+		plushist = new TGTextButton(savecontrolbut,"DrawSum");
 		plushist->Connect("Clicked()","jgating_tool",this,"DrawSaved()");
 		plushist->SetToolTipText("Draw a sum of currently\n selected saved Histograms.");
 		savecontrolbut->Show();
 		
-		plushist = new TGTextButton(saveframe,"Clear");
+		plushist = new TGTextButton(saveframe,"DeleteAll");
 		plushist->Connect("Clicked()","jgating_tool",this,"CSaveButton()");
-		plushist->SetToolTipText("Clear all locally saved\n gated histograms.");	
+		plushist->SetToolTipText("Clear all locally saved\n gated histograms.");
+		
+		TGLabel *label = new TGLabel(saveframe, "Saved Gated\n Histograms.\n Check box\n   to sum.");
 		
 // 		TGHorizontalFrame* inbetw= new TGHorizontalFrame(saveframe, 0, 0, 0);
 // 		savebuttons = new TGButtonGroup(inbetw,"",kVerticalFrame);
@@ -137,13 +139,20 @@ TVirtualPad* hold=gPad;
 		buttonframe->AddFrame(fBgroup1, ffCenX);
 		if(Bthree)buttonframe->AddFrame(fCheck0, ffCenY);
 		buttonframe->AddFrame(ftbutton, ffCenY);
-		buttonframe->AddFrame(spbutton, ffCenY);
+		buttonframe->AddFrame(SAbutton, ffCenY);
 		buttonframe->AddFrame(fCheck1, ffCenY);
 		resultframe->AddFrame(buttonframe, ffCenX);
 		resultframe->AddFrame(fCanvas1, ffExpand);
 		AddFrame(resultframe,ffExpand);
+		
+		TGTextButton* spbutton = new TGTextButton(this,">");
+		spbutton->Connect("Clicked()","jgating_tool",this,"SavePanel()");
+		spbutton->SetToolTipText("Show Save Panel\n Open side-panel for holding gating results\n  in memory to enable on-the-fly summing.");
+		AddFrame(spbutton, ffExpandY);
+		
 		saveframe->AddFrame(savecontrolbut,ffSpeBuf);
 		saveframe->AddFrame(plushist,ffSpeBuf);//
+		saveframe->AddFrame(label,ffSpeBuf);//
 		saveframe->AddFrame(savebuttons,ffCenTop);//
 		AddFrame(saveframe,ffExpandY);	
 			
@@ -227,7 +236,7 @@ void jgating_tool::DoUpdate(){TVirtualPad* hold=gPad;
 	ShowFrame(gJframe2);
 	
 	fCanvas1->GetCanvas()->cd();
-	if(fCheck1->GetState())gJframe2->output_hist_point->Draw("hist");
+	if(fCheck1->GetState())DrawHistOpt(gJframe2->output_hist_point);//Needed if any functions have been drawn
 	else gJframe2->output_hist_point->Draw();
 	
 	if(fRButton2->GetState()){
@@ -280,7 +289,6 @@ void jgating_tool::ClickedFinalCanvas(Int_t event, Int_t px, Int_t py, TObject *
 		//Click is given in pixel coordinates
 	
 		TH1 *h=gJframe2->output_hist_point;
-		if(saveaddsave)if(fCanvas1->GetCanvas()->GetListOfPrimitives()->FindObject(saveaddsave))h=saveaddsave;
 		
 		TF1* Quick=UserQuickSingleGausAutoFitE(h,x,x-20,x+20,1);//Free & linear back
 
@@ -327,11 +335,15 @@ void jgating_tool::FitPanel(){
 	}
 }
 
+void jgating_tool::SaveAs(){
+	TH1* h=hist_capture(fCanvas1->GetCanvas());
+	if(!h)h=gJframe2->output_hist_point;
+	HistSaveAs(h,this,fCanvas1->GetCanvas());
+}
+
 void jgating_tool::AddStoreHistogram(){
 	if(savehists.size()<15){
-		stringstream ss;
-		ss<<" Save"<<(savehists.size()+1)<<" ";
-		savebutton.push_back(new TGTextButton(savebuttons,ss.str().c_str()));
+		savebutton.push_back(new TGTextButton(savebuttons,"[empty]"));
 		
 		savebutton[savebutton.size()-1]->SetToolTipText("Save current gating\n result histogram.");
 		savechecks.push_back(new TGCheckButton(savebuttons,""));
@@ -350,7 +362,13 @@ void jgating_tool::StoreHistograms(Int_t i){
 	// 	cout<<endl<<endl<<i<<endl<<endl;
 		if(select<savehists.size()){
 			if(savehists[select])delete savehists[select];savehists[select]=0;
-			savehists[select]=(TH1F*)gJframe2->output_hist_point->Clone(("savedhist"+make_iterator()).c_str());
+			savehists[select]=new TH1F();
+			gJframe2->output_hist_point->Copy(*savehists[select]);
+			savehists[select]->SetName(("savedhist"+make_iterator()).c_str());
+			
+			cout<<endl<<savehists[select]->GetName()<<endl;
+			
+// 			(TH1F*)gJframe2->output_hist_point->Clone(("savedhist"+make_iterator()).c_str());
 			if(!savechecks[select]->IsEnabled())savechecks[select]->SetEnabled();
 			
 			stringstream ss;ss<<" "<<gJframe2->GateCentre<<" ";
@@ -373,12 +391,7 @@ void jgating_tool::DrawSaved(){
 		}
 	}
 	if(saveadd){
-		TVirtualPad* hold=gPad;
-		fCanvas1->GetCanvas()->cd();
-		saveaddsave=(TH1F*)saveadd->DrawCopy();
-		fCanvas1->GetCanvas()->Modified();
-		fCanvas1->GetCanvas()->Update();
-		gPad=hold;
+		HistDrawCopy(saveadd,fCheck1->GetState());
 	}
 }
 
@@ -397,7 +410,6 @@ void jgating_tool::NewAxisDrawn() //adjust sliders and control values for new ax
 {
 	if(fFitFcn&&fCanvas1->GetCanvas()->GetListOfPrimitives()->FindObject(peaknumremove)){
 		TH1 *h=gJframe2->output_hist_point;
-		if(saveaddsave)if(fCanvas1->GetCanvas()->GetListOfPrimitives()->FindObject(saveaddsave))h=saveaddsave;
 		double cent=fFitFcn->GetParameter(1);
 		double shif=(h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetLast())-h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetFirst()))*0.05;
 		peaknumremove->SetX(cent+shif);

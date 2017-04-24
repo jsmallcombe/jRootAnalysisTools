@@ -388,16 +388,17 @@ void PadNDCtoUser(double& x,double& y,double* xy,bool reverse){
 }
 
 
-void HistDrawCopy(TH1* hist){
+void HistDrawCopy(TH1* hist,bool opt){
 	if(hist){
 		TVirtualPad* hold=gPad;
 		string name=hist->GetName();
 		name+="DrawCopyCan";
 		TCanvas* Can=new TCanvas(name.c_str());
+		Can->SetMargin(0.15,0.05,0.15,0.05);
 		Can->cd();
-		hist->DrawCopy("histcolz");
-		//Convoluted but allows change format of just the drawcopy without cloning
-		TH1* H=hist_capture(Can);
+		TH1* H;
+		if(opt)H=DrawCopyHistOpt(hist);
+		else H=hist->DrawCopy("colz");
 		if(H)hformat(H,0);
 		Can->Modified();
 		Can->Update();
@@ -405,12 +406,20 @@ void HistDrawCopy(TH1* hist){
 	}
 }
 
-TH1* DrawCopyHistOpt(TH1* hist){
+
+TH1* DrawHistOpt(TH1* hist,bool copy){
 	if(!hist)return 0;
-		TH1* h=hist->DrawCopy("histcolz");
-		TObject *obj;TIter next(hist->GetListOfFunctions());
-		while ((obj = next()))((TF1*)obj)->DrawCopy("same");//Needed because of "Hist option turns off the functions"
+		TH1* h;
+		if(copy){h=hist->DrawCopy("histcolz");}
+		else {h=hist;hist->Draw("histcolz");}
+		h->Draw("SAMEFUNC");
+// 		TObject *obj;TIter next(hist->GetListOfFunctions());
+// 		while ((obj = next()))((TF1*)obj)->DrawCopy("same");//Needed because of "Hist option turns off the functions"
 	return h;	
+}
+	
+TH1* DrawCopyHistOpt(TH1* hist){
+	return DrawHistOpt(hist,true);
 }
 
 
@@ -421,7 +430,7 @@ static const char *HistSaveAsTypes[] = { "PDF",          "*.pdf",
                                       "PNG",          "*.png",
                                       "All files",    "*",
                                       0,              0 };
-void HistSaveAs(TH1* hist, TGWindow *window){
+void HistSaveAs(TH1* hist, TGWindow *window,TPad* pad){
 if(hist){
 		//Save the stuff for the next loop;
 		static TString dir(".");
@@ -459,10 +468,14 @@ again:
 			hist->SaveAs(fn);
 		}else if(fn.EndsWith(".pdf") ||
 			fn.EndsWith(".png") ){
-			TCanvas fCan;
-			fCan.cd();
-			DrawCopyHistOpt(hist);
-			fCan.SaveAs(fn);
+			if(pad){
+				pad->SaveAs(fn);
+			}else{
+				TCanvas fCan;
+				fCan.cd();
+				DrawCopyHistOpt(hist);
+				fCan.SaveAs(fn);
+			}
 		}else {//check if the type has been added to string or nor
 			if (!appendedType) {
 			if (ft.Index(".") != kNPOS) {
