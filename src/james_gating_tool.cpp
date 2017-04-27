@@ -74,7 +74,7 @@ TVirtualPad* hold=gPad;
 		if(Bthree){
 			fCheck0 = new TGCheckButton(buttonframe,"2D ");
 			fCheck0->SetState(kButtonUp);
-			fCheck0->Connect(" Clicked()", "jgating_tool", this,"DoUpdate2D()");
+			fCheck0->Connect(" Clicked()", "jgating_tool", this,"DoCheckbox2D()");
 			fCheck0->SetToolTipText("2D Only\n Do not perform the second axis subtraction.\n Instead view TH2 matrix results from the first.");
 		}
 		
@@ -104,7 +104,7 @@ TVirtualPad* hold=gPad;
 		SAbutton->SetToolTipText("Save the currently drawn histogram.");
 		
 		fCheck1 = new TGCheckButton(buttonframe,"Hide Ers");
-		fCheck1->SetState(kButtonDown);
+		fCheck1->SetState(kButtonUp);
 		fCheck1->Connect(" Clicked()", "jgating_tool", this,"DoUpdate()");
 		fCheck1->SetToolTipText("Hide Bin Errors on drawn histograms");
 		
@@ -192,6 +192,13 @@ jgating_tool::~jgating_tool()
 //    cout<<endl<<"DOO0000000OM"<<endl;
 //    delete this;
 // }
+
+
+void jgating_tool::DoCheckbox2D(){
+	CSaveButton();
+	DoUpdate2D();
+}
+
 
 void jgating_tool::DoUpdate2D(){TVirtualPad* hold=gPad;
 	if(!gJframe1)return;
@@ -362,13 +369,17 @@ void jgating_tool::StoreHistograms(Int_t i){
 	// 	cout<<endl<<endl<<i<<endl<<endl;
 		if(select<savehists.size()){
 			if(savehists[select])delete savehists[select];savehists[select]=0;
-			savehists[select]=new TH1F();
-			gJframe2->output_hist_point->Copy(*savehists[select]);
-			savehists[select]->SetName(("savedhist"+make_iterator()).c_str());
+
+// 			savehists[select]=new TH1F();
+// 			gJframe2->output_hist_point->Copy(*savehists[select]);
+// 			savehists[select]->SetName(("savedhist"+make_iterator()).c_str());
 			
-			cout<<endl<<savehists[select]->GetName()<<endl;
+			TH1* targ=gJframe2->output_hist_point;;
+			if(fCheck0)if(fCheck0->GetState()) targ=gJframe1->output_hist_point_2d;
 			
-// 			(TH1F*)gJframe2->output_hist_point->Clone(("savedhist"+make_iterator()).c_str());
+			savehists[select]=(TH1*)targ->Clone(("savedhist"+make_iterator()).c_str());
+			savehists[select]->GetListOfFunctions()->Clear();
+			
 			if(!savechecks[select]->IsEnabled())savechecks[select]->SetEnabled();
 			
 			stringstream ss;ss<<" "<<gJframe2->GateCentre<<" ";
@@ -386,7 +397,7 @@ void jgating_tool::DrawSaved(){
 				if(saveadd->GetNbinsX()==savehists[i]->GetNbinsX())
 					saveadd->Add(savehists[i]);
 			}else{
-				saveadd=(TH1F*)savehists[i]->Clone(("savedhist"+make_iterator()).c_str());
+				saveadd=(TH1*)savehists[i]->Clone(("savedhist"+make_iterator()).c_str());
 			}
 		}
 	}
@@ -400,9 +411,7 @@ void jgating_tool::CSaveButton(){
 	for(uint i=0;i<savehists.size();i++){
 		savechecks[i]->SetState(kButtonUp);
 		savechecks[i]->SetState(kButtonDisabled);
-		stringstream ss;
-		ss<<" Save"<<(i+1)<<" ";
-		savebutton[i]->SetText(ss.str().c_str());
+		savebutton[i]->SetText("[Empty]");
 	}
 }
 

@@ -69,7 +69,7 @@ private:
 	TGTextBuffer        *fTbh1, *fTbh2, *fTbh3;
 	TGCheckButton       *fCheck2,*fCheck1,*fCheck0;
 	TGButtonGroup	*fBgroup1,*fBgroup2;
-	TGRadioButton	*fRButton1,*fRButton2,*fRButton3,*fRButton4,*fRButton5,*fRButton6,*fRButton7,*fRButton8,*fRButtonz;
+	TGRadioButton	*fRButton1,*fRButton2,*fRButton3,*fRButton4,*fRButton5,*fRButton6,*fRButton7,*fRButton8,*fRButton9,*fRButtonz;
 	TGTextButton		*fTButton1;
 	
 	TH3F *raw_3d;

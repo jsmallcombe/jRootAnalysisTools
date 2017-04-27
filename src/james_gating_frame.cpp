@@ -98,7 +98,8 @@ TVirtualPad* hold=gPad;
 			fRButton5->SetToolTipText("Compton Background\n Gate on entire spectrum (including overflow)\n above the gate to form a background spectrum.\n In manual mode a gap of 2 bins above the gate\n is left. In fit mode it begins at +2 sigma.");
 			fRButton6 = new TGRadioButton(fBgroup2,"Anti ");
 			fRButton6->SetToolTipText("Anti-gated Background\n The background spectrum is the full\n projection minus the gated spectrum.");
-			fRButton7 = new TGRadioButton(fBgroup2,"Man");
+			fRButton9 = new TGRadioButton(fBgroup2,"None ");
+			fRButton7 = new TGRadioButton(fBgroup2,"Man ");
 			fRButton7->SetToolTipText("Manual Background\n Manually select a second gate to produce a background spectrum.\n An additional slider will be displayed.");
 			fRButton8 = new TGRadioButton(fBgroup2,"ManRel");
 			fRButton8->SetToolTipText("Relative Position Manual Background\n Manually select a second gate to produce a background spectrum.\n An additional slider will be displayed.\n This gate will move with the primary gate. Useful for scanning.");
@@ -449,7 +450,7 @@ void j_gating_frame::DoSlidePoint() // Updates text to match sliders THEN calls 
 		action_hold=true;
 			fHslider1->SetPosition(xtemp+(fit_down-target_bin),xtemp+(fit_up-target_bin));
 			
-			if(background_mode==5){
+			if(background_mode==6){
 				m_back_down+=xtemp-target_bin;
 				m_back_up+=xtemp-target_bin;
 				fHslider4->SetPosition(m_back_down,m_back_up);
@@ -600,7 +601,7 @@ TVirtualPad* hold=gPad;
 // 	if(axis_up<=proj->GetXaxis()->GetNbins()) proj->GetXaxis()->SetRange(axis_down,axis_up);
 	
 	NewAxisDrawn();//sets sliders ranges and selected to match new axis
-	if(background_mode==4)b_man->Draw("samehist");
+	if(background_mode==5)b_man->Draw("samehist");
 	selected->Draw("samehist");
 // 	fFitFcn->SetParameters(0,0,0,0,0,0);
 // 	fFitFcn->SetRange(0,0);
@@ -620,8 +621,15 @@ void j_gating_frame::ChangeBackMode(const Int_t id)
 //cout<<"ChangeBackMode "<<flush;
 	background_mode=id;
 	
-	if(background_mode>3)ShowFrame(fHframe4);else HideFrame(fHframe4); 
+	if(background_mode>4)ShowFrame(fHframe4);else HideFrame(fHframe4); 
 	HideFullProj();
+	
+	if(background_mode==4){
+			if(set_for_3D)
+				output_hist_point_2d->Sumw2(kFALSE);
+				else
+				gate_hist->Sumw2(kFALSE);
+	}
 	
 	DoHistogram();
 }
@@ -842,6 +850,19 @@ void j_gating_frame::DoHistogram(){
 				}
 			}
 			break;
+		case 4://none
+			{
+				if(set_for_3D){
+					string hpt=output_hist_point_2d->GetName();
+					gate_hist_2d->Copy(*output_hist_point_2d);
+					output_hist_point_2d->SetName(hpt.c_str());
+				}else{
+					string hpt=output_hist_point->GetName();
+					gate_hist->Copy(*output_hist_point);
+					output_hist_point->SetName(hpt.c_str());
+				}
+			}
+			break;
 		default://manual
 			{				
 				if(set_for_3D){
@@ -880,7 +901,7 @@ void j_gating_frame::ShowFullProj(){
 
 		if(hidebinerrors)proj->Draw("samehist");else proj->Draw("same");
 		
-		if(background_mode>3)b_man->Draw("samehist");
+		if(background_mode>4)b_man->Draw("samehist");
 		selected->Draw("samehist");
 		fFitFcn->Draw("same");
 		UpdateCanvas();
@@ -892,7 +913,7 @@ void j_gating_frame::HideFullProj(){
 		TVirtualPad* hold=gPad;
 		fCanvas1->GetCanvas()->cd();
 		if(hidebinerrors)proj->Draw("hist");else proj->Draw("");
-		if(background_mode>3)b_man->Draw("samehist");
+		if(background_mode>4)b_man->Draw("samehist");
 		selected->Draw("samehist");
 		fFitFcn->Draw("same");
 		UpdateCanvas();

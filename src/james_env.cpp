@@ -355,7 +355,9 @@ void jEnv::DoSlider(){TVirtualPad* hold=gPad;
 		if(gSubtract){
 			SumHist=scaled_back_subtract(AHist,back,frac,fracfrac);
 		}else{
-			SumHist=scaled_addition(AHist,back,frac,fracfrac);
+// 			SumHist=scaled_addition(AHist,back,frac,fracfrac);//Decided no scaling for addition
+			SumHist=(TH1*)AHist->Clone();
+			SumHist->Add(back,frac);
 		}
 		
 		if(backtmp)delete back;

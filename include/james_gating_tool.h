@@ -57,8 +57,8 @@ private:
 	TGToolTip *fTip;
 	UltraFitEnv* fFitPanel;
 	
-	TH1F* saveadd;
-	vector< TH1F* > savehists;
+	TH1* saveadd;
+	vector< TH1* > savehists;
 	vector< TGCheckButton* > savechecks;
 	vector< TGTextButton* > savebutton;
    
@@ -67,6 +67,7 @@ public:
 	jgating_tool(TObject* = hist_capture());
 	virtual ~jgating_tool();
 
+	void DoCheckbox2D();
 	void DoUpdate2D();
 	void DoUpdate();
 	void ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*);
