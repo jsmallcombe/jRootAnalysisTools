@@ -9,7 +9,7 @@ TVirtualPad* hold=gPad;
 	char buf[32];	//A buffer for processing text through to text boxes
 	SetCleanup(kDeepCleanup);//Sets this MainFrame to clean all subframes
 	
-	set_for_3D=input->IsA()->InheritsFrom("TH3");
+	set_for_3D=input->IsA()->InheritsFrom(TH3::Class());
 	
 	suffix=suffin;
 
@@ -17,7 +17,7 @@ TVirtualPad* hold=gPad;
 	//	CONTROL VALUES
 	//
 	
-	hidebinerrors=true;
+	hidebinerrors=false;
 	background_mode=1;
 	xyz=0;
 	target_bin=10;
@@ -46,8 +46,6 @@ TVirtualPad* hold=gPad;
 	full=new TH1F();
 	b_man=new TH1F();
 	output_hist_point=new TH1F();
-	full_2d=new TH2F();
-	output_hist_point_2d=new TH2F();
 	gate_hist=new TH1F();
 	free_hist=new TH1F();
 		
@@ -258,9 +256,7 @@ j_gating_frame::~j_gating_frame()
 	delete fFitFcn;
 	delete full;
 	delete b_man;
-	delete full_2d;
 	delete output_hist_point;
-	delete output_hist_point_2d;
 	delete gate_hist;
 	delete free_hist;
 
@@ -535,9 +531,7 @@ void j_gating_frame::ChangeProjection(const Int_t id)
 
 void j_gating_frame::UpdateInput(TH1* input){ 
 //cout<<"boooom "<<flush;
-	if(set_for_3D)raw_3d=(TH3F*)input;
-	else raw_2d=(TH2F*)input;
-	
+	raw_input=input;
 	UpdateInput();
 }
 
@@ -549,13 +543,9 @@ TVirtualPad* hold=gPad;
 	delete proj;
 	delete proj_flow;
 
-	if(set_for_3D){
-		proj=hist_proj_flowless(raw_3d,xyz,"proj_2d"+suffix);
-		proj_flow=hist_proj(raw_3d,xyz,"proj_flow_2d"+suffix);
-	}else{
-		proj=hist_proj_flowless(raw_2d,xyz,"proj"+suffix);
-		proj_flow=hist_proj(raw_2d,xyz,"proj_flow"+suffix);
-	}
+	proj=hist_proj(raw_input,xyz,"proj"+suffix,true);
+	proj_flow=hist_proj(raw_input,xyz,"proj_flow"+suffix);
+	
 	proj->SetStats(0);
 	proj->SetTitle("");
 	proj_flow->SetStats(0);
@@ -563,36 +553,26 @@ TVirtualPad* hold=gPad;
 	proj_flow->SetLineColor(1);
 
 	delete selected;
-	if(set_for_3D) selected=(TH1F*)proj->Clone(("selected_2d"+suffix).c_str());
-	else selected=(TH1F*)proj->Clone(("selected"+suffix).c_str());
+	selected=(TH1*)proj->Clone(("selected"+suffix).c_str());
 	selected->SetLineWidth(3);
 	selected->SetLineColor(2);
 	
 	delete b_man;
-	if(set_for_3D) b_man=(TH1F*)proj->Clone(("b_man_2d"+suffix).c_str());
-	else b_man=(TH1F*)proj->Clone(("b_man"+suffix).c_str());
+	b_man=(TH1*)proj->Clone(("b_man"+suffix).c_str());
 	b_man->SetLineWidth(3);
-	b_man->SetLineColor(1);		
+	b_man->SetLineColor(1);
 
-	if(set_for_3D){
-		delete full_2d;
-		full_2d=hist_gater_bin(1,raw_3d,xyz,"full_2d"+suffix);
-		full_2d->SetStats(0);
-		full_2d->SetTitle("");
-		delete output_hist_point_2d;
-		output_hist_point_2d=(TH2F*)full_2d->Clone(("outputhist_2d"+suffix).c_str());
-	}else{
-		delete full;
-		full=hist_gater_bin(1,raw_2d,xyz,"full"+suffix);
-		full->SetStats(0);	
-		delete output_hist_point;
-		output_hist_point=(TH1F*)full->Clone(("outputhist"+suffix).c_str());
-		delete gate_hist;
-		gate_hist=(TH1F*)full->Clone(("gate_hist"+suffix).c_str());
-		delete free_hist;
-		free_hist=(TH1F*)full->Clone(("free_hist"+suffix).c_str());
-		free_hist->SetLineColor(1);	
-	}
+	delete full;
+	full=hist_gater_bin(1,raw_input,xyz,"full"+suffix);
+	full->SetStats(0);	
+	full->SetTitle("");
+	delete output_hist_point;
+	output_hist_point=(TH1*)full->Clone(("outputhist"+suffix).c_str());
+	delete gate_hist;
+	gate_hist=(TH1*)full->Clone(("gate_hist"+suffix).c_str());
+	delete free_hist;
+	free_hist=(TH1*)full->Clone(("free_hist"+suffix).c_str());
+	free_hist->SetLineColor(1);
 	
 	fCanvas1->GetCanvas()->cd();
 	if(hidebinerrors)proj->Draw("hist");else proj->Draw("");
@@ -625,10 +605,7 @@ void j_gating_frame::ChangeBackMode(const Int_t id)
 	HideFullProj();
 	
 	if(background_mode==4){
-			if(set_for_3D)
-				output_hist_point_2d->Sumw2(kFALSE);
-				else
-				gate_hist->Sumw2(kFALSE);
+		gate_hist->Sumw2(kFALSE);
 	}
 	
 	DoHistogram();
@@ -774,13 +751,6 @@ void j_gating_frame::ClickedCanvasOne(Int_t event, Int_t px, Int_t py, TObject *
 	}
 }
 
-TH2F* j_gating_frame::Raw2DGateRequest(){
-	if(set_for_3D){
-		return hist_gater_bin(gate_down,gate_up,raw_3d,xyz,"Raw2DGateRequest"+suffix);
-	}
-	return new TH2F();
-}
-
 void j_gating_frame::DoHistogram(){
 	
 	if(fCheck1->GetState())
@@ -788,27 +758,19 @@ void j_gating_frame::DoHistogram(){
 	else
 		backfrackfrac=0.04;
 	
-	
-//cout<<"DoHistogram "<<flush;
-// 	TH1F* gate_hist=new TH1F();
-	TH2F* gate_hist_2d=new TH2F();
-	//this is needed because the 3D->2D projection method doesnt nicely fill the named histogram, instead creating a new one, where as the 2D->1D one does
+
 	if(set_for_3D){
-		delete gate_hist_2d; 
-		
-		gate_hist_2d=hist_gater_bin(gate_down,gate_up,raw_3d,xyz,"gate_hist_2d"+suffix);
+		//this is needed because the 3D->2D projection method doesnt nicely fill the named histogram, instead creating a new one, where as the 2D->1D one does
+		delete gate_hist; 
 	
-// 		full_2d=hist_gater_bin(1,raw_3d,xyz,"full");
-	
-	}else{
-		//delete gate_hist;
-		gate_hist=hist_gater_bin(gate_down,gate_up,raw_2d,xyz,"gate_hist"+suffix);
 	}
+	gate_hist=hist_gater_bin(gate_down,gate_up,raw_input,xyz,"gate_hist"+suffix);
+	
+	
 	
 	switch (background_mode) {
 		case 1://full
-			if(set_for_3D) scaled_back_subtract(gate_hist_2d,full_2d,backfrack,output_hist_point_2d,backfrackfrac);
-			else scaled_back_subtract(gate_hist,full,backfrack,output_hist_point,backfrackfrac);
+			scaled_back_subtract(gate_hist,full,backfrack,output_hist_point,backfrackfrac);
 			break;
 		case 2://compton
 			//set the compton background cut to 3sigma above centroid
@@ -820,72 +782,42 @@ void j_gating_frame::DoHistogram(){
 				}
 				if(compton_offset>proj->GetNbinsX())compton_offset=proj->GetNbinsX();
 				
-				if(set_for_3D){
-					TH2F* compton_hist=hist_gater_bin(compton_offset,raw_3d,xyz,"c_gate_2d");
-					scaled_back_subtract(gate_hist_2d,compton_hist,backfrack,output_hist_point_2d,backfrackfrac);
-					delete compton_hist;				
-				}else{
-					TH1F* compton_hist=hist_gater_bin(compton_offset,raw_2d,xyz,"c_gate");
-					scaled_back_subtract(gate_hist,compton_hist,backfrack,output_hist_point,backfrackfrac);
-					delete compton_hist;					
-				}
+				TH1* compton_hist=hist_gater_bin(compton_offset,raw_input,xyz,"c_gate");
+				scaled_back_subtract(gate_hist,compton_hist,backfrack,output_hist_point,backfrackfrac);
+				delete compton_hist;
 			}
 			break;
 		case 3://anti gate
 			{
 // 				if(set_for_3D){ fullcount=full_2d->Integral();gatecount=gate_hist_2d->Integral();}
 // 				else{ fullcount=full->Integral();gatecount=gate_hist->Integral();}
-				if(set_for_3D){
-					TH2F* anti_hist=(TH2F*)full_2d->Clone("antiback");
-					anti_hist->Add(gate_hist_2d,-1);
-					anti_hist->Sumw2(kFALSE);
-					scaled_back_subtract(gate_hist_2d,anti_hist,backfrack,output_hist_point_2d,backfrackfrac);
-					delete anti_hist;
-				}else{
-					TH1F* anti_hist=(TH1F*)full->Clone("antiback");
-					anti_hist->Add(gate_hist,-1);
-					anti_hist->Sumw2(kFALSE);
-					scaled_back_subtract(gate_hist,anti_hist,backfrack,output_hist_point,backfrackfrac);
-					delete anti_hist;
-				}
+				TH1* anti_hist=(TH1*)full->Clone("antiback");
+				anti_hist->Add(gate_hist,-1);
+				anti_hist->Sumw2(kFALSE);
+				scaled_back_subtract(gate_hist,anti_hist,backfrack,output_hist_point,backfrackfrac);
+				delete anti_hist;
 			}
 			break;
 		case 4://none
 			{
-				if(set_for_3D){
-					string hpt=output_hist_point_2d->GetName();
-					gate_hist_2d->Copy(*output_hist_point_2d);
-					output_hist_point_2d->SetName(hpt.c_str());
-				}else{
-					string hpt=output_hist_point->GetName();
-					gate_hist->Copy(*output_hist_point);
-					output_hist_point->SetName(hpt.c_str());
-				}
+				string hpt=output_hist_point->GetName();
+				gate_hist->Copy(*output_hist_point);
+				output_hist_point->SetName(hpt.c_str());
 			}
 			break;
 		default://manual
 			{				
-				if(set_for_3D){
-					TH2F* manb_hist=hist_gater_bin(m_back_down,m_back_up,raw_3d,xyz,"m_gate_2d");
-					if(gate_down>m_back_down&&gate_up<m_back_up)manb_hist->Add(gate_hist_2d,-1);//In special case remove the gated part
-					manb_hist->Sumw2(kFALSE);
-					scaled_back_subtract(gate_hist_2d,manb_hist,backfrack,output_hist_point_2d,backfrackfrac);
-					delete manb_hist;				
-				}else{
-					TH1F* manb_hist=hist_gater_bin(m_back_down,m_back_up,raw_2d,xyz,"m_gate");
-					if(gate_down>m_back_down&&gate_up<m_back_up)manb_hist->Add(gate_hist,-1);//In special case remove the gated part
-					manb_hist->Sumw2(kFALSE);
-					scaled_back_subtract(gate_hist,manb_hist,backfrack,output_hist_point,backfrackfrac);
-					delete manb_hist;					
-				}
+				
+				TH1* manb_hist=hist_gater_bin(m_back_down,m_back_up,raw_input,xyz,"m_gate_2d");
+				if(gate_down>m_back_down&&gate_up<m_back_up)manb_hist->Add(gate_hist,-1);//In special case remove the gated part
+				manb_hist->Sumw2(kFALSE);
+				scaled_back_subtract(gate_hist,manb_hist,backfrack,output_hist_point,backfrackfrac);
+				delete manb_hist;				
 			}
 			break;				
 	}
-	//delete gate_hist;
-	delete gate_hist_2d;
 	
 	output_hist_point->SetTitle("");
-	output_hist_point_2d->SetTitle("");
 
 	Emit("OutputReady()");
 }

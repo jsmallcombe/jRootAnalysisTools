@@ -46,7 +46,7 @@ TVirtualPad* hold=gPad;
 			gJframe1 = new j_gating_frame(this,pass,make_iterator());
 			gJframe1->Connect("OutputReady()", "jgating_tool", this,"DoUpdate2D()");
 			AddFrame(gJframe1,ffExpand);	
-			pass=(TH1*)gJframe1->output_hist_point_2d;
+			pass=(TH1*)gJframe1->output_hist_point;
 		}
 		
 		//TH3 or TH2 gate panel
@@ -207,16 +207,12 @@ void jgating_tool::DoUpdate2D(){TVirtualPad* hold=gPad;
 		HideFrame(gJframe2);
 		fCanvas1->GetCanvas()->cd();
 		if(fRButton2->GetState()){
-			gJframe1->full_2d->Draw("colz");
+			gJframe1->full->Draw("colz");
 		}else if(fRButton3->GetState()){
-			TH2F* raw = gJframe1->Raw2DGateRequest();
-			raw->Add(gJframe1->output_hist_point_2d,-1);
-			raw->SetStats(0);
-			raw->SetTitle("");
-			raw->DrawCopy("colz");
-			delete raw;
+			gJframe1->free_hist->Add(gJframe1->gate_hist,gJframe1->output_hist_point,1,-1);
+			gJframe1->free_hist->DrawCopy("colz");
 		}else{
-			gJframe1->output_hist_point_2d->Draw("colz");
+			gJframe1->output_hist_point->Draw("colz");
 		}
 
 		fCanvas1->GetCanvas()->Modified();
@@ -224,7 +220,7 @@ void jgating_tool::DoUpdate2D(){TVirtualPad* hold=gPad;
 	}else{
 		gJframe2->hidebinerrors=fCheck1->GetState();
 		ShowFrame(gJframe2);
-		gJframe2->UpdateInput(gJframe1->output_hist_point_2d);
+		gJframe2->UpdateInput(gJframe1->output_hist_point);
 	}
 gPad=hold;
 }
@@ -375,7 +371,7 @@ void jgating_tool::StoreHistograms(Int_t i){
 // 			savehists[select]->SetName(("savedhist"+make_iterator()).c_str());
 			
 			TH1* targ=gJframe2->output_hist_point;;
-			if(fCheck0)if(fCheck0->GetState()) targ=gJframe1->output_hist_point_2d;
+			if(fCheck0)if(fCheck0->GetState()) targ=gJframe1->output_hist_point;
 			
 			savehists[select]=(TH1*)targ->Clone(("savedhist"+make_iterator()).c_str());
 			savehists[select]->GetListOfFunctions()->Clear();

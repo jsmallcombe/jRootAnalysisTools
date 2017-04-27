@@ -72,9 +72,8 @@ private:
 	TGRadioButton	*fRButton1,*fRButton2,*fRButton3,*fRButton4,*fRButton5,*fRButton6,*fRButton7,*fRButton8,*fRButton9,*fRButtonz;
 	TGTextButton		*fTButton1;
 	
-	TH3F *raw_3d;
-	TH2F *raw_2d; 
-	TH1F *proj,*proj_flow,*selected,*b_man;
+	TH1 *raw_input; 
+	TH1 *proj,*proj_flow,*selected,*b_man;
 	
 	TText* peaknumremove;
 	
@@ -134,16 +133,14 @@ public:
    void ShowFullProj();
    void HideFullProj();
       
-   TH1F *output_hist_point;
-   TH2F *output_hist_point_2d,*full_2d;
-   TH1F *gate_hist,*full,*free_hist;
+   TH1 *output_hist_point;
+   TH1 *gate_hist,*full,*free_hist;
    
    double GateCentre;
    
    void UpdateInput(TH1*);
    void UpdateInput();
 
-   TH2F* Raw2DGateRequest();
 
    //signals has to be public
    void OutputReady(){};  

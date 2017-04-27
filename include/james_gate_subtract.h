@@ -18,6 +18,7 @@
 #include <TH3.h>
 #include <TH2.h>
 #include <TH1.h>
+#include <TClass.h>
 
 using namespace std;
 
@@ -30,35 +31,40 @@ using namespace std;
 //3D gating functions
 
 
-TAxis* hist_gater(TH3F*,string&,int);
-TAxis* hist_proj(TH3F*,string&,int);
+TAxis* hist_gater(TH3*,string&,int);
+TAxis* hist_proj(TH3*,string&,int);
 
 
 //these will nicely overwrite any previously done projection OF THE SAME TYPE
 //if you dont want that add a name in string
-TH2F* hist_gater(double,double,TH3F*,int=0,string="");
-TH2F* hist_gater_bin(int,int,TH3F*,int=0,string="");
-TH2F* hist_gater(double,TH3F*,int=0,string="");// gates from input to axis max
-TH2F* hist_gater_bin(int,TH3F*,int=0,string="");
-TH2F* hist_gater_anti(double,double,TH3F*,int=0,string="");//return an anti gated hist
-TH2F* hist_gater_anti_bin(int,int,TH3F*,int=0,string="");
+TH2* hist_gater(double,double,TH3*,int=0,string="");
+TH2* hist_gater_bin(int,int,TH3*,int=0,string="");
+TH2* hist_gater(double,TH3*,int=0,string="");// gates from input to axis max
+TH2* hist_gater_bin(int,TH3*,int=0,string="");
+TH2* hist_gater_anti(double,double,TH3*,int=0,string="");//return an anti gated hist
+TH2* hist_gater_anti_bin(int,int,TH3*,int=0,string="");
 
 //2D gating functions
 //these will nicely overwrite/fill any previously done 2D projection add a name in string
-TH1F* hist_gater(double,double,TH2F*,int=0,string="proj");
-TH1F* hist_gater_bin(int,int,TH2F*,int=0,string="proj");
-TH1F* hist_gater(double,TH2F*,int=0,string="proj");// gates from input to axis max
-TH1F* hist_gater_bin(int,TH2F*,int=0,string="proj");
-TH1F* hist_gater_anti(double,double,TH2F*,int=0,string="proj");//return an anti gated hist
-TH1F* hist_gater_anti_bin(int,int,TH2F*,int=0,string="proj");
+TH1* hist_gater(double,double,TH2*,int=0,string="proj");
+TH1* hist_gater_bin(int,int,TH2*,int=0,string="proj");
+TH1* hist_gater(double,TH2*,int=0,string="proj");// gates from input to axis max
+TH1* hist_gater_bin(int,TH2*,int=0,string="proj");
+TH1* hist_gater_anti(double,double,TH2*,int=0,string="proj");//return an anti gated hist
+TH1* hist_gater_anti_bin(int,int,TH2*,int=0,string="proj");
+
+//These just forward to the correct above type after checking TH2/3 inheritance 
+TH1* hist_gater(double,double,TH1*,int,string);
+TH1* hist_gater_bin(int,int,TH1*,int,string);
+TH1* hist_gater(double,TH1*,int,string);
+TH1* hist_gater_bin(int,TH1*,int,string);
+TH1* hist_gater_anti(double,double,TH1*,int,string);
+TH1* hist_gater_anti_bin(int,int,TH1*,int,string);
+
 
 // Project an axis Functions
 //these will nicely overwrite/fill any previously done 2D projection add a name in string
-TH1F* hist_proj(TH3F*,int=0,string="proj");
-TH1F* hist_proj(TH2F*,int=0,string="proj");
-TH1F* hist_proj_flowless(TH3F*,int=0,string="proj");
-TH1F* hist_proj_flowless(TH2F*,int=0,string="proj");
-
+TH1* hist_proj(TH1* in,int xyz=0,string name="proj",bool flowless=false);
 
 
 //addition/subtraction functions 
