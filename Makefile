@@ -49,7 +49,7 @@ bin/build/%.o: src/*/%.cpp include/%.h
 clean:
 	rm -f $(JAMES_LIB)/bin/build/*.o
 	rm -f $(JAMES_LIB)/bin/build/Linkdef.h
-	rm -f $(JAMES_LIB)/bin/DictOutput*
+	rm -f $(JAMES_LIB)/bin/*.*
 	rm -f $(MINI)
 	rm -f $(TARG)
 	rm -f $(TARGB)

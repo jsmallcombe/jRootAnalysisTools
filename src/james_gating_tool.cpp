@@ -331,6 +331,7 @@ void jgating_tool::SavePanel(){
 }
 
 void jgating_tool::FitPanel(){
+	if(fCheck0)if(fCheck0->GetState())return;
 	if(fFitPanel)fFitPanel->ConnectNewCanvas(fCanvas1->GetCanvas());
 	else {
 		fFitPanel=new UltraFitEnv(0,fCanvas1->GetCanvas());
@@ -379,6 +380,8 @@ void jgating_tool::StoreHistograms(Int_t i){
 			if(!savechecks[select]->IsEnabled())savechecks[select]->SetEnabled();
 			
 			stringstream ss;ss<<" "<<gJframe2->GateCentre<<" ";
+			if(fCheck0)if(fCheck0->GetState()){ss.clear(); ss.str("");ss<<" "<<gJframe1->GateCentre<<" ";}
+			
 			savebutton[select]->SetText(ss.str().c_str());
 		}
 	}
