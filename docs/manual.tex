@@ -37,6 +37,7 @@ root -l bin/root_start.C
 If all worked well root started without error messages and is running with the library loaded.
 For future use add a source of $thisjlib.sh$ to your bashrc and add $gSystem->Load("libJanalysistools.so")$ to your root startup script.
 
+\newpage
 \section{jEnv Toolbar}
 A graphical session manager toolbar to handle grabbing (selecting) of histograms with no typing.
 To create a new instance simply type:
@@ -66,8 +67,6 @@ in a ROOT interactive session. A new window will open:
 \end{tabular}
 \end{center}
 
-%\begin{wrapfigure}{r}{0.25\textwidth}
-%\end{wrapfigure}
 \subsection{Histogram Grabbing}
 Whenever an instance of jEnv exists histogram grabbing is enabled in all $TCanvas$s, including those embedded in other classes/windows. Whenever a window containing a drawn histogram is clicked, a pointer to the first histogram of the frame is grabbed by jEnv and the small "Selected Histogram" icon will change. If a frame contains multiple histograms and you must click exactly on the desired histogram itself, not on the whitespace.
 
@@ -106,6 +105,7 @@ Click either of the selected histograms windows $A$ or $B$ to assign the current
 \end{tabular}
 \end{center}
 
+\newpage
 \section{Gating and Background Subtraction Tool}
 The gating tool is designed to provide live graphical gating and background subtraction for $TH2$ and $TH3$ histograms filled with any data. 
 A new instance can be created from the jEnv toolbar or typing any of the following:
@@ -194,8 +194,11 @@ For the first gate on a $TH3$ there is significant amount of computation so this
 \end{enumerate}
 \end{center}
 
-
+\newpage
 \section{Peak Fitting Tool}\label{sec:peakfit}
+\begin{wrapfigure}[8]{r}{0.4\textwidth}
+\includegraphics[width=0.4\textwidth]{jFitB.png}
+\end{wrapfigure}
 The UltraFitEnv fitting environment is designed for the automatic fitting of Gaussian peaks convolved with exponential tails.
 The tool has some foibles that are absent from the root fitting environment, but it is far more tuned to the task of fitting spectra and saving the relevant data.
 A new instance can be created from the jEnv toolbar or typing:
@@ -213,10 +216,37 @@ The tool operates in two primary modes:
 
 The fitting tool stores an internal copy of the histogram to avoid empty fitting segfaults. When the tool is "connected" it is to a selected canvas, not to a particular histogram. When a new histogram is drawn in the canvas the fitting tool updates it's internal histogram accordingly. Note: You cannot modify a histogram through the canvas the fitting tool is connected to (as the fitting tool performs $DrawCopy$ of it's internal histogram).
 
-In order to begin fitting click either [$[$Capture Hist$]$ or $[$Link Canvas$]$ and then immediately click on the Canvas/Histogram you want to fit
+In order to begin fitting click either $[$Capture Hist$]$ or $[$Link Canvas$]$ and then immediately click on the Canvas/Histogram you want to fit
+
+\subsection{Peak Fitting Toolbar}
+Many of the functions of toolbar are duplicated by keyboard shortcuts.
+\begin{center}
+\begin{tabular}{ c c }
+\raisebox{-.5\height}{\includegraphics[width=0.3\textwidth]{jFitC.png}}
+&
+\begin{minipage}{0.7\textwidth}
+\begin{enumerate}
+\item Open dialogue box and save the current histogram to disk.
+\item Open help window
+\item Capture subsequently selected histogram and draw a copy.
+\item Connect the fitting to tool to the subsequently selected canvas.
+\item Re-Draw histogram and saved fits. Useful to reset problematic fit markers.
+\item Save the latest fit to the histogram and to the in memory fit data list. Fit will turn temporarily blue to confirm save.
+\item Delete all saved fit data from memory (Press twice).
+\item Print the in memory fit data list to the terminal.
+\item Save the in memory fit data list to disk file peakinfo.dat
+\item Perform a fit with the current selection/inputs.
+\item Change the background function of the fit.
+\item Increase/decrease the number of peaks to fit.
+\item Place fit constraints on parameters suitable for $\gamma$-ray spectra.
+\item Hide/Show fit shape parameter controls.
+\end{enumerate} \end{minipage}
+\\
+\end{tabular}
+\end{center}
 
 \subsection{Peak Fitting Controls}
-While the mouse pointer is over the fit histogram, the following controls and short-cuts may be used:
+While the mouse pointer is over the fitting canvas the following controls and short-cuts may be used:
 \begin{center}
 \begin{tabular}{ r l }
 $[Left Click]$ & Select peak.\\
@@ -231,14 +261,20 @@ $[0]$-$[9]$ keys & Set the number of peaks.\\
 $[.]/[s]/[Del]$ & Save latest fit to list \& histogram.\\
 \end{tabular}
 \end{center}
-  	
-\subsection{Peak Fit Function \& Logic}
+
+Click to select a peak for fitting, marker lines will appear showing the target peaks and fitting range. By default the nearest peak will be selected, press $[$ctrl$]$ to switch to exact bin selection. An automatic fit range will be shown, this can be overridden by clicking with the middle mouse button. To ignore bins containing anomalous features, create an exclusion region by pressing the $[Alt]$ and then clicking the first and last bins of the region. Use $[Re-Draw\;Hist]$ to clear exclusion regions.
+  
+\subsection{Fit Function \& Logic}
+The peak function consists of a pure Gaussian + an exponential convolved with a Gaussian, similar to Radware. The ratio is controlled by a sharing parameter that can take values from 0 to 1. An analytical normalisation is applied to the exponential peak such that its maximum value is always 1. After a fit the output data contains both a centroid and a "True centroid". The centroid is the maximum of the combined peak, the true centroid corresponds to the centroid of the pure Gaussian component which would correspond to the physical spectroscopic value.  
+\\
+\\
 The tool is designed for fits over small energy regions, as such, all shape parameters of degenerate peaks are shared, as these parameters are dominated by energy dependant physical effects which do not change rapidly. Background across the fit region is approximated by a polynomial + an optional step function constrained by the peak parameters. The step should be used when peak sizes are large compared to background. Pol0, pol1 and pol2 backgrounds may be selected (pol2 are poorly constrained). Watch your fit's Reduced ChiSquards.
 \\
 \\
 For very small numbers of counts the fit mode will automatically switch to Poisson Likelihood fitting rather than Pearson Chi Squared minimisation. Exclusion regions will not function for Likelihood fitting.
+
 \subsection{Fit Inputs}
-For multi-peak/degenerate fits peak separation are set rather than absolute centroids. This provides more accurate fitting overall as it is less sensitive to small deviations in the absolute scale i.e. poor calibration. The area ratio between peaks may also be set if it is in known. When inputting multiple peaks to a fit, any constrained peaks should immediately follow the peak to which they are fixed. Un-constrained peaks should be in ascending order.
+For multi-peak/degenerate fits, peak separations are set rather than absolute centroids. This provides more accurate fitting overall as it is less sensitive to small deviations in the absolute scale i.e. poor calibration. The area ratio between peaks may also be set if it is in known. When inputting multiple peaks to a fit, any constrained peaks should immediately follow the peak to which they are fixed. Un-constrained peaks should be in ascending order.
 \lstset{language={}}
 \begin{lstlisting}
 e.g. We have 3 peaks:
@@ -251,13 +287,33 @@ e.g. We have 3 peaks:
           -Click on each peak A and C in the histogram window.
           -Click [Fit Peaks].
 \end{lstlisting}
-
-For both separation and area ratio between peaks, the box should be left blank to free the fit. Uncertainties on both constraint parameters may also be added in the input box. If no error is given the parameter will be fixed. Plain text input is fairly robust and accepts ENSDF format errors:\\
-Example inputs :\quad25.0\qquad0.051(2)\qquad-16.0 5\qquad6+-5\qquad3E-5+3e-6
+Note: When marking peaks in the fit canvas any peaks constrained to their neighbour do not need to be manually selected.
 \\
 \\
-For problematic fits the shape parameters (Sigma, Decay and Sharing) may be constrained. The bottom most button on the panel [$\wedge$] will expose these options. As with centroid \& ratio these parameters may be fixed or given with uncertainties and should be left blank when not constrained.
+For both separation and area ratio between peaks, the box should be left blank to free the fit. Uncertainties on both constraint parameters may also be added in the input box. If no error is given the parameter will be fixed. Only symmetric errors are currently supported. Plain text input is fairly robust and accepts ENSDF format errors:\\
+Example inputs :\quad0.051\qquad0.051(2)\qquad0.051 0.002\qquad0.051+-0.002\qquad5.1E-2+2E-3
+\\
+\\
+For problematic fits the shape parameters (Sigma, Decay and Sharing) may be constrained. The bottom-most button on the panel [$\wedge$] will expose these options. As with centroid \& ratio these parameters may be fixed or given with uncertainties and should be left blank when not constrained.
+\begin{center}
+\begin{tabular}{ c c }
+\raisebox{-.5\height}{\includegraphics[width=0.3\textwidth]{jFitD.png}}
+&
+\begin{minipage}{0.7\textwidth}
+\begin{enumerate}
+\item Number of peaks in fit.
+\item Centroid of peak 0. Updated on selection or fit.
+\item Fixed separation between peak 0 and peak 1.
+\item Fixed size ratio between peak 0 and peak 1.
+\item Centroid of peak 1. Updated on selection or fit.
+\item Hide/Show fit shape parameter controls.
+\item Fit shape parameter constraint inputs.
+\end{enumerate} \end{minipage}
+\\
+\end{tabular}
+\end{center}
 
-\section{Histogram Formatting Functions}
+
+%\section{Histogram Formatting Functions}
 
 \end{document}
