@@ -147,8 +147,15 @@ void UltraFitEnv::DialogBox() {
 				fCheck1 = new TGCheckButton(ticks,"Limit Tail  ");// A tick box with hover text belonging to a parent frame
 				fCheck1->SetState(kButtonUp);
 				fCheck1->SetToolTipText("Force strict maximum values on the\nexponential tail parameters.\n Recommended for fitting gamma rays.");
+				
+				fCheck2 = new TGCheckButton(ticks,"Two Gaus");// A tick box with hover text belonging to a parent frame
+				fCheck2->SetState(kButtonUp);
+				fCheck2->SetToolTipText("Use the peak fit mode which has no tail\n but instead two Gaussians\n of different sigma.");
+				fCheck2->Connect("Clicked()","UltraFitEnv",this,"SwitchDecayLabel()");
+				
 
 			ticks->AddFrame(fCheck1,XX);
+			ticks->AddFrame(fCheck2,XX);
 		fHframe0->AddFrame(ticks,ExpandXz);
 			
 			TGVerticalFrame* fHframepm = new TGVerticalFrame(fHframe0, 0, 0, 0);
@@ -200,7 +207,8 @@ void UltraFitEnv::DialogBox() {
 				cShapeTdecay->SetDefaultSize(50,25);	
 				cShapeTdecay->SetToolTipText("Decay Tail\n Fix or constrain peak decay tail.");
 				shapeelement->AddFrame(cShapeTdecay,buff);
-				label = new TGLabel(shapeelement, "Decay");
+				label = new TGLabel(shapeelement, "Decay  ");
+				decaysigmablabel=label;
 				shapeelement->AddFrame(label,buff);
 			cShapePane->AddFrame(shapeelement,ExpandXz);
 			
@@ -842,7 +850,10 @@ void  UltraFitEnv::FitGUIPeak(){
 	string fixdec=cShapeTdecay->GetBuffer()->GetString();
 	string fixsha=cShapeTshare->GetBuffer()->GetString();
 	
-	FullFitHolder* fHold=Ultrapeak::PeakFit(fExclusionHist,bound_l,bound_u,fPass,fCombo->GetSelected(),fCheck1->GetState(),fixsig,fixdec,fixsha);
+	int fittype=fCheck1->GetState();
+	if(fCheck2->GetState())fittype=2;//trumps fCheck1
+	
+	FullFitHolder* fHold=Ultrapeak::PeakFit(fExclusionHist,bound_l,bound_u,fPass,fCombo->GetSelected(),fittype,fixsig,fixdec,fixsha);
 	delete fExclusionHist;
 	
 	fFitFinished=true;
@@ -1017,4 +1028,9 @@ void UltraFitEnv::Help(){
 
 void UltraFitEnv::SaveAs(){
 	if(gHist)HistSaveAs(gHist,cBar,GetCan());
+}
+
+void UltraFitEnv::SwitchDecayLabel(){
+	if(fCheck2->GetState())decaysigmablabel->SetText("SigmaB");
+	else decaysigmablabel->SetText("Decay  ");
 }

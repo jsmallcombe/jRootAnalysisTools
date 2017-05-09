@@ -131,6 +131,8 @@ class UltraFitEnv : public TQObject
 	
 	void PassNewHist(TH1*);
 	
+	void SwitchDecayLabel();
+	
     private:	    
 	    
 	// Members
@@ -150,8 +152,10 @@ class UltraFitEnv : public TQObject
 	
 	TGTextEntry* cShapeTsig,*cShapeTdecay,*cShapeTshare;
 	
+	TGLabel* decaysigmablabel;
+	
 	// Peak controls
-	TGCheckButton* fCheck0,*fCheck1;
+	TGCheckButton* fCheck0,*fCheck1,*fCheck2;
 	vector< TGHorizontalFrame* > cTframe;//row holder
 	vector< TGTextEntry* > cTbox;//peak separation
 	vector< TGTextEntry* > cPTbox;//peak selected/fit centroids
