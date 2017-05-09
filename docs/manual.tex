@@ -3,12 +3,27 @@
 \usepackage[margin=0.5in]{geometry}
 \usepackage{amsmath}
 \usepackage{xfrac}
+
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
 \usepackage{listings}
+
 \usepackage{graphicx}
 \usepackage{wrapfig}
 \usepackage{adjustbox}
 \graphicspath{{figures/}}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
 
+\usepackage [english]{babel}
+\usepackage [autostyle, english = american]{csquotes}
+\MakeOuterQuote{"}
 
 %opening
 \title{JAnalysisTools Manual}
@@ -227,18 +242,20 @@ Many of the functions of toolbar are duplicated by keyboard shortcuts.
 \begin{minipage}{0.7\textwidth}
 \begin{enumerate}
 \item Open dialogue box and save the current histogram to disk.
-\item Open help window
 \item Capture subsequently selected histogram and draw a copy.
-\item Connect the fitting to tool to the subsequently selected canvas.
-\item Re-Draw histogram and saved fits. Useful to reset problematic fit markers.
+\item Connect the fitting tool to the subsequently selected canvas.
+\item Open help window
+\item Re-Draw histogram and saved fits. (Reset problematic fit markers.)
+\item Clear the user-defined exclusion regions.
 \item Save the latest fit to the histogram and to the in memory fit data list. Fit will turn temporarily blue to confirm save.
 \item Delete all saved fit data from memory (Press twice).
 \item Print the in memory fit data list to the terminal.
 \item Save the in memory fit data list to disk file peakinfo.dat
 \item Perform a fit with the current selection/inputs.
 \item Change the background function of the fit.
+\item Place fit constraints on tail shape parameters. Suitable for $\gamma$-ray spectra \& problematic fits.
+\item Use the "Two Gaussian" fit function instead of the tailed Gaussian.
 \item Increase/decrease the number of peaks to fit.
-\item Place fit constraints on parameters suitable for $\gamma$-ray spectra.
 \item Hide/Show fit shape parameter controls.
 \end{enumerate} \end{minipage}
 \\
@@ -259,6 +276,7 @@ $[+]$ & Increase the number of peaks.\\
 $[-]$ & Decrease the number of peaks.\\
 $[0]$-$[9]$ keys & Set the number of peaks.\\
 $[.]/[s]/[Del]$ & Save latest fit to list \& histogram.\\
+$[c]$ & Clear the selected exclusion region.\\
 \end{tabular}
 \end{center}
 
@@ -272,12 +290,17 @@ The tool is designed for fits over small energy regions, as such, all shape para
 \\
 \\
 For very small numbers of counts the fit mode will automatically switch to Poisson Likelihood fitting rather than Pearson Chi Squared minimisation. Exclusion regions will not function for Likelihood fitting.
+\\
+\\
+A new Two-Gaussian fit can now be used when mixed resolution detector effects (such as Doppler shift) dominate over the tail feature of spectroscopic peaks. Each peak is fit with a narrow and a wide Gaussian with identical centroid and the same 0 to 1 sharing parameter. Background step is modified accordingly and all other fitting functionality remains the same.
 
 \subsection{Fit Inputs}
 For multi-peak/degenerate fits, peak separations are set rather than absolute centroids. This provides more accurate fitting overall as it is less sensitive to small deviations in the absolute scale i.e. poor calibration. The area ratio between peaks may also be set if it is in known. When inputting multiple peaks to a fit, any constrained peaks should immediately follow the peak to which they are fixed. Un-constrained peaks should be in ascending order.
-\lstset{language={}}
+\lstset{language={},
+  literate=~{$\sim$}2,
+  upquote=true}
 \begin{lstlisting}
-e.g. We have 3 peaks:
+Example: We have 3 peaks:
            An unknown ~130 keV, a known 125 keV and a known 145 keV.
            Inputs : A = 125
                     B = A + 20

@@ -94,6 +94,11 @@ void UltraFitEnv::DialogBox() {
 		button->SetToolTipText("Re-draw the currently selected histogram\nand any saved fits.");
 		cFrame->AddFrame(button,ExpandX);
 		
+		button = new TGTextButton(cFrame,"Clear Exclusion");
+		button->Connect("Clicked()","UltraFitEnv",this,"ClearExclusion()");
+		button->SetToolTipText("Clear any user specified\n fit exclusion region.");
+		cFrame->AddFrame(button,ExpandX);
+		
 		button = new TGTextButton(cFrame,"");
 		button->Connect("Clicked()","UltraFitEnv",this,"PointMe()");
 		cFrame->AddFrame(button,ExpandX);	
@@ -583,6 +588,7 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 	double y1=fCan->GetUymin(),y2=fCan->GetUymax();
 	double x1=fCan->GetUxmin(),x2=fCan->GetUxmax();
 
+	//To find the number binding of key presses
 // 	if(kKeyPress == event)cout<<endl<<px<<" "<<py<<endl;
 	
 	//+- key adds remove a peak
@@ -614,6 +620,9 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 	
 	//pressing alt turns on off exclusion range specification
 	if(kKeyPress == event &&py==4131 ){cAlt=!cAlt;return;}
+	
+	//  C c  key clears exclusion regions
+	if(kKeyPress == event && (py==99||py==67) ){ClearExclusion();return;}
 	
 	if(Y>y2||Y<y1||X<x1||X>x2){
 		fCan->SetCrosshair(0);
@@ -974,6 +983,7 @@ const char gHelpCanvas[] = "\n\
 			     <[-]>	Decrease the number of peaks.\n\
 		    <[0]-[9] keys>	Set the number of peaks.\n\
 		   <[.]/[s]/[Del]>	Save latest fit to list & histogram.\n\
+			     <[c]>	Clear the selected exclusion region.\n\
 \n\n\
   The tool is designed for fits over small energy regions, as such, all shape \n\
   parameters of degenerate peaks are shared, as these parameters are dominated\n\
@@ -1031,6 +1041,15 @@ void UltraFitEnv::SaveAs(){
 }
 
 void UltraFitEnv::SwitchDecayLabel(){
-	if(fCheck2->GetState())decaysigmablabel->SetText("SigmaB");
+	if(fCheck2->GetState()){
+		decaysigmablabel->SetText("SigmaB");
+		fCheck1->SetState(kButtonUp);
+	}
 	else decaysigmablabel->SetText("Decay  ");
+}
+
+
+void UltraFitEnv::ClearExclusion(){
+	cExClicker.clear();
+	this->UpdateLines();
 }
