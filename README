@@ -14,7 +14,7 @@ Various histogram presentation formating and automated fitting (for peaks and ef
 
 Instructions for use:
 
-Unsure ROOT 6 is installed and sourced
+Ensure ROOT 6 is installed and sourced
 
 make
 

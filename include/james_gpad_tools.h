@@ -26,6 +26,9 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TBranch.h>
+#include <TRootCanvas.h>
+#include "TROOT.h"
+#include "TSystem.h"
 
 #include "james_utility.h"
 
@@ -43,5 +46,47 @@ TH1* hist_capture(TVirtualPad* =gPad);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+
+class HistClickStop{ 
+   private:
+	bool selected;
+	double pickedx,pickedy;
+	TCanvas* cCan;
+	bool xy;
+	
+	void DeleteCan(){
+		if(cCan){
+			cCan->Close();
+			delete cCan;
+// 			TRootCanvas* c=(TRootCanvas*)cCan->GetCanvasImp();
+// 			c->DeleteWindow();
+			cCan=0;
+		}
+	}
+
+   public:
+	HistClickStop(TH1* hist=0,string title="Select",bool yaxis=true);
+	~HistClickStop(){DeleteCan();};
+	
+	operator double() const {
+		if(xy)
+		return pickedy;
+		else
+		return pickedx;
+		
+	}
+	operator int() const { return double(); }
+	operator bool() const {return !selected;}
+	
+	bool PickedX(){return pickedx;}
+	bool PickedY(){return pickedy;}
+	bool Picked(){return selected;}
+	
+	void ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *selected_ob);
+};
+
+
+double GetHistClickVal(TH1* hist,string title="",bool y=true);
 
 #endif
