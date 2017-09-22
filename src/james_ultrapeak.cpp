@@ -649,6 +649,8 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	
 	FullFitHolder* fHold = new FullFitHolder(fFit,fResult->GetCovarianceMatrix(),fPeakFunc.cBits);
 	
+	Ultrapeak::MakeData(fHold,fHist);
+	
 	return fHold;	
 }
 

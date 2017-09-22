@@ -120,7 +120,7 @@ class TransientBitsClass {
 
 
 //////////////////////////////////////////////////////////
-//	Function to sepearte value+error strings	//
+//	Function to separate value+error strings	//
 //////////////////////////////////////////////////////////
 
 void ExtractError(string str,double& value,double& error);

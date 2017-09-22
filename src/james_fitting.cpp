@@ -104,6 +104,27 @@ double FindLocalMax(TH1* fHist,int& fPeak,int fLeft,int fRight){
 	return fRet;
 }
 
+double FindBinRangeMaxD(TH1* fHist,double& fPeak,double range){
+	TAxis* x =fHist->GetXaxis();
+	int X=x->FindBin(fPeak);
+	double Y =FindBinRangeMax(fHist,X,range/x->GetBinWidth(1));
+	fPeak=x->GetBinCenter(X);
+	return Y;
+}
+	
+double FindBinRangeMax(TH1* fHist,int& fPeak,int range){
+	double m=0;
+	int x=0;
+	for(int i=-range;i<=range;i++){
+		double y=fHist->GetBinContent(fPeak+i);
+		if(y>m){m=y;x=fPeak+i;}
+	}
+	fPeak=x;
+	return m;
+}
+	
+
+
 //Gets better results if fHist is background subtracted, but should be ok without
 double FitPositionOptimisation(TH1* fHistIn,int& fPeak,int& fLeft,int& fRight){
 	//Determine a good fitting range near the suggested fLeft and fRight

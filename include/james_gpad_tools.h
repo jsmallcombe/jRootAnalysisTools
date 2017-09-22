@@ -27,6 +27,9 @@
 #include <TTree.h>
 #include <TBranch.h>
 #include <TRootCanvas.h>
+#include "TGButton.h"
+#include "TRootEmbeddedCanvas.h"
+#include "TGButtonGroup.h"
 #include "TROOT.h"
 #include "TSystem.h"
 
@@ -88,5 +91,34 @@ class HistClickStop{
 
 
 double GetHistClickVal(TH1* hist,string title="",bool y=true);
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+class jhistquestion : public TGMainFrame {
+private:
+	TRootEmbeddedCanvas *fCanvas1;
+	TGButtonGroup	*fBgroup1;
+	int answer;
+public:
+	jhistquestion():fCanvas1(0),fBgroup1(0){};
+	jhistquestion(string a,string b="",string c=""):jhistquestion(vector<string>{a,b,c}){};
+	jhistquestion(vector<string>,TH1* h=0);
+	virtual ~jhistquestion(){};
+
+	TH1*  DrawCopySame(TH1*);
+	TCanvas* GetCanvas(){if(fCanvas1)return	fCanvas1->GetCanvas();return 0;}
+	
+	int WaitAnswer();
+	void SetAnswer(int);
+
+	ClassDef(jhistquestion, 1)
+};
+
+
+
 
 #endif
