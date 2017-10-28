@@ -1,4 +1,5 @@
 #include "james_gpad_tools.h"
+#include "james_fitting.h"
 
 
 
@@ -21,6 +22,81 @@ TH1* hist_capture(TVirtualPad* fPad){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+// Just a basic little no frills, minimal input peak fitter for standard size y/e peaks
+// Added it in to help with quick peak identification
+void ClickPeakDrawConnect(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
+{TVirtualPad* hold=gPad;
+	
+	if(!gTQSender)return;
+	if(((TObject*)gTQSender)->IsA() != TCanvas::Class())return;
+	TCanvas* Can=((TCanvas*)gTQSender);
+	
+	TGToolTip *fTip=0;
+	TObjLink *lnk = Can->GetListOfPrimitives()->FirstLink();
+	while (lnk) {
+		if(lnk->GetObject()->InheritsFrom("TGToolTip")){
+			fTip=(TGToolTip*)lnk->GetObject();
+			break;
+		}
+		lnk = lnk->Next();
+	}
+	if(!fTip){
+		fTip = new TGToolTip(100, 100,"", 200);	// create the tooltip with a timeout of 200 ms
+			fTip->Hide();
+			Can->GetListOfPrimitives()->Add(fTip);
+	}
+	if (event == kMouseLeave){fTip->Hide(); return;}
+	
+	//Click is given in pixel coordinates
+	double x =Can->PixeltoX(px);
+	
+	fTip->Hide();
+	fTip->SetText(TString::Format("%.1f",x));
+	fTip->SetPosition(Can->GetWindowTopX()+px+15,Can->GetWindowTopY()+py-15);
+	fTip->Reset();	
+
+	if (event == kButton1Double){
+
+		TH1* h=hist_capture(Can);
+		if(!h) return;
+		
+		lnk = Can->GetListOfPrimitives()->FirstLink();
+		while (lnk) {
+			if(lnk->GetObject()->InheritsFrom("TF1")||lnk->GetObject()->InheritsFrom("TText")){
+				Can->GetListOfPrimitives()->Remove(lnk->GetObject());
+				lnk = Can->GetListOfPrimitives()->FirstLink();//shouldnt cause infinite loop
+			}
+			lnk = lnk->Next();
+		}		
+		
+		TF1* Quick=UserQuickSingleGausAutoFitE(h,x,x-20,x+20,1);//Free & linear back
+		Can->cd();
+		Quick->DrawCopy("same");
+		// Print the text on the canvas
+		double cent=Quick->GetParameter(1);
+		stringstream ss;
+		ss<<round(cent*10)/10;
+		delete Quick;
+		TText peaknum;
+		peaknum.SetTextAlign(22);
+		peaknum.SetTextSize(0.035);	
+		
+		double shif=(h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetLast())-h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetFirst()))*0.05;
+		//GetXmin() doesnt account for zooming		
+		
+		peaknum.DrawText(cent+shif,h->GetBinContent(h->FindBin(cent))*0.95,ss.str().c_str());
+		
+		Can->GetCanvas()->Modified();
+		Can->GetCanvas()->Update();
+	}
+	
+gPad=hold;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 HistClickStop::HistClickStop(TH1* hist,string title,bool yaxis):selected(0),pickedx(0),pickedy(0),cCan(0),xy(yaxis){
 	if(!hist){pickedx=1;pickedy=1;selected=true;return;}

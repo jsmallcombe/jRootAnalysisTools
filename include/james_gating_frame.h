@@ -28,6 +28,8 @@
 #include "TText.h"
 #include "TGToolTip.h"
 #include "TGLabel.h"
+#include "TSpectrum.h"
+#include "TGComboBox.h"
 
 
 #include <iostream>
@@ -71,15 +73,19 @@ private:
 	TGButtonGroup	*fBgroup1,*fBgroup2;
 	TGRadioButton	*fRButton1,*fRButton2,*fRButton3,*fRButton4,*fRButton5,*fRButton6,*fRButton7,*fRButton8,*fRButton9,*fRButtonz;
 	TGTextButton		*fTButton1;
+	TGComboBox *BackModeDrop;
 	
 	TH1 *raw_input; 
-	TH1 *proj,*proj_flow,*selected,*b_man;
+	TH1 *proj,*proj_flow,*selected,*b_man,*specback;
 	
 	TText* peaknumremove;
+	
+// 	TSpectrum spec;
 	
 	//	CONTROL VALUES
 
 	int background_mode;
+	int backfit_mode;
 	int xyz;  
 	int axis_down,axis_up;  
 	int gate_down,gate_up;
@@ -92,7 +98,7 @@ private:
 	bool action_hold; 
 	bool set_for_3D;
 
-	double manual_frac_store,storef1,storef2;
+	double storef1,storef2;
 	
 	TGToolTip *fTip;
 
@@ -103,9 +109,10 @@ private:
 	void ValuesToSliders();
 	void FetchTextValues();
 	void ValuesToText();
+	void UpdateSpecBack();
 
 	void DoAutoFit();
-	void DoHistogram();
+	void UpdateDraw();
 	
 	string suffix;
 
@@ -125,13 +132,15 @@ public:
    void DoSlider();
    void SliderRelease();
    void DoSlidePoint();
-   void HandleButtons();
+//    void HandleButtons();
    void ChangeProjection(const Int_t);
    void ChangeBackMode(const Int_t);
+   void ChangeBackFit(const Int_t);
    void ReDrawOne();
    void ClickedCanvasOne(Int_t,Int_t,Int_t,TObject*);
    void ShowFullProj();
    void HideFullProj();
+   void DoHistogram();
       
    TH1 *output_hist_point;
    TH1 *gate_hist,*full,*free_hist;

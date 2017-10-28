@@ -6,7 +6,7 @@
 #
 #
 
-ROOT_LIBS = `root-config --glibs`
+ROOT_LIBS = `root-config --glibs` -lSpectrum 
 ROOT_GCC_FLAGS = `root-config --cflags`
 
 JAMES_LIB = $(shell pwd)

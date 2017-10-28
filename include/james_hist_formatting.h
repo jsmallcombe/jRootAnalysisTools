@@ -83,7 +83,8 @@ void PadNDCtoUser(double& x,double& y,TVirtualPad* pad,bool reverse=false);
 void PadNDCtoUser(double& x,double& y,double* xy,bool reverse=false);
 
 //Draw a formatted copy in a new window
-void HistDrawCopy(TH1* hist,bool opt=true);//opt="hist" hide errors
+TCanvas* HistDrawCopy(TH1* hist,bool opt=true);//opt="hist" hide errors
+TCanvas* HistDrawCopyPeaker(TH1* hist,bool opt=true);//opt="hist" hide errors
 
 //Draw without errors (but with functions) in current pad
 TH1* DrawHistOpt(TH1* hist,bool copy=false);

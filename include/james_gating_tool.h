@@ -48,6 +48,7 @@ private:
 	TGButtonGroup	*fBgroup1,*savebuttons;
 	TGRadioButton	*fRButton1,*fRButton2,*fRButton3;
 	TGCheckButton   *fCheck0,*fCheck1;
+	TGHSlider    	*fHslider1;
 	
 	TF1 *fFitFcn; 
 	TText* peaknumremove;   

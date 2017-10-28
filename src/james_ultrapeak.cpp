@@ -353,7 +353,20 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	}else fPre->FixParameter(gPeakSharing,ShareF);	
 
 	fPre->SetParLimits(gPeakNH(0), fParam[gPeakNH(0)]*0.5, fParam[gPeakNH(0)]*2);  // Height
-	fPre->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-3, fParam[gPeakNC(0)]+3);  // Centroid
+	
+	if(fInput[0].CentConstrained){//Centroid
+		double err=fInput[0].CentError;
+		if(err>0){
+			fPre->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-err, fParam[gPeakNC(0)]+err); 
+		}else{
+			fPre->FixParameter(gPeakNC(0), fParam[gPeakNC(0)]);
+		}
+	}else{
+		fPre->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-3, fParam[gPeakNC(0)]+3); 
+	}
+	
+	
+	
 	
 	//////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////// PRE FIT //////////////////////////////////////
@@ -579,7 +592,18 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	///////// Peak zero  ////////
 
 	fFit->SetParLimits(gPeakNH(0), fParam[gPeakNH(0)]*0.5, fHist->GetMaximum()*1.5);	// 0 Height
-	fFit->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-3, fParam[gPeakNC(0)]+3);	// 0 Centroid
+	
+	if(fInput[0].CentConstrained){//Centroid
+		double err=fInput[0].CentError;
+		if(err>0){
+			fFit->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-err, fParam[gPeakNC(0)]+err); 
+		}else{
+			fFit->FixParameter(gPeakNC(0), fParam[gPeakNC(0)]);
+		}
+	}else{
+		fFit->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-3, fParam[gPeakNC(0)]+3); 
+	}
+	
 	
 	///////// Additional Peaks ////////
 	

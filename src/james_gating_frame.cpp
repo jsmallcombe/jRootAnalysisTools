@@ -17,16 +17,17 @@ TVirtualPad* hold=gPad;
 	//	CONTROL VALUES
 	//
 	
+	
 	hidebinerrors=false;
 	background_mode=1;
+	backfit_mode=2;
 	xyz=0;
-	target_bin=10;
-	gate_down=8;gate_up=12;
-	gate_range=5;
-	fit_down=1;fit_up=19;
+	target_bin=20;
+	gate_down=19;gate_up=21;
+	gate_range=3;
+	fit_down=1;fit_up=39;
 	backfrack=0.1;
 	backfrackfrac=0.05;
-	manual_frac_store=-1;
 	storef1=1;storef2=1;
 	axis_down=0;axis_up=-1;
 	m_back_down=1;m_back_up=20;
@@ -43,6 +44,7 @@ TVirtualPad* hold=gPad;
 	proj=new TH1F();
 	proj_flow=new TH1F();
 	selected=new TH1F();
+	specback=new TH1F();
 	full=new TH1F();
 	b_man=new TH1F();
 	output_hist_point=new TH1F();
@@ -59,7 +61,7 @@ TVirtualPad* hold=gPad;
 	fBly = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 5, 3, 0, 0);
 	TGLayoutHints* fBfly1 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 3, 3);
 	TGLayoutHints* fBfly2 = new TGLayoutHints(kLHintsLeft | kLHintsCenterY,    0, 0, 0, 0);
-	TGLayoutHints* fBfly3 = new TGLayoutHints(kLHintsLeft,    0, 0, 0, 0);
+	TGLayoutHints* fBfly3 = new TGLayoutHints(kLHintsBottom,    4,4, 4,4);
 	TGLayoutHints* fBfly4 = new TGLayoutHints(kLHintsTop | kLHintsCenterX, 5, 5, 3, 3);
 	TGLayoutHints* fBfly5 = new TGLayoutHints(kLHintsCenterX,    0, 0, 0, 0);
 
@@ -112,8 +114,7 @@ TVirtualPad* hold=gPad;
 	// and with 30 pixel margins all around
 	fCanvas1 = new TRootEmbeddedCanvas("Canvas1", this, 600, 500);
 		fCanvas1->GetCanvas()->SetFillColor(33);
-		fCanvas1->GetCanvas()->SetFrameFillColor(kYellow-9);
-		fCanvas1->GetCanvas()->SetBorderMode(0);
+		fCanvas1->GetCanvas()->SetFrameFillColor(10);
 		fCanvas1->GetCanvas()->SetMargin(0.1,0.01,0.05,0.01);
 		//    fCanvas1->GetCanvas()->SetGrid();
 			fCanvas1->GetCanvas()->Connect("RangeChanged()", "j_gating_frame", this, "ReDrawOne()");
@@ -126,10 +127,18 @@ TVirtualPad* hold=gPad;
 	fHframe1 = new TGHorizontalFrame(this, 0, 0, 0);// Create a new horizontally alighed frame for some control widgets
 		if(set_for_3D){
 			fTButton1 = new TGTextButton(fHframe1,"&Update",HCId2);
-			fTButton1->Connect("Clicked()","j_gating_frame",this,"HandleButtons()");
+			fTButton1->Connect("Clicked()","j_gating_frame",this,"DoHistogram()");
 			fTButton1->SetToolTipText("Update Gate Result\n For TH3s the first gate is only applied\n when this button is clicked or when\n the suppression scheme is changed");
 			fHframe1->AddFrame(fTButton1, fBfly2);
 		}
+		
+		fTeh1 = new TGTextEntry(fHframe1, fTbh1 = new TGTextBuffer(4), HId1);//Create some text entry boxes 
+		fTeh1->SetToolTipText("Gate Position");
+		fTeh1->SetDefaultSize(50,25);
+		fTeh1->SetAlignment (kTextRight);
+		fTeh1->Connect("ReturnPressed()", "j_gating_frame", this,"DoText()");//So it doesnt continually do things while typing is occuring
+		fTeh1->Connect("TabPressed()", "j_gating_frame", this,"DoText()");
+		fHframe1->AddFrame(fTeh1, fBfly1);
 
 		fHslider1 = new TGTripleHSlider(fHframe1, 190, kSlider1, HSId1);//Create a control slider
 			fHslider1->Connect("PointerPositionChanged()", "j_gating_frame", this, "DoSlidePoint()");//Link it signal to its slot (method fn) 
@@ -143,24 +152,18 @@ TVirtualPad* hold=gPad;
 	this->AddFrame(fHframe1, fBly);		
 	
 	fHframe2 = new TGHorizontalFrame(this);
-		fTeh1 = new TGTextEntry(fHframe2, fTbh1 = new TGTextBuffer(5), HId1);//Create some text entry boxes 
+		
 		fTeh2 = new TGTextEntry(fHframe2, fTbh2 = new TGTextBuffer(5), HId2);
-			fTeh1->SetToolTipText("Gate Position");
 			fTeh2->SetToolTipText("Gate Width");
-			fTeh1->SetDefaultSize(50,25);
 			fTeh2->SetDefaultSize(50,25);
-			fTeh1->SetAlignment (kTextRight);
-			fTeh2->SetAlignment (kTextRight);
+			fTeh2->SetAlignment(kTextRight);
 			// Set the data in the text buffer the text entry boxes are using
 			sprintf(buf, "%.1f", proj->GetBinCenter(1));	fTbh1->AddText(0, buf);
 			sprintf(buf, "%.1f", 5*(double)proj->GetBinWidth(1));	fTbh2->AddText(0, buf);
 			
-		fTeh1->Connect("ReturnPressed()", "j_gating_frame", this,"DoText()");//So it doesnt continually do things while typing is occuring
 		fTeh2->Connect("ReturnPressed()", "j_gating_frame", this,"DoText()");
-		fTeh1->Connect("TabPressed()", "j_gating_frame", this,"DoText()");
 		fTeh2->Connect("TabPressed()", "j_gating_frame", this,"DoText()");
 		
-		fHframe2->AddFrame(fTeh1, fBfly1);
 		fHframe2->AddFrame(fTeh2, fBfly1);
 
 		TGVerticalFrame* minifvertrame = new TGVerticalFrame(fHframe2);
@@ -171,26 +174,13 @@ TVirtualPad* hold=gPad;
 			fHslider2->Connect("PositionChanged(Int_t)", "j_gating_frame", this, "DoSlider()");
 			fHslider2->Connect("Released()", "j_gating_frame", this, "SliderRelease()");
 			minifvertrame->AddFrame(fHslider2, fBly);
-
 		fHframe2->AddFrame(minifvertrame, fBly);
+		
+
 	this->AddFrame(fHframe2, fBly);
 	
 	//Create some text entry boxes 
 	fHframe3 = new TGHorizontalFrame(this, 0, 0, 0);
-	
-		minifvertrame = new TGVerticalFrame(fHframe3, 0, 0, 0);
-			fCheck0 = new TGCheckButton(minifvertrame,"FreeFit", HCId2);// A tick box with hover text belonging to a parent frame
-				fCheck0->SetState(kButtonUp);
-				fCheck0->Connect("Clicked()","j_gating_frame",this,"DoSlider()");//Link it signal to its slot
-				fCheck0->SetToolTipText("Free Peak Fit\n Enable automatic optimising of the background in peak fitting.\n May use reduced fit range.\n The default mode fixes a linear 	background to user specified points.");
-			minifvertrame->AddFrame(fCheck0, fBfly3);
-
-			fCheck1 = new TGCheckButton(minifvertrame, "Manual", HCId1);// A tick box with hover text belonging to a parent frame
-				fCheck1->SetState(kButtonUp);
-				fCheck1->Connect("Clicked()","j_gating_frame",this,"HandleButtons()");//Link it signal to its slot (method fn) 
-				fCheck1->SetToolTipText("Manual Background Fraction\n Do not fit a peak in the gate region.\n Instead manually specify a background subtraction fraction");
-			minifvertrame->AddFrame(fCheck1, fBfly3);
-		fHframe3->AddFrame(minifvertrame, fBfly2);
 
 		fTeh3 = new TGTextEntry(fHframe3, fTbh3 = new TGTextBuffer(5), HId3);
 			fTeh3->SetDefaultSize(50,25);
@@ -213,6 +203,19 @@ TVirtualPad* hold=gPad;
 			minifvertrame->AddFrame(sliderlabel, fBfly5);
 			minifvertrame->AddFrame(fHslider3, fBly);
 		fHframe3->AddFrame(minifvertrame, fBly);
+		
+		BackModeDrop=new TGComboBox(fHframe3);			
+			BackModeDrop->AddEntry("Linear Fixed",1);
+			BackModeDrop->AddEntry("Polynomial Flex",2);
+			BackModeDrop->AddEntry("Manual",3);
+			BackModeDrop->AddEntry("TSpectrum High",4);
+			BackModeDrop->AddEntry("TSpectrum Medium",5);
+			BackModeDrop->AddEntry("TSpectrum Low",6);
+			BackModeDrop->Resize(150,20);
+			BackModeDrop->Select(2);
+			BackModeDrop->Connect(" Selected(Int_t)", "j_gating_frame", this,"ChangeBackFit(Int_t)");
+		fHframe3->AddFrame(BackModeDrop, fBfly3);
+		
 	this->AddFrame(fHframe3, fBly);
 
 
@@ -245,6 +248,7 @@ gPad=hold;
 }
 
 //______________________________________________________________________________
+
 j_gating_frame::~j_gating_frame()
 {
 	fTip->Hide();
@@ -253,6 +257,7 @@ j_gating_frame::~j_gating_frame()
 	delete proj;
 	delete proj_flow;
 	delete selected;
+	delete specback;
 	delete fFitFcn;
 	delete full;
 	delete b_man;
@@ -275,6 +280,7 @@ j_gating_frame::~j_gating_frame()
 
 
 //______________________________________________________________________________
+
 void j_gating_frame::NewAxisDrawn() //adjust sliders and control values for new axis
 {//cout<<"NewAxisDrawn "<<flush;
 	axis_down=proj->GetXaxis()->GetFirst();
@@ -297,6 +303,8 @@ void j_gating_frame::NewAxisDrawn() //adjust sliders and control values for new 
 		fCanvas1->GetCanvas()->Update();
 	}
 }
+
+//______________________________________________________________________________
 
 void j_gating_frame::ValidateValues() //checks stored control parameters are valid
 {//cout<<"ValidateValues "<<flush;
@@ -323,7 +331,7 @@ void j_gating_frame::ValidateValues() //checks stored control parameters are val
 	if(m_back_down<axis_down||m_back_down>axis_up)m_back_down=axis_down;
 	if(m_back_up<axis_down||m_back_up>axis_up)m_back_up=axis_up;	
 	
-	if(fCheck1->GetState()){
+	if(backfit_mode>2){//Not a peak fit
 		fit_down=target_bin;
 		fit_up=target_bin;
 	}
@@ -332,6 +340,7 @@ void j_gating_frame::ValidateValues() //checks stored control parameters are val
 	if(backfrack>1)backfrack=1.0;
 }	 
 
+//______________________________________________________________________________
 
 void j_gating_frame::FetchSliderValues() //copy slider values to control parameters
 {//cout<<"FetchSliderValues "<<flush;	
@@ -343,9 +352,11 @@ void j_gating_frame::FetchSliderValues() //copy slider values to control paramet
 		gate_range=((over_speed-0.25)*35.0+0.25)*(axis_up-axis_down)+0.5;
 	}
 
-	if(fCheck1->GetState()){//manual or fitting
+	if(backfit_mode==3){//manual background fraction mode
 		backfrack=(double)fHslider3->GetPosition()/10000.0;
-	}else{
+	}
+	
+	if(backfit_mode<3){//peal fitting mode
 		fit_down=fHslider1->GetMinPosition();
 		fit_up=fHslider1->GetMaxPosition();	
 	}
@@ -353,8 +364,9 @@ void j_gating_frame::FetchSliderValues() //copy slider values to control paramet
 	m_back_down=fHslider4->GetMinPosition();
 	m_back_up=fHslider4->GetMaxPosition();	
 	
-	
 }
+
+//______________________________________________________________________________
 
 void j_gating_frame::ValuesToSliders() //copy control parameters to sliders
 {//cout<<"ValuesToSliders "<<flush;
@@ -373,12 +385,16 @@ void j_gating_frame::ValuesToSliders() //copy control parameters to sliders
 	action_hold=false;
 }
 
+//______________________________________________________________________________
+
 void j_gating_frame::FetchTextValues() //copy text values to control parameters
 {//cout<<"FetchTextValues "<<flush;	
 	target_bin=proj->GetXaxis()->FindFixBin(atof(fTbh1->GetString()));
 	gate_range=atof(fTbh2->GetString())/proj->GetBinWidth(1);
 	backfrack=atof(fTbh3->GetString());
 }
+
+//______________________________________________________________________________
 
 void j_gating_frame::ValuesToText() //copy control parameters to text
 {	char buf[32];
@@ -401,9 +417,8 @@ void j_gating_frame::ValuesToText() //copy control parameters to text
 		
 }
 
-
-
 //______________________________________________________________________________
+
 void j_gating_frame::DoText() // Updates sliders to match text THEN calls DO HISTOGRAMS (which does everything else)
 {//cout<<"DoText "<<flush;
 	// Handle text entry widgets.
@@ -442,8 +457,8 @@ void j_gating_frame::DoText() // Updates sliders to match text THEN calls DO HIS
 void j_gating_frame::DoSlidePoint() // Updates text to match sliders THEN calls DO HISTOGRAMS (which does everything else)
 {
 	if(!action_hold){//cout<<"DoSlidePoint "<<flush;
-		int xtemp=fHslider1->GetPointerPosition();
 		action_hold=true;
+		int xtemp=fHslider1->GetPointerPosition();
 			fHslider1->SetPosition(xtemp+(fit_down-target_bin),xtemp+(fit_up-target_bin));
 			
 			if(background_mode==6){
@@ -456,7 +471,11 @@ void j_gating_frame::DoSlidePoint() // Updates text to match sliders THEN calls 
 		DoSlider();
 	}
 }
-void j_gating_frame::DoSlider() // Updates text to match sliders THEN calls DO HISTOGRAMS (which does everything else)
+
+//______________________________________________________________________________
+// Updates text to match sliders THEN calls DO HISTOGRAMS
+// (which does everything else)
+void j_gating_frame::DoSlider()
 {	
 	if(!action_hold){//cout<<"DoSlider "<<flush;
 		FetchSliderValues();
@@ -468,58 +487,28 @@ void j_gating_frame::DoSlider() // Updates text to match sliders THEN calls DO H
 		if(!set_for_3D) DoHistogram();//in the 3D version we dont update for slider slide
 	}
 }
+
+
 void j_gating_frame::SliderRelease(){
 // 	if(set_for_3D) DoHistogram(); //only on release
 }
 
 
 //______________________________________________________________________________
-void j_gating_frame::HandleButtons()// Various depending on button
-{      
-   // Handle different buttons.
-//cout<<"HandleButtons "<<flush;
-   TGButton *btn = (TGButton *) gTQSender;
-   Int_t id = btn->WidgetId();
-
-   switch (id) {
-      case HCId1:	//Switches between manual modes and then calls stuff
-	      if(fCheck1->GetState()){
-			fHslider3->SetEnabled(kTRUE);
-			fTeh3->SetEnabled(kTRUE);
-			fCheck0->SetEnabled(kFALSE);
-			
-			fFitFcn->SetParameters(0,0,0,0,0,0);
-			fFitFcn->SetRange(0,0);
-
-			if(manual_frac_store>=0){
-// 				backfrack=manual_frac_store; //Decided to revert this behaviour
-			}
-			storef1=fit_down-target_bin;storef2=fit_up-target_bin;
-	      }else{
-		        fit_down=storef1+target_bin;fit_up=storef2+target_bin;
-			fHslider3->SetEnabled(kFALSE);
-			fTeh3->SetEnabled(kFALSE);
-			fCheck0->SetEnabled(kTRUE);
-			manual_frac_store=backfrack;
-	      }
-	      
-	ValidateValues();
-	ValuesToSliders();
-	ValuesToText();      
-	DoAutoFit();
-	UpdateCanvas();
-	if(!set_for_3D)DoHistogram();
-	break;
-	
-      case HCId2://manual update for 3D gating that is slow
-		DoHistogram();
-	      
-	      
-         break;
-      default:
-         break;
-   }
-}
+// void j_gating_frame::HandleButtons()// Various depending on button
+// {      
+//    // Handle different buttons.
+// //cout<<"HandleButtons "<<flush;
+//    TGButton *btn = (TGButton *) gTQSender;
+//    Int_t id = btn->WidgetId();
+//    switch (id) {
+//       case HCId2://manual update for 3D gating that is slow
+// 		DoHistogram();
+//          break;
+//       default:
+//          break;
+//    }
+// }
 //______________________________________________________________________________
 void j_gating_frame::ChangeProjection(const Int_t id)
 {  
@@ -529,12 +518,18 @@ void j_gating_frame::ChangeProjection(const Int_t id)
 	UpdateInput();
 }
 
+//______________________________________________________________________________
 void j_gating_frame::UpdateInput(TH1* input){ 
 //cout<<"boooom "<<flush;
 	raw_input=input;
 	UpdateInput();
 }
 
+//______________________________________________________________________________
+
+// Basically redo everything.
+// All histograms, drawing etc
+// Calles for new input histogram or change axis
 void j_gating_frame::UpdateInput()
 {       
 TVirtualPad* hold=gPad;
@@ -574,35 +569,49 @@ TVirtualPad* hold=gPad;
 	free_hist=(TH1*)full->Clone(("free_hist"+suffix).c_str());
 	free_hist->SetLineColor(1);
 	
-	fCanvas1->GetCanvas()->cd();
-	if(hidebinerrors)proj->Draw("hist");else proj->Draw("");
-		
-	//This used to keep the same zoom when changing projections, but it was a pain
-// 	if(axis_up<=proj->GetXaxis()->GetNbins()) proj->GetXaxis()->SetRange(axis_down,axis_up);
 	
-	NewAxisDrawn();//sets sliders ranges and selected to match new axis
-	if(background_mode==5)b_man->Draw("samehist");
-	selected->Draw("samehist");
-// 	fFitFcn->SetParameters(0,0,0,0,0,0);
-// 	fFitFcn->SetRange(0,0);
-	fFitFcn->Draw("same");
 	
+	UpdateSpecBack();
 	DoAutoFit();
-	UpdateCanvas();
+	UpdateDraw();
 	DoHistogram();
+	
+// 	fCanvas1->GetCanvas()->cd();
+// 	if(hidebinerrors)proj->Draw("hist");else proj->Draw("");
+// 	NewAxisDrawn();//sets sliders ranges and selected to match new axis
+// 	if(background_mode==5)b_man->Draw("samehist");
+// 	selected->Draw("samehist");
+// 	fFitFcn->Draw("same");
+// 	DoAutoFit();
+// 	UpdateCanvas();
+// 	DoHistogram();
+
 	
 gPad=hold;
 }
 
+//______________________________________________________________________________
 
+//Make the 2 TSpectrum background histogram
+void j_gating_frame::UpdateSpecBack(){
+	delete specback;
+	if(backfit_mode==4)specback= TSpectrum::StaticBackground(proj,25);
+	else if(backfit_mode==5)specback= TSpectrum::StaticBackground(proj,10);
+	else specback=TSpectrum::StaticBackground(proj,30,"kBackOrder4");
+	specback->SetLineColor(6);
+}
 
+//______________________________________________________________________________
+
+// Change the way in which background historam is calcuated
+// And recalculate
 void j_gating_frame::ChangeBackMode(const Int_t id)
 {       
 //cout<<"ChangeBackMode "<<flush;
 	background_mode=id;
 	
 	if(background_mode>4)ShowFrame(fHframe4);else HideFrame(fHframe4); 
-	HideFullProj();
+	UpdateDraw();
 	
 	if(background_mode==4){
 		gate_hist->Sumw2(kFALSE);
@@ -611,17 +620,74 @@ void j_gating_frame::ChangeBackMode(const Int_t id)
 	DoHistogram();
 }
 
+//______________________________________________________________________________
 
+// Change the mode of background fraction calculation
+// Then update the histograms etc
+void j_gating_frame::ChangeBackFit(const Int_t id)
+{
+	if(backfit_mode<3&&id>2){//Switching away from a fitting mode
+		storef1=fit_down-target_bin;storef2=fit_up-target_bin;
+	}
+	if(backfit_mode>2&&id<3){
+		fit_down=storef1+target_bin;fit_up=storef2+target_bin;
+	}
+	
+	bool doupdraw=(backfit_mode>3||id>3);//TSpectrum
+	
+	backfit_mode=id;
+	
+	if(backfit_mode==3){//manual mode
+			fHslider3->SetEnabled(kTRUE);
+			fTeh3->SetEnabled(kTRUE);
+	}else{
+			fHslider3->SetEnabled(kFALSE);
+			fTeh3->SetEnabled(kFALSE);
+	}
+	
+	if(backfit_mode>2){//manual or TSpectrum mode
+		fFitFcn->SetParameters(0,0,0,0,0,0);
+		fFitFcn->SetRange(0,0);
+	}
+	
+	DoAutoFit();
+	
+	if(backfit_mode>3){//TSpectrum
+		UpdateSpecBack();
+	}
+	
+	if(doupdraw){//TSpectrum
+		UpdateDraw();
+	}else{   
+		UpdateCanvas();
+	}
+	
+	if(!set_for_3D)DoHistogram();
+}
+
+
+//______________________________________________________________________________
+
+// Calculated the background fraction
+// Either by fitting or TSpectrum intergral
+// Does nothing when on manual mode
 void j_gating_frame::DoAutoFit()
 {  
-//cout<<"DoAutoFit "<<flush;
-	if(!(fCheck1->GetState())){
-		double ingatecount=proj->Integral(gate_down,gate_up,"width");
-		if(ingatecount>0){//avoid empty fits
+	 if(backfit_mode==3)return;//manual mode
+	 
+	 double ingatecount=proj->Integral(gate_down,gate_up,"width");
+	 double background=ingatecount;
+	 
+	 if(ingatecount<=0){//avoid empty fits
+		backfrack=0;
+		return;
+	 }
+
+	if(backfit_mode<3){//cout<<"DoAutoFit "<<flush;
 				
 // 			//Fit a gaus+pol1 where pol1 is constrained OR 	gaus+pol2	
 			TF1* tempfn;
-			if(fCheck0->GetState())tempfn=QuickSingleGausAutoFitEE(proj,target_bin,fit_down,fit_up,1);
+			if(backfit_mode==2)tempfn=QuickSingleGausAutoFitEE(proj,target_bin,fit_down,fit_up,1);
 			else tempfn=QuickSingleGausAutoFit(proj,target_bin,fit_down,fit_up);			
 			
 			fFitFcn->SetParameters(tempfn->GetParameters());
@@ -633,19 +699,29 @@ void j_gating_frame::DoAutoFit()
 			//calc background frac from pol1
 			double x0=proj->GetBinLowEdge(gate_down),x1=proj->GetBinLowEdge(gate_up+1);
 			double m=fFitFcn->GetParameter(4),c=fFitFcn->GetParameter(3),d=fFitFcn->GetParameter(5);
-			double background=0.3333*d*x1*x1*x1+0.5*m*x1*x1+c*x1-0.3333*d*x0*x0*x0-0.5*m*x0*x0-c*x0;
-			backfrack= background/ingatecount;
-			if(backfrack>1)backfrack=1;
-			if(!(backfrack<=1&&backfrack>=0))backfrack=0;//guards against INF
-	
-		}else{backfrack=0;}
-		
-		ValuesToSliders();
-		ValuesToText();
+			background=0.3333*d*x1*x1*x1+0.5*m*x1*x1+c*x1-0.3333*d*x0*x0*x0-0.5*m*x0*x0-c*x0;	
 	}
+	
+	if(backfit_mode>3){
+		background=specback->Integral(gate_down,gate_up,"width");
+	}
+	
+	backfrack= background/ingatecount;	
+	if(backfrack>1)backfrack=1;
+	if(!(backfrack<=1&&backfrack>=0))backfrack=0;//guards against INF
+	
+	//Called to set calculated backfrack to gui
+	ValuesToSliders();
+	ValuesToText();
 }
 	
 
+//______________________________________________________________________________
+
+// Update all the currently drawn elements
+// Histograms & peak text
+// The call canvas update
+// TF1 parameters should have already been set
 void j_gating_frame::UpdateCanvas()
 {       
 //cout<<"UpdateCanvas "<<flush;
@@ -656,7 +732,7 @@ void j_gating_frame::UpdateCanvas()
 
 	//New optional fit centroid text
 	if(peaknumremove)fCanvas1->GetCanvas()->GetListOfPrimitives()->Remove(peaknumremove);peaknumremove=0;
-	if(fCheck2->GetState()&&!fCheck1->GetState()){
+	if(fCheck2->GetState()&&backfit_mode<3){
 		TVirtualPad* hold=gPad;
 		fCanvas1->GetCanvas()->cd();
 		
@@ -684,11 +760,15 @@ void j_gating_frame::UpdateCanvas()
 	fCanvas1->GetCanvas()->Update();
 	
 	//Update public number saying where gate is
-	if(!fCheck1->GetState())GateCentre=round(fFitFcn->GetParameter(1)*10)/10.;	
+	if(backfit_mode<3)GateCentre=round(fFitFcn->GetParameter(1)*10)/10.;	
 	else if(proj)GateCentre=proj->GetBinCenter(target_bin);
 }
 
 
+//______________________________________________________________________________
+
+// Called by canvas range change
+// Either because drawing a new histogram or selecting axis
 void j_gating_frame::ReDrawOne(){
 	
 	
@@ -706,11 +786,14 @@ void j_gating_frame::ReDrawOne(){
 		selected->GetXaxis()->SetRange(gate_down,gate_up);
 	}
 	
-	//Cant call this because it does an emit which transfers us to another draw canvas mid draw
+	//Cant call DoHistogram because it does an emit which transfers us to another draw canvas mid draw
 	//DoHistogram();
 }
 
+//______________________________________________________________________________
 
+// Function called by canvas interaction
+// Mostly for moving the gate to double click position
 void j_gating_frame::ClickedCanvasOne(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
 {   
 	if (event == kMouseLeave){fTip->Hide(); return;}
@@ -751,9 +834,13 @@ void j_gating_frame::ClickedCanvasOne(Int_t event, Int_t px, Int_t py, TObject *
 	}
 }
 
+//______________________________________________________________________________
+
+// Do the gating on the matrix and produce the output histogram
 void j_gating_frame::DoHistogram(){
 	
-	if(fCheck1->GetState())
+	//Rough error on background fraction
+	if(backfit_mode==3)//If its manual increase it
 		backfrackfrac=0.08;
 	else
 		backfrackfrac=0.04;
@@ -766,8 +853,6 @@ void j_gating_frame::DoHistogram(){
 	}
 	gate_hist=hist_gater_bin(gate_down,gate_up,raw_input,xyz,"gate_hist"+suffix);
 	
-	
-	
 	switch (background_mode) {
 		case 1://full
 			scaled_back_subtract(gate_hist,full,backfrack,output_hist_point,backfrackfrac);
@@ -776,7 +861,7 @@ void j_gating_frame::DoHistogram(){
 			//set the compton background cut to 3sigma above centroid
 			{
 				int compton_offset=gate_up+2;
-				if(!(fCheck1->GetState())){
+				if(backfit_mode<3){
 					compton_offset=proj->GetXaxis()->FindFixBin(fFitFcn->GetParameter(1)+2*fFitFcn->GetParameter(2));
 					if(compton_offset<gate_up)compton_offset=gate_up+2;
 				}
@@ -822,8 +907,10 @@ void j_gating_frame::DoHistogram(){
 	Emit("OutputReady()");
 }
 
-
+//______________________________________________________________________________
 	
+//Draw histograms to canvas but with an additional
+//matrix full projection shown.
 void j_gating_frame::ShowFullProj(){
 	action_hold=true;
 		TVirtualPad* hold=gPad;
@@ -840,16 +927,30 @@ void j_gating_frame::ShowFullProj(){
 		gPad=hold;
 	action_hold=false;
 }
+
+//______________________________________________________________________________
+
+// Redraw histograms to canvas without the full projection
 void j_gating_frame::HideFullProj(){
 	action_hold=true;
-		TVirtualPad* hold=gPad;
-		fCanvas1->GetCanvas()->cd();
-		if(hidebinerrors)proj->Draw("hist");else proj->Draw("");
-		if(background_mode>4)b_man->Draw("samehist");
-		selected->Draw("samehist");
-		fFitFcn->Draw("same");
-		UpdateCanvas();
+		UpdateDraw();
 		fRButtonz->SetState(kButtonUp);
-		gPad=hold;
 	action_hold=false;
 }
+
+//______________________________________________________________________________
+
+// Draw histograms & canvas to the pad
+// these may be updated without redraw
+void j_gating_frame::UpdateDraw(){
+	TVirtualPad* hold=gPad;
+	fCanvas1->GetCanvas()->cd();
+	if(hidebinerrors)proj->Draw("hist");else proj->Draw("");
+	if(backfit_mode>3)specback->Draw("samehist");
+	if(background_mode>4)b_man->Draw("samehist");
+	selected->Draw("samehist");
+	fFitFcn->Draw("same");
+	UpdateCanvas();
+	gPad=hold;
+}
+

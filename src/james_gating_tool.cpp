@@ -32,6 +32,7 @@ TVirtualPad* hold=gPad;
 		
 		TGLayoutHints* ffExpand = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
 		TGLayoutHints* ffExpandY = new TGLayoutHints(kLHintsExpandY, 0, 0, 0, 0);
+		TGLayoutHints* ffExpandXpad = new TGLayoutHints(kLHintsExpandX, 3, 3, 3, 3);
 		TGLayoutHints* ffCenX = new TGLayoutHints(kLHintsCenterX, 3, 3, 3, 3);
 		TGLayoutHints* ffCenY = new TGLayoutHints(kLHintsCenterY, 3, 3, 3, 3);
 		TGLayoutHints* ffCenTop = new TGLayoutHints(kLHintsTop | kLHintsCenterX, 3, 3, 3, 3);
@@ -82,12 +83,24 @@ TVirtualPad* hold=gPad;
 		fCanvas1->GetCanvas()->SetName(("ResultCan"+make_iterator()).c_str());
 		
 		fCanvas1->GetCanvas()->SetFillColor(33);
-		fCanvas1->GetCanvas()->SetFrameFillColor(kYellow-9);
 		fCanvas1->GetCanvas()->SetBorderMode(0);
+		fCanvas1->GetCanvas()->SetFrameFillColor(10);
+
 		fCanvas1->GetCanvas()->SetMargin(0.1,0.01,0.05,0.01);	
 		fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jgating_tool", this,"ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*)");
 		fCanvas1->GetCanvas()->Connect("RangeChanged()", "jgating_tool", this, "NewAxisDrawn()");
-	
+		
+		// rebin bar
+		
+		TGHorizontalFrame* rebinframe = new TGHorizontalFrame(resultframe, 0, 0, 0);
+			TGLabel *reblabel = new TGLabel(rebinframe, "Rebin Result Histogram ");
+			rebinframe->AddFrame(reblabel);
+			
+			fHslider1 = new TGHSlider(rebinframe, 9, kSlider2);
+			fHslider1->SetPosition(0);
+			fHslider1->Connect("PositionChanged(Int_t)", "jgating_tool", this, "DoUpdate()");
+			rebinframe->AddFrame(fHslider1, ffExpandXpad);
+		
 		//New stuff for the saving of histograms
 		
 		saveadd=0;
@@ -104,7 +117,7 @@ TVirtualPad* hold=gPad;
 		SAbutton->SetToolTipText("Save the currently drawn histogram.");
 		
 		fCheck1 = new TGCheckButton(buttonframe,"Hide Ers");
-		fCheck1->SetState(kButtonUp);
+		fCheck1->SetState(kButtonDown);
 		fCheck1->Connect(" Clicked()", "jgating_tool", this,"DoUpdate()");
 		fCheck1->SetToolTipText("Hide Bin Errors on drawn histograms");
 		
@@ -143,6 +156,7 @@ TVirtualPad* hold=gPad;
 		buttonframe->AddFrame(fCheck1, ffCenY);
 		resultframe->AddFrame(buttonframe, ffCenX);
 		resultframe->AddFrame(fCanvas1, ffExpand);
+		resultframe->AddFrame(rebinframe, ffExpandXpad);
 		AddFrame(resultframe,ffExpand);
 		
 		TGTextButton* spbutton = new TGTextButton(this,">");
@@ -238,9 +252,13 @@ void jgating_tool::DoUpdate(){TVirtualPad* hold=gPad;
 
 	ShowFrame(gJframe2);
 	
+	unsigned short rebin=fHslider1->GetPosition()+1;
+	
+	TH1* H;
 	fCanvas1->GetCanvas()->cd();
-	if(fCheck1->GetState())DrawHistOpt(gJframe2->output_hist_point);//Needed if any functions have been drawn
-	else gJframe2->output_hist_point->Draw();
+	if(fCheck1->GetState())H=DrawCopyHistOpt(gJframe2->output_hist_point);//Needed if any functions have been drawn
+	else H=gJframe2->output_hist_point->DrawCopy();
+	if(rebin>1)H->Rebin(rebin);		
 	
 	if(fRButton2->GetState()){
 		gJframe2->free_hist->Reset();
@@ -251,7 +269,8 @@ void jgating_tool::DoUpdate(){TVirtualPad* hold=gPad;
 	}
 	if(!fRButton1->GetState()){
 		gJframe2->free_hist->Sumw2(kFALSE);
-		gJframe2->free_hist->Draw("same");
+		TH1* h=gJframe2->free_hist->DrawCopy("same");
+		if(rebin>1)h->Rebin(rebin);		
 	}
 	
 	fCanvas1->GetCanvas()->Modified();
@@ -278,6 +297,7 @@ void jgating_tool::ClickedFinalCanvas(Int_t event, Int_t px, Int_t py, TObject *
 {TVirtualPad* hold=gPad;
 	if (event == kMouseLeave){fTip->Hide(); return;}
 
+	//Click is given in pixel coordinates
 	double x =fCanvas1->GetCanvas()->PixeltoX(px);
 	
 	//Update the tooltip
@@ -288,10 +308,9 @@ void jgating_tool::ClickedFinalCanvas(Int_t event, Int_t px, Int_t py, TObject *
 	
 	if ( event == kButton1Double) {
 		fCanvas1->GetCanvas()->cd();
-		
-		//Click is given in pixel coordinates
 	
-		TH1 *h=gJframe2->output_hist_point;
+		TH1* h=hist_capture(fCanvas1->GetCanvas());
+		if(!h)h=gJframe2->output_hist_point;
 		
 		TF1* Quick=UserQuickSingleGausAutoFitE(h,x,x-20,x+20,1);//Free & linear back
 
@@ -401,7 +420,9 @@ void jgating_tool::DrawSaved(){
 		}
 	}
 	if(saveadd){
-		HistDrawCopy(saveadd,fCheck1->GetState());
+		unsigned short rebin=fHslider1->GetPosition()+1;
+		if(rebin>1)saveadd->Rebin(rebin);
+		HistDrawCopyPeaker(saveadd,fCheck1->GetState());
 	}
 }
 
@@ -417,7 +438,9 @@ void jgating_tool::CSaveButton(){
 void jgating_tool::NewAxisDrawn() //adjust sliders and control values for new axis
 {
 	if(fFitFcn&&fCanvas1->GetCanvas()->GetListOfPrimitives()->FindObject(peaknumremove)){
-		TH1 *h=gJframe2->output_hist_point;
+		
+		TH1* h=hist_capture(fCanvas1->GetCanvas());
+		if(!h)h=gJframe2->output_hist_point;
 		double cent=fFitFcn->GetParameter(1);
 		double shif=(h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetLast())-h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetFirst()))*0.05;
 		peaknumremove->SetX(cent+shif);

@@ -1,6 +1,6 @@
 {
 
-	int a=3;
+	int a=2;
 
 	
 	TH1* ret;

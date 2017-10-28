@@ -388,7 +388,7 @@ void PadNDCtoUser(double& x,double& y,double* xy,bool reverse){
 }
 
 
-void HistDrawCopy(TH1* hist,bool opt){
+TCanvas* HistDrawCopy(TH1* hist,bool opt){
 	if(hist){
 		TVirtualPad* hold=gPad;
 		string name=hist->GetName();
@@ -403,9 +403,19 @@ void HistDrawCopy(TH1* hist,bool opt){
 		Can->Modified();
 		Can->Update();
 		gPad=hold;
+		return Can;
 	}
+	return 0;
 }
 
+
+TCanvas* HistDrawCopyPeaker(TH1* hist,bool opt){
+	TCanvas* Can=HistDrawCopy(hist,opt);
+	if(Can){
+			TQObject::Connect(Can, "ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ClickPeakDrawConnect(Int_t,Int_t,Int_t,TObject*)");
+	}
+	return Can;
+}
 
 TH1* DrawHistOpt(TH1* hist,bool copy){
 	if(!hist)return 0;
