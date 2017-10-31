@@ -4,8 +4,26 @@
 void axislab(TH1* HH,string x,string y,string z){
 	HH->GetXaxis()->SetTitle(x.c_str());
 	if(y==""){
+		double w=HH->GetBinWidth(1);
 		stringstream ss;
-		ss<<"Counts/"<<HH->GetBinWidth(1);
+		ss<<"Counts";
+		bool N=true;
+		
+		if(w>1.0001||w<0.999){
+			N=false;
+			ss<<"/"<<w;
+		}
+		
+		if(x.find("keV")<x.size()){
+			if(N)ss<<"/"<<w;
+			ss<<" keV";
+		}
+		
+		if(x.find("MeV")<x.size()){
+			if(N)ss<<"/"<<w;
+			ss<<" MeV";
+		}
+			
 		HH->GetYaxis()->SetTitle(ss.str().c_str());
 	}else{
 		HH->GetYaxis()->SetTitle(y.c_str());	

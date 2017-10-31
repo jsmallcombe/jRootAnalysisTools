@@ -7,15 +7,41 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-TH1* hist_capture(TVirtualPad* fPad){
+TObject* obj_capture(TClass* tclass,TVirtualPad* fPad){
 	if(fPad){
 		TObjLink *lnk = fPad->GetListOfPrimitives()->FirstLink();
 		while (lnk) {
-			if(lnk->GetObject()->InheritsFrom("TH1"))return (TH1*)lnk->GetObject();
+			if(lnk->GetObject()->InheritsFrom(tclass))return lnk->GetObject();
 			lnk = lnk->Next();
 		}
 	}
 	return 0;
+}
+
+void obj_removeall(TClass* tclass,TVirtualPad* fPad){
+	obj_remove(tclass,fPad,true);
+}
+
+
+void obj_remove(TClass* tclass,TVirtualPad* fPad,bool all){
+	if(fPad){
+		TObjLink *lnk = fPad->GetListOfPrimitives()->FirstLink();
+		while (lnk) {
+			if(lnk->GetObject()->InheritsFrom(tclass)){
+				fPad->GetListOfPrimitives()->Remove(lnk->GetObject());
+				lnk = fPad->GetListOfPrimitives()->FirstLink();//shouldnt cause infinite loop
+				if(!all)return;
+			}else{
+				lnk = lnk->Next();
+			}
+		}
+	}
+	return;
+}
+
+TH1* hist_capture(TVirtualPad* fPad){
+	return (TH1*)obj_capture(TH1::Class(),fPad);
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -32,21 +58,13 @@ void ClickPeakDrawConnect(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
 	if(((TObject*)gTQSender)->IsA() != TCanvas::Class())return;
 	TCanvas* Can=((TCanvas*)gTQSender);
 	
-	TGToolTip *fTip=0;
-	TObjLink *lnk = Can->GetListOfPrimitives()->FirstLink();
-	while (lnk) {
-		if(lnk->GetObject()->InheritsFrom("TGToolTip")){
-			fTip=(TGToolTip*)lnk->GetObject();
-			break;
-		}
-		lnk = lnk->Next();
-	}
+	TGToolTip *fTip=(TGToolTip*)obj_capture(TGToolTip::Class(),Can);
 	if(!fTip){
 		fTip = new TGToolTip(100, 100,"", 200);	// create the tooltip with a timeout of 200 ms
 			fTip->Hide();
 			Can->GetListOfPrimitives()->Add(fTip);
 	}
-	if (event == kMouseLeave){fTip->Hide(); return;}
+	if(event == kMouseLeave){fTip->Hide(); return;}
 	
 	//Click is given in pixel coordinates
 	double x =Can->PixeltoX(px);
@@ -54,21 +72,15 @@ void ClickPeakDrawConnect(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
 	fTip->Hide();
 	fTip->SetText(TString::Format("%.1f",x));
 	fTip->SetPosition(Can->GetWindowTopX()+px+15,Can->GetWindowTopY()+py-15);
-	fTip->Reset();	
+	fTip->Reset();
 
 	if (event == kButton1Double){
 
 		TH1* h=hist_capture(Can);
 		if(!h) return;
 		
-		lnk = Can->GetListOfPrimitives()->FirstLink();
-		while (lnk) {
-			if(lnk->GetObject()->InheritsFrom("TF1")||lnk->GetObject()->InheritsFrom("TText")){
-				Can->GetListOfPrimitives()->Remove(lnk->GetObject());
-				lnk = Can->GetListOfPrimitives()->FirstLink();//shouldnt cause infinite loop
-			}
-			lnk = lnk->Next();
-		}		
+		obj_removeall(TF1::Class(),Can);
+		obj_removeall(TText::Class(),Can);
 		
 		TF1* Quick=UserQuickSingleGausAutoFitE(h,x,x-20,x+20,1);//Free & linear back
 		Can->cd();
