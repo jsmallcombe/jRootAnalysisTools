@@ -45,7 +45,7 @@ In the base directory of the library run:
 \lstset{language=bash}
 \begin{lstlisting}
 make clean
-make -j 4
+make -j4
 source bin/thisjlib.sh
 root -l bin/root_start.C
 \end{lstlisting}
@@ -96,6 +96,7 @@ Once a histogram is grabbed a copy of it will be passed to any of the functions 
 \subsubsection{Histogram Lifetime}
 A histogram can go out of memory scope in several ways. For speed, as grabbing is done on EVERY canvas click, only a pointer is stored. jEnv will refuse to do anything with its histogram pointer until it has established it is valid. To check if a histogram is still in memory jEnv checks the histogram against roots list of object, however this object search has limitations. If this histogram is still drawn in the same canvas as when it was grabbed, it will be found.
 
+\newpage
 \subsection{Histogram AddSub Tool}
 Hidden in the side of jEnv is the AddSub tool. This is a simple tool to allow quick addition and subtraction of $TH1$s from anywhere. The tool even allows histograms with different binning, summing is done based on "user coordinates".
 Click either of the selected histograms windows $A$ or $B$ to assign the currently grabbed histogram from jEnv, at this point a copy IS saved. The projected histogram is then given by $A\pm B*f$ where f is the fraction specified by the slider. In the case of subtraction the area of B is first normalised to that of A. The resultant histogram can also be grabbed.
@@ -120,7 +121,8 @@ Click either of the selected histograms windows $A$ or $B$ to assign the current
 \end{tabular}
 \end{center}
 
-\newpage
+\bigskip
+\bigskip
 \section{Gating and Background Subtraction Tool}
 The gating tool is designed to provide live graphical gating and background subtraction for $TH2$ and $TH3$ histograms filled with any data. 
 A new instance can be created from the jEnv toolbar or typing any of the following:
@@ -132,13 +134,13 @@ new jgating_tool(HistogramName);
 \end{lstlisting}
 where "HistogramName" is the name (not title) of a histogram open in memory. The call with no arguments will grab the most recently selected or drawn histogram. If no valid input is found a window will not appear. Please wait a moment for the window to appear when using $TH3$s, particularly if they are large.
 \begin{center}
-\includegraphics[width=0.55\textwidth]{jGateG.png}
+\includegraphics[width=0.55\textwidth]{toolA.png}
 \end{center}
 
 \subsection{Gating Window}
 
 \begin{center}
-\includegraphics[width=0.5\textwidth]{jGateB.png}
+\includegraphics[width=0.5\textwidth]{toolB.png}
 \end{center}
 \begin{enumerate}
 \item Overflow Peek - By default shown projection excludes the overflow bins of the other axis. Hold this button to see the projecting including overflow overlain  
@@ -146,14 +148,18 @@ where "HistogramName" is the name (not title) of a histogram open in memory. The
 \item Axis Select - Change the axis on which gating performed. (USE TO RESET IF ERRORS OCCUR)
 \item Background Subtraction Type
 \item Projection Window - Window showing the current projection and gate, when appropriate shows also fit and background gate. You can double click in this window to move the gate.
-\item Gate Width and Centre - These act as both text entry boxes and outputs for the sliders. Both are in user coordinates but inputs will be rounded to bin multiples. 
-\item Free Fit - The initial peak fit to determine background fraction is not a true fit as the background is a pol1 fixed by the user's cursor. Free fit fits a pol2 and will automatically fit a shrunk range in the presence of other peaks, useful for scanning.\raisebox{-0.9\height}{\includegraphics[width=0.4\textwidth]{jGateD.png}}
-\item Enable Manual Background Fraction - Select this to enable manual adjustment of the background subtraction fraction, this will hide the peak fit.
+\item Gate Centre - Both text a entry boxes and output for the slider. In user coordinates, but input will be rounded to nearest bin. 
+\item Gate Width - As Gate Centre. 
 \item Background Fraction Text Box - This can be used as a text entry box when manual background fraction is enabled.
-\item Manual Background Gate - If manual background gate is selected, adjust the ends of this slider to define background gate (shown in black). This slider is hidden when not in use.
-\item Gate \& Fit Slider - Use the central slider to adjust the position of your gate. When the fit is enabled, use the outer edges of the slider to adjust the range of the fit relative to the gate position.
+\item Gate \& Fit Slider - Use the central slider to adjust the position of your gate. When background fit is enabled, use the outer edges of the slider to adjust the range of the fit relative to the gate position.
 \item Gate Width Slider
 \item Background Fraction slider - Can be used to manually adjust background fraction, when manual background fraction is enabled.
+\item Manual Background Gate - If manual background gate is selected, adjust the ends of this slider to define background gate (shown in black). This slider is hidden when not in use.
+\item Background Fraction Mode -
+Select how you would like to determine the background subtraction fraction, peak fit with fixed pol0 background, fit with auto-adjusting pol1 background, set manually OR use TSpectrum show background function (3 smoothing options pre-set).
+
+\centering\raisebox{-0.9\height}{\includegraphics[width=0.5\textwidth]{jGateD.png}\includegraphics[width=0.25\textwidth]{toolC.png}}
+
 \end{enumerate}
 
 \subsubsection{Background Subtraction Type}
@@ -168,7 +174,7 @@ where "HistogramName" is the name (not title) of a histogram open in memory. The
 
 \subsection{Result Window}
 \begin{center}
-\includegraphics[width=0.5\textwidth]{jGateE.png}
+\includegraphics[width=0.5\textwidth]{toolD.png}
 \end{center}
 \begin{enumerate}
 \item Draw Overlays - Show the total ungated-projection (scaled), or the currently subtracted background spectrum, overlain in the result window.
@@ -177,6 +183,7 @@ where "HistogramName" is the name (not title) of a histogram open in memory. The
 \item Hide Errs - Hide the error bars from background subtraction and draw histogram normally. Note: When selected fits performed with the ROOT FitPanel will not initially display, select the SAME drawing option to fix.
 \item Show/Hide Gate Summing Tool.
 \item Result Frame. Double clicking in this window will perform a quick Gaussian fit at the cursor and display the centroid.
+\item Rebin Result - Select a factor by which to rebin result histograms.
 \end{enumerate}
 
 \subsection{Gate Summing Tool}
@@ -202,11 +209,12 @@ The Gate Summing Tool is used for saving the result histograms in memory after g
 \subsection{3D Gating Window}
 For the first gate on a $TH3$ there is significant amount of computation so this is not done live. The output of the first gate is only performed when a new projection is selected, a different background mode is selected or when the [Update] button is pressed.
 \begin{center}
-\includegraphics[width=0.95\textwidth]{jGateA.png}
+\includegraphics[width=0.95\textwidth]{toolE.png}
 \begin{enumerate}
 \item Update - Select after changing gate or background.
 \item 2D - Do not perform a second gate but instead pass the TH2 result to the result frame. The gate sum tool can also be used in this mode.
 \end{enumerate}
+\includegraphics[width=0.6\textwidth]{toolF.png}
 \end{center}
 
 \newpage
@@ -262,6 +270,7 @@ Many of the functions of toolbar are duplicated by keyboard shortcuts.
 \end{tabular}
 \end{center}
 
+\newpage
 \subsection{Peak Fitting Controls}
 While the mouse pointer is over the fitting canvas the following controls and short-cuts may be used:
 \begin{center}
