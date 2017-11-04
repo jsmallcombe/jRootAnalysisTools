@@ -29,6 +29,7 @@ void UltraFitEnv::ClearFits(){
 	//cout<<endl<<"ERROR IN FN A"<<flush;
 	for(int i=0;(unsigned)i<cFitList.size();i++)delete cFitList[i];
 	cFitList.clear();
+	cSaveLabels.clear();
 	if(gHist){
 		gHist->GetListOfFunctions()->Clear();
 	}
@@ -88,6 +89,12 @@ void UltraFitEnv::DialogBox() {
 			button->SetToolTipText("Begin fitting in another canvas\n(subsequent click).");
 			capt->AddFrame(button,ExpandXz);	
 		cFrame->AddFrame(capt,ExpandX);
+		
+		fCheck0 = new TGCheckButton(cFrame,"Peak Labels ");
+		fCheck0->SetState(kButtonDown);
+		fCheck0->Connect("Clicked()","UltraFitEnv",this,"DrawSaveLabels()");
+ 		fCheck0->SetToolTipText("Show peak labels on histogram.");
+		cFrame->AddFrame(fCheck0,XX);
 		
 		button = new TGTextButton(cFrame,"Re-Draw Hist");
 		button->Connect("Clicked()","UltraFitEnv",this,"ReDrawgHist()");
@@ -361,6 +368,7 @@ void UltraFitEnv::SetNewHist(TH1* fHist){if(!fHist)return;
 	cRClicker.clear();
 	cClicker.clear();
 	cExClicker.clear();
+	cSaveLabels.clear();
 	fFitFinished=false;
 }
 
@@ -370,6 +378,7 @@ void UltraFitEnv::ReDrawgHist(){
 	cExClicker.clear();
 	DrawgHist();
 }
+
 void UltraFitEnv::DrawgHist(){
 	TVirtualPad* hold=gPad;
 	
@@ -381,11 +390,34 @@ void UltraFitEnv::DrawgHist(){
 		
 		//This is another protection of gHist
 		gHistDrawn=DrawCopyHistOpt(gHist);
+		
+		//Add the labels on the top
+		DrawSaveLabels();
 
 		if(!fCan->GetShowEventStatus())fCan->ToggleEventStatus();//info at the bottom
 		gPad->Update();	
 	}
 	
+	gPad=hold;
+}
+
+void UltraFitEnv::DrawSaveLabels(){
+	TVirtualPad* hold=gPad;
+	
+	TCanvas* fCan=GetCan();
+	if(fCan){
+		fCan->cd();
+		
+		obj_removeall(TText::Class(),GetCan());
+		if(fCheck0->GetState()){
+			for(unsigned int i=0;i<cSaveLabels.size();i++){
+				cSaveLabels[i].Draw();
+			}
+		}
+		gPad->Modified();
+		gPad->Update();
+	
+	}
 	gPad=hold;
 }
 
@@ -657,15 +689,19 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 
 void UltraFitEnv::RemoveLines(){
 	//cout<<endl<<"ERROR IN FN V"<<flush;
-	TCanvas* fCan=GetCan();	
-	if(fCan){
-		//remove old lines
-		TObject *obj;TIter next(fCan->GetListOfPrimitives());
-		while ((obj = next())){
-		if(obj->InheritsFrom("TText")||obj->InheritsFrom("TLine")||obj->InheritsFrom("TBox"))
-			fCan->GetListOfPrimitives()->Remove(obj);
-		}
-	}
+	if(!fCheck0->GetState())obj_removeall(TText::Class(),GetCan());
+	obj_removeall(TLine::Class(),GetCan());
+	obj_removeall(TBox::Class(),GetCan());
+	
+// 	TCanvas* fCan=GetCan();		
+// 	if(fCan){
+// 		//remove old lines
+// 		TObject *obj;TIter next(fCan->GetListOfPrimitives());
+// 		while ((obj = next())){
+// 		if(obj->InheritsFrom("TText")||obj->InheritsFrom("TLine")||obj->InheritsFrom("TBox"))
+// 			fCan->GetListOfPrimitives()->Remove(obj);
+// 		}
+// 	}
 }
 
 void UltraFitEnv::UpdateLines(){
@@ -840,6 +876,7 @@ void  UltraFitEnv::FitGUIPeak(){
 	ExternalHistUpdateCheck();
 			
 	cGoodFit=false;
+	cPeakLabels.clear();
 	cSaveConf=0;
 	cClearConf=0;
 	
@@ -878,25 +915,41 @@ void UltraFitEnv::UltraFitAfter(FullFitHolder* fHold){
 // 		cClicker.clear();
 // 		cExClicker.clear();
 		
+		//This calculates all the data (area etc) internally using MakeUltraData(fHold) and stores in fHold's vector
+		Ultrapeak::PrintData(fHold,1,gHist);
+				
+		//update the text on the cBar
+		cPeakLabels.clear();
+		for(unsigned int i=0;i<cNfit;i++){
+			double cc=fHold->CVal(Ultrapeak::VPC(i));
+			double oo=fHold->CVal(Ultrapeak::VOff);
+			
+			cPTbox[i]->SetText(TString::Format("%.1f",cc+oo));
+			gClient->NeedRedraw(cPTbox[i]);
+			
+			double hh = gHist->GetBinContent(gHist->GetXaxis()->FindBin(cc));
+			cPeakLabels.push_back(TText(cc,hh*1.05,TString::Format("%.1f",cc+oo)));
+		}
+		
+		// Actually update what is drawn
 		TCanvas* fCan=GetCan();
 		if(fCan){
 			fCan->cd();
 			double x1=fCan->GetUxmin(),x2=fCan->GetUxmax();
 			DrawgHist();
 			if(gHistDrawn){
+				if(fCheck0->GetState())for(unsigned int i=0;i<cNfit;i++){
+					cPeakLabels[i].SetTextAlign(21);
+					cPeakLabels[i].SetTextFont(82);
+					cPeakLabels[i].SetTextSize(0.025);
+					cPeakLabels[i].Draw();
+				}
+				
 				gHistDrawn->GetXaxis()->SetRangeUser(x1,x2);
-				Ultrapeak::DrawPeak(fHold,GetCan());
-			}			
+				Ultrapeak::DrawPeak(fHold,GetCan()); // Want this to be the last thing drawn
+			}
 		}
 		
-		//This calculates all the data (area etc) internally using MakeUltraData(fHold) and stores in fHold's vector
-		Ultrapeak::PrintData(fHold,1,gHist);
-		
-		//update the text on the cBar
-		for(unsigned int i=0;i<cNfit;i++){
-			cPTbox[i]->SetText(TString::Format("%.1f",fHold->CVal(Ultrapeak::VPC(i))+fHold->CVal(Ultrapeak::VOff)));
-			gClient->NeedRedraw(cPTbox[i]);
-		}
 		
 		cLastFit=*fHold;
 		delete fHold;
@@ -919,6 +972,11 @@ void UltraFitEnv::SaveFit(){
 		
 		TObject* last = GetCan()->GetListOfPrimitives()->Last();
 		if(last)if(last->InheritsFrom("TF1"))((TF1*)last)->SetLineColor(4);
+		
+		for(unsigned int i=0;i<cPeakLabels.size();i++)cSaveLabels.push_back(cPeakLabels[i]);
+		cPeakLabels.clear();
+		DrawSaveLabels();
+		
 		gPad->Modified();
 		gPad->Update();
 		

@@ -120,6 +120,7 @@ class UltraFitEnv : public TQObject
 	void SetNewHist(TH1*);
 	void ConnectNewCanvas(TVirtualPad*);
 	void ReDrawgHist();
+	void DrawSaveLabels();
 	void DrawgHist();
 	void ClearFits();
 	void ClearFitsD();
@@ -148,6 +149,10 @@ class UltraFitEnv : public TQObject
 	bool cShift,cCtrl,cAlt,cGoodFit,cSaveConf,cClearConf;
 	vector< double > cClicker,cRClicker,cExClicker;
 	vector< FullFitHolder* > cFitList;
+	vector< TText > cPeakLabels;
+	vector< TText > cSaveLabels;
+	
+	
 	TGComboBox *fCombo;
 	bool fFitFinished;
 	
