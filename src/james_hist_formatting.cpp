@@ -35,27 +35,23 @@ void axislab(TH1* HH,string x,string y,string z){
 
 //Add most common axis label so automated
 void axislabelkev(TH1* HH){
-	stringstream ss;
-	double c=HH->GetXaxis()->GetBinWidth(1);
-	ss<<"Counts/";
-	if(c!=1)ss<<c<<" ";
-	ss<<"keV";	
-	axislab(HH,"Energy (KeV)",ss.str());
+	axislab(HH,"Energy (KeV)");
 }
 
 void hformat(TH1* HH,bool setminzero){
 	TAxis* ax[3]={HH->GetXaxis(),HH->GetYaxis(),HH->GetZaxis()};
+	axislab(HH,ax[0]->GetTitle(),ax[1]->GetTitle(),ax[2]->GetTitle());//slightly redundant
 	for(int i=0;i<3;i++){
 		ax[i]->SetTicks("+-");
 		ax[i]->SetLabelFont(22);
 		ax[i]->SetLabelSize(0.045);
 		ax[i]->SetTitleFont(22);
 		ax[i]->SetTitleSize(0.06);
-		ax[i]->SetTitleOffset(0.7);
+		ax[i]->SetTitleOffset(1.1);
 		ax[i]->SetTickLength(0.015);
 		ax[i]->CenterTitle(true);
 	}
-	ax[1]->SetTitleOffset(-0.7);
+	ax[1]->SetTitleOffset(-1.1);
 	
 	HH->SetLineColor(1);
 	HH->SetStats(false);
