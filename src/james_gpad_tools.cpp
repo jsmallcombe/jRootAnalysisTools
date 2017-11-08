@@ -106,6 +106,20 @@ void ClickPeakDrawConnect(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
 gPad=hold;
 }
 
+// Hide the tooltip associated with a Canvas, use on close or as an override
+void ToolTipHide(){
+	if(!gTQSender)return;
+	if(((TObject*)gTQSender)->IsA() != TCanvas::Class())return;
+	TCanvas* Can=((TCanvas*)gTQSender);
+	TGToolTip *fTip=(TGToolTip*)obj_capture(TGToolTip::Class(),Can);
+	if(fTip){
+		fTip->Hide(); 
+	}
+	return;
+}
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
