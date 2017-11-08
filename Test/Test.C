@@ -9,6 +9,7 @@ gSystem->Load(load.c_str());
 
 //load some 1D histograms
 gROOT->ProcessLine((dir+"/data/1Dhist.C").c_str());
+gROOT->ProcessLine((dir+"/data/1Dhistlow.C").c_str());
 
 //Pick a script by commenting
 // dir+="/scripts/EfficiencyCurves.C";

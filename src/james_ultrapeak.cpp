@@ -192,7 +192,7 @@ void Ultrapeak::PrintData(FullFitHolder* fHold,bool titles,double binwidth,ostre
 //////////////////////////////////////////////////////
 
 
-FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode,int peaktype,string sig,string dec,string sha){
+FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode,int peaktype,string sig,string dec,string sha,TH1* fExHist){
 	// This function takes in peak positions as a series of relative positions
 	// This creates undue correlation between centroid positions 
 	// However this is the best way to fix the distance between pairs (or more)
@@ -372,7 +372,10 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	///////////////////////////////////// PRE FIT //////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////
 	
-	fHist->Fit(fPre, "RMQN"); 
+	//Use the bin cancelled exclusion histogram if passed
+	if(fExHist)fExHist->Fit(fPre, "RMQN"); 
+	else fHist->Fit(fPre, "RMQN");
+		
 	fPre->GetParameters(fParam);
 	delete fPre;
 	
@@ -641,12 +644,16 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 // 	ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(9999);
 	ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
 
-	fHist->Fit(fFit, "RMNQ");//Get close, then do extra fit with error analysis
+	
+	TH1* fFitHist=fHist;
+	if(fExHist)fFitHist=fExHist;//Use the bin cancelled exclusion histogram if passed
+
+	fFitHist->Fit(fFit, "RMNQ");//Get close, then do extra fit with error analysis
 	
 	TFitResultPtr fResult;
-	if(statmode==0)fResult=fHist->Fit(fFit, "RMENS");
-	if(statmode==1)fResult=fHist->Fit(fFit, "RMENSL");
-	if(statmode==2)fResult=fHist->Fit(fFit, "RMENSWL");
+	if(statmode==0)fResult=fFitHist->Fit(fFit, "RMENS");
+	if(statmode==1)fResult=fFitHist->Fit(fFit, "RMENSL");
+	if(statmode==2)fResult=fFitHist->Fit(fFit, "RMENSWL");
 	
 	//////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////// POST FIT OUTPUT ///////////////////////////////////

@@ -884,14 +884,21 @@ void  UltraFitEnv::FitGUIPeak(){
 	double bound_l,bound_u;
 	vector< jPeakDat >fPass=MakeBoundryPeakList(bound_l,bound_u);
 	
-	TH1* fExclusionHist=(TH1*)gHist->Clone("ExclusionHist");
-	for(unsigned int i=0;(i*2)+1<cExClicker.size();i++){
-		int X1=gHist->GetXaxis()->FindBin(cExClicker[i*2]);
-		int X2=gHist->GetXaxis()->FindBin(cExClicker[i*2+1]);
-		if(X1>X2){int X=X1;X1=X2;X2=X;}
-		
-		for(int j=X1;j<=X2;j++)fExclusionHist->SetBinContent(j,0);
+	TH1* fExclusionHist=0;
+	if(cExClicker.size()>1){
+		fExclusionHist=(TH1*)gHist->Clone("ExclusionHist");
+		for(unsigned int i=0;(i*2)+1<cExClicker.size();i++){
+			int X1=gHist->GetXaxis()->FindBin(cExClicker[i*2]);
+			int X2=gHist->GetXaxis()->FindBin(cExClicker[i*2+1]);
+			if(X1>X2){int X=X1;X1=X2;X2=X;}
+			
+			for(int j=X1;j<=X2;j++){
+				fExclusionHist->SetBinContent(j,0);
+				fExclusionHist->SetBinError(j,0);
+			}
+		}
 	}
+	
 	string fixsig=cShapeTsig->GetBuffer()->GetString();
 	string fixdec=cShapeTdecay->GetBuffer()->GetString();
 	string fixsha=cShapeTshare->GetBuffer()->GetString();
@@ -899,8 +906,8 @@ void  UltraFitEnv::FitGUIPeak(){
 	int fittype=fCheck1->GetState();
 	if(fCheck2->GetState())fittype=2;//trumps fCheck1
 	
-	FullFitHolder* fHold=Ultrapeak::PeakFit(fExclusionHist,bound_l,bound_u,fPass,fCombo->GetSelected(),fittype,fixsig,fixdec,fixsha);
-	delete fExclusionHist;
+	FullFitHolder* fHold=Ultrapeak::PeakFit(gHist,bound_l,bound_u,fPass,fCombo->GetSelected(),fittype,fixsig,fixdec,fixsha,fExclusionHist);
+	if(fExclusionHist)delete fExclusionHist;
 	
 	fFitFinished=true;
 	this->UltraFitAfter(fHold);
