@@ -8,10 +8,10 @@ CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t op
 
 CCframe::~CCframe(){
 	TQObject::Disconnect(this);
-/*	
-	Disconnect(0,this,0);
-	TQObject::Disconnect((TCanvas*)cCan);
-	TQObject::Disconnect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", 0, "CaptureCanvas(TPad*,TObject*,Int_t)");*/
+	TQObject::Disconnect("TCanvas", 0, this);
+// 	TQObject::Disconnect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", 0, "CaptureCanvas(TPad*,TObject*,Int_t)");
+// 	Disconnect(0,this,0);
+// 	TQObject::Disconnect((TCanvas*)this);
 }
 
 
@@ -117,6 +117,7 @@ int CCframe::Type(){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+int jEnv::SumNameItt = 0;
 
 jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),fFitPanel(0),addsub(0),A(0),B(0),result(0),AHist(0),BHist(0),SumHist(0){
 TVirtualPad* hold=gPad;
@@ -283,7 +284,7 @@ void jEnv::Grab(int i){
 		if(*H)delete *H;
 		*H=(TH1*)fCanvas1->Hist()->Clone(S.c_str());
 		DrawAB(i);
-		if(SumHist){delete SumHist;SumHist=0;}
+		if(SumHist){delete SumHist;SumHist=0;SumNameItt++;}
 		DoSlider();
 	}
 }
@@ -312,7 +313,7 @@ void jEnv::Swap(){
 	BHist=H;
 	DrawAB(0);
 	DrawAB(1);
-	if(SumHist){delete SumHist;SumHist=0;}
+	if(SumHist){delete SumHist;SumHist=0;SumNameItt++;}
 	DoSlider();
 }
 
@@ -371,7 +372,8 @@ void jEnv::DoSlider(){TVirtualPad* hold=gPad;
 			// SumHist->GetXaxis()->SetLabelSize();
 			// SumHist->GetYaxis()->SetLabelSize();
 			if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
-			SumHist->SetName("AddSubResultHist");
+			stringstream ss;ss<<"AddSubResultHist"<<SumNameItt;
+			SumHist->SetName(ss.str().c_str());
 			hformat(SumHist,0);
 			// SumHist->SetMinimum(SumHist->GetBinContent(SumHist->GetMinimumBin()));
 			if(fCheck1->GetState())SumHist->Draw("hist");else SumHist->Draw();

@@ -75,6 +75,7 @@ private:
 	TGTextBuffer  *fTbh1;
 	bool gSubtract;
 	TGTextButton* addsubclick;
+	static int SumNameItt;
 	
 	void Show();
 	void Hide();

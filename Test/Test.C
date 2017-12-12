@@ -10,11 +10,13 @@ gSystem->Load(load.c_str());
 //load some 1D histograms
 gROOT->ProcessLine((dir+"/data/1Dhist.C").c_str());
 gROOT->ProcessLine((dir+"/data/1Dhistlow.C").c_str());
+gROOT->ProcessLine((dir+"/data/1Doversub.C").c_str());
 
 //Pick a script by commenting
 // dir+="/scripts/EfficiencyCurves.C";
 // dir+="/scripts/GateTest.C";
- dir+="/scripts/UltraFitTest.C";
+//  dir+="/scripts/UltraFitTest.C";
+ dir+="/scripts/Massage.C";
 //  dir+="/scripts/gPadTest.C";
 
 //Run that script

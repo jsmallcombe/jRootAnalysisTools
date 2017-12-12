@@ -15,12 +15,12 @@ void axislab(TH1* HH,string x,string y,string z){
 		}
 		
 		if(x.find("keV")<x.size()){
-			if(N)ss<<"/"<<w;
+			if(N)ss<<"/";
 			ss<<" keV";
 		}
 		
 		if(x.find("MeV")<x.size()){
-			if(N)ss<<"/"<<w;
+			if(N)ss<<"/";
 			ss<<" MeV";
 		}
 			
