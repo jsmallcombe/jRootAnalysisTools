@@ -119,7 +119,7 @@ int CCframe::Type(){
 
 int jEnv::SumNameItt = 0;
 
-jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),fFitPanel(0),addsub(0),A(0),B(0),result(0),AHist(0),BHist(0),SumHist(0){
+jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),fFitPanel(0),fSpecTool(0),addsub(0),A(0),B(0),result(0),AHist(0),BHist(0),SumHist(0){
 TVirtualPad* hold=gPad;
 	SetWindowName("jEnv");
 	char buf[32];	//A buffer for processing text through to text boxes
@@ -134,6 +134,9 @@ TVirtualPad* hold=gPad;
 		TGTextButton* fitter = new TGTextButton(controlframe1,"Fit Panel");
 		fitter->Connect("Clicked()","jEnv",this,"FitPanel()");	
 		controlframe1->AddFrame(fitter,ExpandX);
+		TGTextButton* Spect = new TGTextButton(controlframe1,"SpecTool");
+		Spect->Connect("Clicked()","jEnv",this,"Spectrum()");
+		controlframe1->AddFrame(Spect,ExpandX);
 		TGTextButton* gatter = new TGTextButton(controlframe1,"Gate");
 		gatter->Connect("Clicked()","jEnv",this,"Gatter()");	
 		controlframe1->AddFrame(gatter,ExpandX);
@@ -240,6 +243,18 @@ void jEnv::FitPanel(){
 		fFitPanel->Connect("Destroyed()", "jEnv", this,"FitPanelClose()");
 	}
 };
+void jEnv::Spectrum(){
+	if(fCanvas1->Type()==1){
+		if(fSpecTool){
+			if(fCanvas1->Type()==1)fSpecTool->NewInput(fCanvas1->Hist());
+		}else {
+			fSpecTool=new jSpecTool(fCanvas1->Hist());
+			fSpecTool->Connect("Destroyed()", "jEnv", this,"SpecToolClose()");
+		}
+	}
+};
+
+
 void jEnv::Gatter(){
 	if(fCanvas1->Type()>1)new jgating_tool(fCanvas1->Hist());
 };

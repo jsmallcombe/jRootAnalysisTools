@@ -7,8 +7,8 @@
 //
 //
 
-#ifndef jamesfunc_massage
-#define jamesfunc_massage
+#ifndef jamesfunc_spectool
+#define jamesfunc_spectool
 
 #include "TROOT.h"
 #include "TGButton.h"
@@ -39,32 +39,38 @@
 using namespace std;
 
 
-class jmassage : public TGMainFrame {
+class jSpecTool : public TGMainFrame {
 
 private:
 	TRootEmbeddedCanvas *fCanvas1;
-	TH1	*histin,*histsub,*specback;
-	TGCheckButton   *fCheck0,*fCheck1,*fCheck2,*fCheck3;
+	TH1	*histin,*histsub,*histzero,*specback;
+	TGCheckButton   *fCheck0,*fCheck1,*fCheck2,*fCheck3,*fCheck4;
 	TGHSlider    	*fHslider1,*fHslider2,*fHslider3;
 	TGTextEntry *fTeh1,*fTeh2;
-	static int jmassage_iterator;
+	static int spectool_iterator;
 	static vector<string> BackOpt;
 	string make_iterator();
-	unsigned int N;
+	unsigned int N,gStart;
 	string StrOpt;
+		
+	void RemovalPrep(TH1*);
+	int RemovalStart(TH1*);
+	void RemovalPrivate(TH1*);
 
 public:
-	jmassage(TObject* = 0);
-	virtual ~jmassage();
+	jSpecTool(TH1* = 0);
+	virtual ~jSpecTool();
 
-	void DoUpdate();
+	void DoUpdate(bool=true);
+	void DoUpdateF(){DoUpdate(false);}
 	void UpdateSpecBack();
-	void RemovalProcess(TH1*);
 	void ReMakeSpecBack(TH1*);
-	
-	ClassDef(jmassage, 1)
+	void RemovalPublic(TH1*,bool=true);
+	void RemovalProcess(TH1*,int);
+	void NewInput(TH1*);
+		
+	ClassDef(jSpecTool, 1)
 };
-
 
 
 #endif

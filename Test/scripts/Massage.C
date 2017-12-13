@@ -1,5 +1,5 @@
 { 
-//    jmassage* bob=new jmassage(sili);
-   jmassage* bob=new jmassage(oversub);
-//    jmassage* bob=new jmassage(sililow);
+//    jSpecTool* bob=new jSpecTool(sili);
+   jSpecTool* bob=new jSpecTool(oversub);
+//    jSpecTool* bob=new jSpecTool(sililow);
 }

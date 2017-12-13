@@ -401,6 +401,9 @@ void PadNDCtoUser(double& x,double& y,double* xy,bool reverse){
 	}
 }
 
+void ReMargin(TVirtualPad* pad){
+	pad->SetMargin(0.15,0.05,0.15,0.05);
+}
 
 TCanvas* HistDrawCopy(TH1* hist,bool opt){
 	if(hist){
@@ -408,7 +411,7 @@ TCanvas* HistDrawCopy(TH1* hist,bool opt){
 		string name=hist->GetName();
 		name+="DrawCopyCan";
 		TCanvas* Can=new TCanvas(name.c_str());
-		Can->SetMargin(0.15,0.05,0.15,0.05);
+		ReMargin(Can);
 		Can->cd();
 		TH1* H;
 		if(opt)H=DrawCopyHistOpt(hist);

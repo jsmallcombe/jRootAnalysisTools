@@ -82,6 +82,8 @@ void PadNDCtoUser(vector<double>& x,vector<double>& y,TVirtualPad* pad,bool reve
 void PadNDCtoUser(double& x,double& y,TVirtualPad* pad,bool reverse=false);
 void PadNDCtoUser(double& x,double& y,double* xy,bool reverse=false);
 
+void ReMargin(TVirtualPad*);
+
 //Draw a formatted copy in a new window
 TCanvas* HistDrawCopy(TH1* hist,bool opt=true);//opt="hist" hide errors
 TCanvas* HistDrawCopyPeaker(TH1* hist,bool opt=true);//opt="hist" hide errors

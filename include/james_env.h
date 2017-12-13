@@ -33,6 +33,8 @@
 #include "james_gating_tool.h"
 #include "james_gate_subtract.h"
 #include "james_hist_formatting.h"
+#include "james_spectool.h"
+
 
 using namespace std;
 
@@ -66,6 +68,7 @@ class jEnv : public TGMainFrame {
 private:
 	CCframe *fCanvas1;
 	UltraFitEnv* fFitPanel;
+	jSpecTool* fSpecTool;
 	TGVerticalFrame* addsub;
 	TRootEmbeddedCanvas *A,*B,*result;
 	TH1* AHist,*BHist,*SumHist;//Always owned and private
@@ -87,6 +90,7 @@ public:
 	jEnv();
 	virtual ~jEnv(){
 		if(fFitPanel){delete fFitPanel;}
+		if(fSpecTool){delete fSpecTool;}
 		if(AHist){delete AHist;}
 		if(BHist){delete BHist;}
 		if(SumHist){delete SumHist;}
@@ -95,6 +99,8 @@ public:
 	void Swap();
 	void FitPanel();
 	void FitPanelClose(){fFitPanel=0;}
+	void Spectrum();
+	void SpecToolClose(){fSpecTool=0;}
 	void Browser();
 	void Gatter();
 	void ShowHide();
