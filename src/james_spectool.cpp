@@ -278,7 +278,9 @@ void jSpecTool::RemovalProcess(TH1* hist,int start){
 	if(!hist->GetSumw2N())hist->Sumw2();
 
 	bool Itter=true;
+	short n=0;
 	while(Itter){
+		n++;
 		Itter=false;
 		ReMakeSpecBack(hist);
 		vector<bool> bad(hist->GetNbinsX(),false);
@@ -304,5 +306,6 @@ void jSpecTool::RemovalProcess(TH1* hist,int start){
 				}
 			}
 		}
+		if(n>50)Itter=false;
 	}
 }
