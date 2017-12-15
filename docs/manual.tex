@@ -324,6 +324,7 @@ Note: When marking peaks in the fit canvas any peaks constrained to their neighb
 \\
 For both separation and area ratio between peaks, the box should be left blank to free the fit. Uncertainties on both constraint parameters may also be added in the input box. If no error is given the parameter will be fixed. Only symmetric errors are currently supported. Plain text input is fairly robust and accepts ENSDF format errors:\\
 Example inputs :\quad0.051\qquad0.051(2)\qquad0.051 0.002\qquad0.051+-0.002\qquad5.1E-2+2E-3
+\label{sec:errors}
 \\
 \\
 For problematic fits the shape parameters (Sigma, Decay and Sharing) may be constrained. The bottom-most button on the panel [$\wedge$] will expose these options. As with centroid \& ratio these parameters may be fixed or given with uncertainties and should be left blank when not constrained.
@@ -344,6 +345,99 @@ For problematic fits the shape parameters (Sigma, Decay and Sharing) may be cons
 \\
 \end{tabular}
 \end{center}
+
+\section{Command Line and Script Peak Fitting}
+The following static function may be used to fit with Ultrapeak in scripts or on the command line:
+
+\lstset{language=C++}
+\begin{lstlisting}
+FullFitHolder* Ultrapeak::PeakFit(
+	TH1* HistogramToFit,
+	double FitRangeLeft,
+	double FitRangeRight,
+	vector< jPeakDat > ListOfPeaks,
+	int BackGroundMode = 0,
+	int PeakType = 0,
+	string SigmaParameterOveride="",
+	string DecayParameterOveride="",
+	string SharingParameterOveride="",
+	TH1* ExclusionHistogram=0
+);
+\end{lstlisting}
+
+The function returns a $FullFitHolder$ pointer. The pointer will =0 if the fit fails (so check!).
+The $FullFitHolder$ class that inherits from $TF1$, so all $TF1$ functions may be called.
+
+The area of peak $i$ can be retrieved from a returned $FullFitHolder$ by calling:
+\lstset{language=C++}
+\begin{lstlisting}
+ReturnedPointer->CVal(Ultrapeak::VPA(i));
+\end{lstlisting}
+
+The error of area i can be retrieved similarly by:
+\lstset{language=C++}
+\begin{lstlisting}
+ReturnedPointer->CVal(Ultrapeak::VPAe(i));
+\end{lstlisting}
+
+The centroids, "integral" and their respective errors can be fetched with $VPC$, $VPCe$, $VPI$ \& $VPIe$.
+
+
+\subsection{PeakFit Function Inputs}
+
+\renewcommand{\labelenumi}{\arabic{enumi}}
+\begin{itemize}
+	\item $ListOfPeaks$ consists of a $std::vector$ containing struct class $jPeakDat$ for each peak in the fit, see Section \ref{sec:jpeakdata} for details.
+	\item $BackGroundMode$ can take the following values:
+      \begin{enumerate}
+      \setcounter{enumi}{-1}
+      \item Constant + step under peaks
+      \item Linear constrained by the fit window
+      \item Linear
+      \item Linear + step under peaks
+      \item Quadratic
+      \item Quadratic + step under peaks
+      \end{enumerate}
+    \item $PeakType$ can take the following values:
+      \begin{enumerate}
+      \setcounter{enumi}{-1}
+      \item Gaussian + exponential tail
+      \item Gaussian + small exponential tail
+      \item Two Gaussians with the same centroid 
+      \end{enumerate}
+    \item $SigmaParameterOveride$, $DecayParameterOveride$, $SharingParameterOveride$ - these allow changing of the peak shape values from their defaults. Defaults are optimised for HPGe and Si(Li) spectra in keV. If used, provide a number in the string, the new value will be fixed in the fit. If desired include and uncertainty in the string (as explained in Section \ref{sec:errors}) to free the parameter
+    \item $ExclusionHistogram$ should not be used in command line or script fitting.   
+\end{itemize}
+
+\subsection{jPeakDat}\label{sec:jpeakdata}
+The jPeakDat struct holds the basic information needed to pass the fit function.
+\lstset{language=C++}
+\begin{lstlisting}
+typedef struct jPeakDat{
+	double Centroid;
+	bool CentConstrained;
+	double CentError;
+	double Ratio;
+	double RatioError;// <=0 fixed param
+	jPeakDat(double c,bool cb=0,double ce=0,double r=0,double re=0):
+	Centroid(c),CentConstrained(cb),CentError(ce),Ratio(r),RatioError(re){}
+} jPeakDat;
+\end{lstlisting}
+
+Only centroid is required and it can be filled on construction. e.g.
+\lstset{language=C++}
+\begin{lstlisting}
+	ListOfPeaks.push_back(jPeakDat(1432.2));
+\end{lstlisting}
+
+\begin{itemize}
+\item $Centroid$ inputs in fitting are relative. The first peak centroid $ListOfPeaks[0].Centroid$ should be the absolute centroid, but for all other peaks $i>0$ the centroid should be relative, \\$ListOfPeaks[i].Centroid = centroid_i - centroid_{(i-1)}$
+\item $CentConstrained$ tells the fit program is $CentError$ should be used
+\item If $CentError\leq0$ the value of $Centroid$ will be fixed in the fit, else it will be given the range $\pm CentError$.
+\item If $Ratio\leq0$ it is not used and the ratio of peak areas is not constrained in the fit, if a value is given it sets $area_i/area_{(i-1)}$ (it has no effect for peak 0).
+\item  If $RatioError\leq0$ the value of $Ratio$ will be fixed in the fit, else it will be given the range $\pm RatioError$.
+\end{itemize}
+
 
 
 %\section{Histogram Formatting Functions}

@@ -25,7 +25,7 @@
 	vector< jPeakDat > fInput;
 	fInput.push_back(peak);
 	
-	static FullFitHolder* PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode=0,int peaktype=0,string sig="",string dec="",string sha="");
+// 	static FullFitHolder* PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode=0,int peaktype=0,string sig="",string dec="",string sha="");
 	
 	double FitRangeStart=XX-25;
 	double FitRangeEnd=XX-25;
