@@ -146,6 +146,7 @@ class UltraFitEnv : public TQObject
 	TCanvas *cCan;
 	TH1 *gHist;//always 0 if deleted, never give access/use directly
 	TH1 *gHistDrawn;
+	string gHistDrawnName;
 	bool cShift,cCtrl,cAlt,cGoodFit,cSaveConf,cClearConf;
 	vector< double > cClicker,cRClicker,cExClicker;
 	vector< FullFitHolder* > cFitList;

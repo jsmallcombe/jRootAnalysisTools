@@ -8,7 +8,7 @@
 int UltraFitEnv::UltraFitEnv_iterator = 0;
 
 UltraFitEnv::UltraFitEnv(TH1* fHist,TCanvas* fCan, double iSepA,double iSepB,double iSepC):TQObject(),
-cBar(0),cFrame(0),cPan(0),cCan(0),gHist(0),gHistDrawn(0),cShift(0),cCtrl(0),cAlt(0),cGoodFit(0),cSaveConf(0),cClearConf(0),cNfit(1),cNfree(1)
+cBar(0),cFrame(0),cPan(0),cCan(0),gHist(0),gHistDrawn(0),gHistDrawnName(""),cShift(0),cCtrl(0),cAlt(0),cGoodFit(0),cSaveConf(0),cClearConf(0),cNfit(1),cNfree(1)
 {TVirtualPad* hold=gPad;
 	if(iSepA!=0)SetSep(2,iSepA);
 	if(iSepB!=0)SetSep(3,iSepB);
@@ -345,8 +345,8 @@ void UltraFitEnv::ExternalHistUpdateCheck(){
 		TH1* fHist=hist_capture(GetCan());
 		if(fHist){//if it has a histogram
 			if(gHist&&gHistDrawn){//If there is a current histogram
-					
-				if(gHistDrawn==fHist){//Is it just a the one we drew
+				if(!(strcmp(fHist->GetName(),gHistDrawnName.c_str()))){//Is it just a the one we drew
+					//used to compare pointer not name, but then DrawCopy was using the same memory so pointer didnt change!
 					return;
 				}
 			}
@@ -390,6 +390,7 @@ void UltraFitEnv::DrawgHist(){
 		
 		//This is another protection of gHist
 		gHistDrawn=DrawCopyHistOpt(gHist);
+		gHistDrawnName=gHistDrawn->GetName();
 		
 		//Add the labels on the top
 		DrawSaveLabels();

@@ -191,8 +191,8 @@ gPad=hold;
 //______________________________________________________________________________
 jgating_tool::~jgating_tool()
 {
-	if(fTip){fTip->Hide();delete fTip;}
 	if(fFitPanel){delete fFitPanel;}
+	if(fTip){fTip->Hide();delete fTip;}
 	
    // Clean up
    Cleanup();
