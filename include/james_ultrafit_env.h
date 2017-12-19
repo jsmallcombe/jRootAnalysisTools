@@ -117,7 +117,7 @@ class UltraFitEnv : public TQObject
 	void CaptureHistogram(TPad*,TObject*,Int_t);
 	void CaptureCanvas(TPad*,TObject*,Int_t);
    
-	void SetNewHist(TH1*);
+	void SetNewHist(TH1*,bool=true);
 	void ConnectNewCanvas(TVirtualPad*);
 	void ReDrawgHist();
 	void DrawSaveLabels();

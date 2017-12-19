@@ -89,7 +89,7 @@ TCanvas* HistDrawCopy(TH1* hist,bool opt=true);//opt="hist" hide errors
 TCanvas* HistDrawCopyPeaker(TH1* hist,bool opt=true);//opt="hist" hide errors
 
 //Draw without errors (but with functions) in current pad
-TH1* DrawHistOpt(TH1* hist,bool copy=false);
+TH1* DrawHistOpt(TH1* hist,bool copy=false,bool same=false);
 TH1* DrawCopyHistOpt(TH1* hist);
 
 void HistSaveAs(TH1* hist, TGWindow *window=0,TPad* pad=0);

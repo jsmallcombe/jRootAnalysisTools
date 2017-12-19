@@ -55,14 +55,14 @@ void CCframe::SetNewHist(TH1* fH,TPad* Pad,TCanvas* Can){
 			t.SetTextSize(.6);
 			t.DrawTextNDC(.5,.5,"TH3");
 		}else{
-			double xt=fH->GetXaxis()->GetLabelSize();
-			double yt=fH->GetYaxis()->GetLabelSize();
-			fH->GetXaxis()->SetLabelSize(0);
-			fH->GetYaxis()->SetLabelSize(0);
-			fH->SetStats(kFALSE);
-			fH->DrawCopy("COLZ");
-			fH->GetXaxis()->SetLabelSize(xt);
-			fH->GetYaxis()->SetLabelSize(yt);
+// 			double xt=fH->GetXaxis()->GetLabelSize();
+// 			double yt=fH->GetYaxis()->GetLabelSize();
+			TH1* H=fH->DrawCopy("COLZ");
+			H->GetXaxis()->SetLabelSize(0);
+			H->GetYaxis()->SetLabelSize(0);
+			H->SetStats(kFALSE);			
+// 			fH->GetXaxis()->SetLabelSize(xt);
+// 			fH->GetYaxis()->SetLabelSize(yt);
 		}
 		this->GetCanvas()->Modified();
 		this->GetCanvas()->Update();
@@ -119,7 +119,7 @@ int CCframe::Type(){
 
 int jEnv::SumNameItt = 0;
 
-jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),fFitPanel(0),fSpecTool(0),addsub(0),A(0),B(0),result(0),AHist(0),BHist(0),SumHist(0){
+jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),fFitPanel(0),fSpecTool(0),addsub(0),A(0),B(0),result(0),AHist(0),BHist(0),SumHist(0),SameSave(0),gDrawSame(false){
 TVirtualPad* hold=gPad;
 	SetWindowName("jEnv");
 	char buf[32];	//A buffer for processing text through to text boxes
@@ -146,6 +146,9 @@ TVirtualPad* hold=gPad;
 		TGTextButton* Drawer = new TGTextButton(controlframe1,"DrawCopy");
 		Drawer->Connect("Clicked()","jEnv",this,"DrawCpy()");
 		controlframe1->AddFrame(Drawer,ExpandX);
+		TGTextButton* Drawsm = new TGTextButton(controlframe1,"DrawSame");
+		Drawsm->Connect("Clicked()","jEnv",this,"DrawSm()");
+		controlframe1->AddFrame(Drawsm,ExpandX);
 		TGTextButton* Saver = new TGTextButton(controlframe1,"SaveAs");
 		Saver->Connect("Clicked()","jEnv",this,"jSaveAs()");
 		controlframe1->AddFrame(Saver,ExpandX);
@@ -263,6 +266,36 @@ void jEnv::Gatter(){
 void jEnv::DrawCpy(){
 	HistDrawCopyPeaker(fCanvas1->Hist());
 };
+
+void jEnv::DrawSm(){
+	gDrawSame=false;
+	if(SameSave){delete SameSave;SameSave=0;}
+	TH1* h=fCanvas1->Hist();
+	if(fCanvas1->Type()==1&&h){
+		SameSave=(TH1*)h->Clone();
+		gDrawSame=true;
+		TQObject::Connect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", "jEnv", this,"DrawSmHere(TPad*,TObject*,Int_t)");
+	}
+};
+
+void jEnv::DrawSmHere(TPad* pad,TObject* obj,Int_t event){
+	
+	if(SameSave&&gDrawSame){
+		TCanvas* sender=(TCanvas*)gTQSender;
+		TVirtualPad* hold=gPad;
+		pad->cd();
+		hformat(SameSave,0);
+		DrawHistOpt(SameSave,true,true);
+		sender->Modified();
+		sender->Update();
+		gPad=hold;
+	}
+
+	gDrawSame=false;
+	TQObject::Disconnect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", 0, "DrawSmHere(TPad*,TObject*,Int_t)");
+	if(SameSave){delete SameSave;SameSave=0;}
+}
+
 
 void jEnv::jSaveAs(){
 	if(fCanvas1->Type())HistSaveAs(fCanvas1->Hist(),this);

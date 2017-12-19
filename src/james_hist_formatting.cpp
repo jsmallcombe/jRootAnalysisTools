@@ -38,7 +38,7 @@ void axislabelkev(TH1* HH){
 	axislab(HH,"Energy (KeV)");
 }
 
-void hformat(TH1* HH,bool setminzero){
+void hformat(TH1* HH,bool setminzero){if(!HH)return;
 	TAxis* ax[3]={HH->GetXaxis(),HH->GetYaxis(),HH->GetZaxis()};
 	axislab(HH,ax[0]->GetTitle(),ax[1]->GetTitle(),ax[2]->GetTitle());//slightly redundant
 	for(int i=0;i<3;i++){
@@ -434,11 +434,16 @@ TCanvas* HistDrawCopyPeaker(TH1* hist,bool opt){
 	return Can;
 }
 
-TH1* DrawHistOpt(TH1* hist,bool copy){
+TH1* DrawHistOpt(TH1* hist,bool copy,bool same){
 	if(!hist)return 0;
 		TH1* h;
-		if(copy){h=hist->DrawCopy("histcolz");}
-		else {h=hist;hist->Draw("histcolz");}
+		if(same){
+			if(copy){h=hist->DrawCopy("histcolzsame");}
+			else {h=hist;hist->Draw("histcolzsame");}
+		}else{
+			if(copy){h=hist->DrawCopy("histcolz");}
+			else {h=hist;hist->Draw("histcolz");}
+		}
 // // 		h->Draw("SAMEFUNC");
 		TObject *obj;TIter next(hist->GetListOfFunctions());
 		while ((obj = next()))((TF1*)obj)->DrawCopy("same");//Needed because of "Hist option turns off the functions"

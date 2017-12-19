@@ -71,7 +71,7 @@ private:
 	jSpecTool* fSpecTool;
 	TGVerticalFrame* addsub;
 	TRootEmbeddedCanvas *A,*B,*result;
-	TH1* AHist,*BHist,*SumHist;//Always owned and private
+	TH1* AHist,*BHist,*SumHist,*SameSave;//Always owned and private
 	TGHSlider* fHslider1;
 	TGTextEntry* fTeh1;
 	TGCheckButton* fCheck1;
@@ -79,6 +79,7 @@ private:
 	bool gSubtract;
 	TGTextButton* addsubclick;
 	static int SumNameItt;
+	bool gDrawSame;
 	
 	void Show();
 	void Hide();
@@ -94,6 +95,7 @@ public:
 		if(AHist){delete AHist;}
 		if(BHist){delete BHist;}
 		if(SumHist){delete SumHist;}
+		if(SameSave){delete SameSave;}
 	};
 	
 	void Swap();
@@ -106,6 +108,8 @@ public:
 	void ShowHide();
 	void jSaveAs();
 	void DrawCpy();
+	void DrawSm();
+	void DrawSmHere(TPad*,TObject*,Int_t);
 	void GrabA(Int_t,Int_t,Int_t,TObject*);
 	void GrabB(Int_t,Int_t,Int_t,TObject*);
 	void DoSlider();

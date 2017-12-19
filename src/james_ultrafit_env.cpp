@@ -160,7 +160,7 @@ void UltraFitEnv::DialogBox() {
 				fCheck1->SetState(kButtonUp);
 				fCheck1->SetToolTipText("Force strict maximum values on the\nexponential tail parameters.\n Recommended for fitting gamma rays.");
 				
-				fCheck2 = new TGCheckButton(ticks,"Two Gaus");// A tick box with hover text belonging to a parent frame
+				fCheck2 = new TGCheckButton(ticks,"Twin Gaus");// A tick box with hover text belonging to a parent frame
 				fCheck2->SetState(kButtonUp);
 				fCheck2->SetToolTipText("Use the peak fit mode which has no tail\n but instead two Gaussians\n of different sigma.");
 				fCheck2->Connect("Clicked()","UltraFitEnv",this,"SwitchDecayLabel()");
@@ -260,6 +260,7 @@ void UltraFitEnv::DialogBox() {
 		HideCanvas();
 		HideShape();
 		cPan->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "UltraFitEnv", this,"ClickedCanvas(Int_t,Int_t,Int_t,TObject*)");
+		ReMargin(cPan->GetCanvas());
 		
 		cBar->Connect("CloseWindow()","UltraFitEnv",this,"DialogClose()");
 	}
@@ -335,7 +336,7 @@ void UltraFitEnv::ConnectNewCanvas(TVirtualPad* fPad){if(!fPad)return;
 
 // 	//Connect the new pad and grab the histogram if it has one
 	cCan=fPad->GetCanvas();
-	SetNewHist(hist_capture(fPad));
+	SetNewHist(hist_capture(fPad),false);
 	cCan->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "UltraFitEnv", this,"ClickedCanvas(Int_t,Int_t,Int_t,TObject*)");
 };
 
@@ -350,19 +351,19 @@ void UltraFitEnv::ExternalHistUpdateCheck(){
 					return;
 				}
 			}
-			SetNewHist(fHist);
+			SetNewHist(fHist,false);
 		}
 	}
 }
 
-void UltraFitEnv::SetNewHist(TH1* fHist){if(!fHist)return;
+void UltraFitEnv::SetNewHist(TH1* fHist,bool format){if(!fHist)return;
 	//cout<<endl<<"ERROR IN FN H"<<flush;
 	stringstream ss;
 	ss <<"gHist"<<UltraFitEnv_iterator;
 	UltraFitEnv_iterator++;
 	if(gHist!=0)delete gHist;
 	gHist=(TH1*)fHist->Clone(ss.str().c_str());
-	gHist->SetStats(0);
+	if(format)hformat(gHist,0);
 	gHist->GetXaxis()->SetRange(1,-1);
 	DrawgHist();
 	cRClicker.clear();
