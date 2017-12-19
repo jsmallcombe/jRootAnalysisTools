@@ -147,7 +147,7 @@ TVirtualPad* hold=gPad;
 		Drawer->Connect("Clicked()","jEnv",this,"DrawCpy()");
 		controlframe1->AddFrame(Drawer,ExpandX);
 		TGTextButton* Saver = new TGTextButton(controlframe1,"SaveAs");
-		Saver->Connect("Clicked()","jEnv",this,"SaveAs()");
+		Saver->Connect("Clicked()","jEnv",this,"jSaveAs()");
 		controlframe1->AddFrame(Saver,ExpandX);
 		TGTextButton* close = new TGTextButton(controlframe1,"Close");
 		close->Connect("Clicked()","jEnv",this,"DeleteWindow()");
@@ -264,7 +264,7 @@ void jEnv::DrawCpy(){
 	HistDrawCopyPeaker(fCanvas1->Hist());
 };
 
-void jEnv::SaveAs(){
+void jEnv::jSaveAs(){
 	if(fCanvas1->Type())HistSaveAs(fCanvas1->Hist(),this);
 };
 

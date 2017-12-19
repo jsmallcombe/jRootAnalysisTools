@@ -74,7 +74,7 @@ public:
 	void ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*);
 	void SavePanel();
 	void FitPanel();
-	void SaveAs();
+	void jSaveAs();
 	void FitPanelClose(){fFitPanel=0;}
 	void AddStoreHistogram();
 	void CSaveButton();

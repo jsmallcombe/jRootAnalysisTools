@@ -113,7 +113,7 @@ TVirtualPad* hold=gPad;
 		ftbutton->SetToolTipText("Open Fit Tool\n Open an instance of J-fit panel,\n initially connected to result canvas.");
 
 		TGTextButton* SAbutton = new TGTextButton(buttonframe,"SaveAs");
-		SAbutton->Connect("Clicked()","jgating_tool",this,"SaveAs()");
+		SAbutton->Connect("Clicked()","jgating_tool",this,"jSaveAs()");
 		SAbutton->SetToolTipText("Save the currently drawn histogram.");
 		
 		fCheck1 = new TGCheckButton(buttonframe,"Hide Ers");
@@ -358,7 +358,7 @@ void jgating_tool::FitPanel(){
 	}
 }
 
-void jgating_tool::SaveAs(){
+void jgating_tool::jSaveAs(){
 	TH1* h=hist_capture(fCanvas1->GetCanvas());
 	if(!h)h=gJframe2->output_hist_point;
 	HistSaveAs(h,this,fCanvas1->GetCanvas());

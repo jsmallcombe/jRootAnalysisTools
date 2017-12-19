@@ -70,7 +70,7 @@ void UltraFitEnv::DialogBox() {
 			button->Connect("Clicked()","UltraFitEnv",this,"Help()");
 			menuB->AddFrame(button,new TGLayoutHints(kLHintsRight,0,0,0,0));
 			button = new TGTextButton(menuB," SaveAs ");
-			button->Connect("Clicked()","UltraFitEnv",this,"SaveAs()");
+			button->Connect("Clicked()","UltraFitEnv",this,"jSaveAs()");
 			menuB->AddFrame(button,new TGLayoutHints(kLHintsLeft,0,0,0,0));
 		cBar->AddFrame(menuB,ExpandXz);
 		
@@ -1101,7 +1101,7 @@ void UltraFitEnv::Help(){
 	hd->Popup();
 }
 
-void UltraFitEnv::SaveAs(){
+void UltraFitEnv::jSaveAs(){
 	if(gHist)HistSaveAs(gHist,cBar,GetCan());
 }
 

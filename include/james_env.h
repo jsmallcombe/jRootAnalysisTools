@@ -104,7 +104,7 @@ public:
 	void Browser();
 	void Gatter();
 	void ShowHide();
-	void SaveAs();
+	void jSaveAs();
 	void DrawCpy();
 	void GrabA(Int_t,Int_t,Int_t,TObject*);
 	void GrabB(Int_t,Int_t,Int_t,TObject*);

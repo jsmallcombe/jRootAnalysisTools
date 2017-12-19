@@ -81,7 +81,7 @@ TVirtualPad* hold=gPad;
 	TGHorizontalFrame* smoothframe = new TGHorizontalFrame(this, 0, 0, 0);
 	label = new TGLabel(smoothframe, "   Smoothing N       ");
 	smoothframe->AddFrame(label);
-	fHslider3 = new TGHSlider(smoothframe, 50, kSlider2);
+	fHslider3 = new TGHSlider(smoothframe, 140, kSlider2);
 	fHslider3->SetPosition(15);
 	fHslider3->Connect("PositionChanged(Int_t)", "jSpecTool", this, "UpdateSpecBack()");
 	smoothframe->AddFrame(fHslider3, ffExpandXpad);

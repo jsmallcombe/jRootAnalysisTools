@@ -128,7 +128,7 @@ class UltraFitEnv : public TQObject
 	void HideShape();
 	
 	void Help();
-	void SaveAs();
+	void jSaveAs();
 	
 	void PassNewHist(TH1*);
 	
