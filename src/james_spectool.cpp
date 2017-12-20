@@ -18,6 +18,8 @@ vector<string> jSpecTool::BackOpt={"BackOrder2","BackOrder4","BackOrder6","BackO
 jSpecTool::jSpecTool(TH1* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),histin(0),histsub(0),histzero(0),specback(0){
 TVirtualPad* hold=gPad;
 	
+	input->GetXaxis()->SetRange(1,-1);
+
 	TGLayoutHints* ffExpandXpad = new TGLayoutHints(kLHintsExpandX, 1, 1, 1, 1);
 		
 	SetCleanup(kDeepCleanup);
@@ -93,7 +95,7 @@ TVirtualPad* hold=gPad;
 	smoothframe->AddFrame(fTeh2);
 	
 	fCheck3 = new TGCheckButton(smoothframe," OverSubMode ");
-	fCheck3->SetState(kButtonDown);
+	fCheck3->SetState(kButtonUp);
 	fCheck3->Connect(" Clicked()", "jSpecTool", this,"UpdateSpecBack()");
 	fCheck3->SetToolTipText("Background will do anti-oversubtraction iterations background");	
 	smoothframe->AddFrame(fCheck3);
@@ -257,8 +259,9 @@ void jSpecTool::RemovalPrep(TH1* hist){
 int jSpecTool::RemovalStart(TH1* hist){
 	//because often zeros at the start make trouble
 	double max=hist->GetBinContent(hist->GetMaximumBin());
+	double min=hist->GetBinContent(hist->GetMinimumBin());
 	for(int i=1;i<=hist->GetNbinsX();i++){
-		if(hist->GetBinContent(i)>max*0.05){
+		if(hist->GetBinContent(i)>min+((max-min)*0.05)){
 			return i;
 		}
 	}

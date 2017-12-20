@@ -543,9 +543,10 @@ TVirtualPad* hold=gPad;
 	
 	proj->SetStats(0);
 	proj->SetTitle("");
+	proj->SetLineColor(1);
+
 	proj_flow->SetStats(0);
 	proj_flow->SetTitle("");
-	proj_flow->SetLineColor(1);
 
 	delete selected;
 	selected=(TH1*)proj->Clone(("selected"+suffix).c_str());
@@ -563,14 +564,16 @@ TVirtualPad* hold=gPad;
 	full->SetTitle("");
 	delete output_hist_point;
 	output_hist_point=(TH1*)full->Clone(("outputhist"+suffix).c_str());
+	output_hist_point->SetLineColor(1);
+	output_hist_point->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
+	
 	delete gate_hist;
 	gate_hist=(TH1*)full->Clone(("gate_hist"+suffix).c_str());
 	delete free_hist;
 	free_hist=(TH1*)full->Clone(("free_hist"+suffix).c_str());
 	free_hist->SetLineColor(1);
 	
-	
-	
+
 	UpdateSpecBack();
 	DoAutoFit();
 	UpdateDraw();
@@ -852,6 +855,8 @@ void j_gating_frame::DoHistogram(){
 	
 	}
 	gate_hist=hist_gater_bin(gate_down,gate_up,raw_input,xyz,"gate_hist"+suffix);
+	gate_hist->SetLineColor(1);
+	gate_hist->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
 	
 	switch (background_mode) {
 		case 1://full

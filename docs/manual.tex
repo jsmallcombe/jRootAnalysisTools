@@ -68,9 +68,11 @@ in a ROOT interactive session. A new window will open:
 \begin{enumerate}
 \item Grabbed Histogram Icon
 \item Open a new peak fitting environment (copy grabbed histogram if $TH1$)
-\item Open a new 2/3D gating tool if grabbed histogram is $TH2/TH3$.
+\item Open a TSpectrum Tool (if grabbed histogram is $TH1$)
+\item Open a new 2/3D gating tool (if grabbed histogram is $TH2/TH3$.)
 \item Open a new TBrowser and draw grabbed.
 \item Create a new canvas and draw a copy of grabbed
+\item Overlay a copy of grabbed in the NEXT clicked canvas
 \item Open a dialogue box to save grabbed to disk
 \item Close the toolbar.
 \item Exit root
@@ -345,6 +347,52 @@ For problematic fits the shape parameters (Sigma, Decay and Sharing) may be cons
 \\
 \end{tabular}
 \end{center}
+
+\section{TSpectrum Tool}
+The $TSpectrum Tool$ provides a gui interface for manipulating $TH1$ spectra, correcting over-subtraction and subtracting continuum background with the ROOT $TSpectrum$ class.
+
+\begin{center}
+\begin{tabular}{ c c }
+\begin{minipage}{0.35\textwidth}
+\begin{enumerate}
+\item Correct over-subtraction.  
+\item Hide/Show bin errors.
+\item Subtract TSpectrum background.
+\item View/Result Window.
+\item Rebin resultant histogram.
+\item TSpectrum options.
+\item TSpectrum smoothing iterations N.
+\item Selected option.
+\item Selected N.
+\item Enable over-subtracted background.
+\item Set minimum bin content to zero.
+\end{enumerate} \end{minipage}
+&
+\raisebox{-.5\height}{\includegraphics[width=0.65\textwidth]{TSpectrum1.png}}
+\\
+\end{tabular}
+\end{center}
+
+\subsection{TSpectrum Background}
+This tool allows experimenting with the different settings of TSpectrum graphically.
+One of the following options may be selected : $BackOrder2$, $BackOrder4$, $BackOrder6$, $BackOrder8$, $BackSmoothing3$, $BackSmoothing5$, $BackSmoothing7$, $BackSmoothing9$, $BackSmoothing11$, $BackSmoothing13$, $BackIncreasingWindow$, $Compton$. For details see the ROOT TSpectrum documentation. In general use the default $BackOrder2$ is sufficient and good agreement can be achieved with varying the number of iterations $N$. Occasional, in the case of over-subtraction, increasing to $BackSmoothing5$ or above may be needed. The $Compton$ option does not provide good background for a dense HPGe spectrum.
+\\
+When a good background is achieved you may elect to subtract it from the data with the $Remove Background$ tick button. Subtracting continuum background from TSpectrum is a matter of personal preference and is not scientifically rigorous. This can help fitting and automation.
+\begin{center}
+\includegraphics[width=0.5\textwidth]{TSpectrum4.png}
+\end{center}
+
+\subsection{Over-Subtracted Spectra}
+The tool's provisional feature to correct over-subtraction is intended for situations in which spectra were produced such that over-subtraction was unavoidable. The default TSpectrum behaviour will fail in the presence of over-subtraction. Click the $OverSubMode$ option and the tool will perform attempt to compensate. Note that this option will produce backgrounds that are too high when over-subtraction is not present.
+\begin{center}
+\includegraphics[width=0.5\textwidth]{TSpectrum2.png}
+\end{center}
+Additionally you may request to correct the over-subtracted histogram bins with the $Remove Oversub$ check box. Bins below the $TSpectrum$ line will be increased until they are within $1\sigma$. This is useful when one needs to use such a spectra in a subsequent subtraction and you wish to mistakenly avoid adding counts. Ideally one would find an alternate original subtraction to avoid the problem in the first place, but this tool is intended to provide one  solution, to be used with discretion, when there is not alternative.
+\begin{center}
+\includegraphics[width=0.5\textwidth]{TSpectrum3.png}
+\end{center}
+The $ZeroMin$ option simply sets that when performing a correction, no bin will be below zero. This accelerates the correction and is the default setting (irrespective of selection) when $Remove Oversub$ is selected but $OverSubMode$ is not.
+
 
 \section{Command Line and Script Peak Fitting}
 The following static function may be used to fit with Ultrapeak in scripts or on the command line:

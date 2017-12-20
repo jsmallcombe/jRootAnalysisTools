@@ -62,6 +62,8 @@ private:
 	vector< TH1* > savehists;
 	vector< TGCheckButton* > savechecks;
 	vector< TGTextButton* > savebutton;
+	
+	TH1* fInputStore;
    
 public:
 	jgating_tool(const char *);

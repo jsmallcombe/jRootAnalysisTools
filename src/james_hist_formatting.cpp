@@ -4,7 +4,7 @@
 void axislab(TH1* HH,string x,string y,string z){
 	HH->GetXaxis()->SetTitle(x.c_str());
 	if(y==""){
-		double w=HH->GetBinWidth(1);
+		double w=HH->GetXaxis()->GetBinWidth(1);
 		stringstream ss;
 		ss<<"Counts";
 		bool N=true;

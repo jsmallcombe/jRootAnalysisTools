@@ -17,15 +17,19 @@ int jgating_tool::jgating_tool_iterator = 0;
 
 jgating_tool::jgating_tool(const char * input) : jgating_tool(gROOT->FindObject(input)){}
 
-jgating_tool::jgating_tool(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame) ,gJframe1(0),fCheck0(0),fCheck1(0),fFitFcn(0),peaknumremove(0),fTip(0),fFitPanel(0){
+jgating_tool::jgating_tool(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame) ,gJframe1(0),fCheck0(0),fCheck1(0),fFitFcn(0),peaknumremove(0),fTip(0),fFitPanel(0),fInputStore(0){
 TVirtualPad* hold=gPad;
 
 	if(!input)return;
 	
 	bool Bthree=input->IsA()->InheritsFrom("TH3");
+	if(Bthree){
+		cout<<endl<<endl<<" ============== Beginning Loading of TH3 ============ "<<endl<<" ====== Please be patient until window appears ====== "<<endl<<endl;
+	}
+	
 	bool Btwo=input->IsA()->InheritsFrom("TH2");
 	if(Bthree||Btwo){//Main IF histogram loop
-		
+
 		SetCleanup(kDeepCleanup);	
 	  	
 		//    //--- layout for the frame:
@@ -41,6 +45,15 @@ TVirtualPad* hold=gPad;
 		SetWindowName(input->GetName());		
 		TH1* pass=(TH1*)input;
 		
+		if(Btwo&&!Bthree){
+			// Until recently didn't store and in local class copy, rarely and issue, but it COULD be
+			// Still too intensive to do it for TH3 though.
+			stringstream ss;
+			ss<<"GateStoreCopy"<<make_iterator();
+			fInputStore=(TH1*)pass->Clone(ss.str().c_str());
+			pass=fInputStore;
+		}
+
 		//If TH3 extra gate panel
 	
 		if(Bthree){
@@ -193,6 +206,9 @@ jgating_tool::~jgating_tool()
 {
 	if(fFitPanel){delete fFitPanel;}
 	if(fTip){fTip->Hide();delete fTip;}
+	if(fInputStore){delete fInputStore;}
+	
+	
 	
    // Clean up
    Cleanup();

@@ -52,7 +52,8 @@ TH1* hist_capture(TVirtualPad* fPad){
 // Just a basic little no frills, minimal input peak fitter for standard size y/e peaks
 // Added it in to help with quick peak identification
 void ClickPeakDrawConnect(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
-{TVirtualPad* hold=gPad;
+{
+// 	TVirtualPad* hold=gPad;
 	
 	if(!gTQSender)return;
 	if(((TObject*)gTQSender)->IsA() != TCanvas::Class())return;
@@ -103,7 +104,7 @@ void ClickPeakDrawConnect(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
 		Can->GetCanvas()->Update();
 	}
 	
-gPad=hold;
+// gPad=hold;
 }
 
 // Hide the tooltip associated with a Canvas, use on close or as an override
