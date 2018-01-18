@@ -149,7 +149,8 @@ void UltraFitEnv::DialogBox() {
 				fCombo->AddEntry("pol0+step",0);
 				fCombo->AddEntry("pol1 fixed",1);
 				fCombo->AddEntry("pol1",2);
-				fCombo->AddEntry("pol1+step",3);
+				fCombo->AddEntry("pol1 down",3);
+				fCombo->AddEntry("pol1+step",4);
 				fCombo->AddEntry("pol2",4);
 				fCombo->AddEntry("pol2+step",5);
 				fCombo->Resize(110, 20);

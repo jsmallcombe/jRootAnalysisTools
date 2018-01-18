@@ -72,16 +72,14 @@ typedef struct jPeakDat{
 //////////////////////////////////////////////////
 
 //
-// Finds the local maximum bin of a histogram and returns its value, for lazy peak selection
-// Hist, Peak, bin range down, bin range up
+// Finds the local maximum bin of a histogram and returns its value (for lazy peak selection)
+// Climbs from input, stops at any decrease (so bad in grassy spectra)
 // Returns the height at the max
-// Stops if it goes down from selected
-// Not great in grassy spectra
 //
+double FindLocalMax(TH1* fHist,double& fPeak);//This version is in user coordinates
+double FindLocalMax(TH1* fHist,int& fPeak,int fLeft,int fRight);//This version is in bin number
 // Range is absolute, not relative
-double FindLocalMax(TH1* fHist,double&);//This version is in user coordinates
-double FindLocalMax(TH1*,int&,int,int);//This version is in bin number
-
+	
 //Absolute max in +-range
 double FindBinRangeMaxD(TH1* fHist,double& fPeak,double range);
 double FindBinRangeMax(TH1* fHist,int& fPeak,int range);
