@@ -179,6 +179,14 @@ double bins_var(TH1* fHist,int fM,int fN){
 	return ret/(fN*2+1);
 }
 
+void ZeroBinsFitFix(TH1* hist){
+	for(int i=1;i<=hist->GetNbinsX();i++){
+		if(hist->GetBinContent(i)==0){
+			hist->SetBinError(i,1);
+		}
+	}
+}
+
 
 TH1* SmoothOffBack(TH1* fHist){
 	//Calc a very smoothed background

@@ -105,6 +105,9 @@ double bins_smooth(TH1*,int,int);//bin #, # bins to sample
 //The variance on the value from the above bins_smooth function
 double bins_var(TH1*,int,int);//bin #, # bins to sample
 
+//Adds errors to zero bins so they are fit normally
+void ZeroBinsFitFix(TH1*);
+
 //
 // Does a quick background subtraction (very smooth) input unchanged
 //

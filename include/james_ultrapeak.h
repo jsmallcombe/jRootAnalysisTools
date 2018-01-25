@@ -338,7 +338,10 @@ class  Ultrapeak{
 	// int=1 specified to attempt to use step background int=0 uses linear
 	static FullFitHolder* PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode=0,int peaktype=0,string sig="",string dec="",string sha="",TH1* fExHist=0);
 	// If the fit fails returns 0
-
+	
+	// Uses default values for simple single fit
+	// If the fit fails returns 0
+	
 	static FullFitHolder* QuickPeakFit(TH1* fHist,double fLeftUser,double fRightUser);
 
 };
