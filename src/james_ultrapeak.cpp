@@ -327,7 +327,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	fPre->FixParameter(gUltraOffsetOrPol2, 0);
 	fPre->FixParameter(gUltraStep, 0);
 	
-	if(SigFree)fPre->SetParLimits(gPeakSigma, 1.0, 5.0);  // Sigma
+	if(SigFree)fPre->SetParLimits(gPeakSigma, 1.0, 6.0);  // Sigma
 	else if(SigmaFE>0){
 		if(SigmaFE>SigmaF)fPre->SetParLimits(gPeakSigma,1E-3,SigmaF+SigmaFE);
 		fPre->SetParLimits(gPeakSigma,SigmaF-SigmaFE,SigmaF+SigmaFE);
@@ -657,8 +657,8 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	
 	TFitResultPtr fResult;
 	if(statmode==0)fResult=fFitHist->Fit(fFit, "RMENS");
-	if(statmode==1)fResult=fFitHist->Fit(fFit, "RMENSL");
-	if(statmode==2)fResult=fFitHist->Fit(fFit, "RMENSWL");
+	if(statmode==1)fResult=fFitHist->Fit(fFit, "RMNSL");
+	if(statmode==2)fResult=fFitHist->Fit(fFit, "RENSWL");
 	
 	//////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////// POST FIT OUTPUT ///////////////////////////////////
@@ -681,7 +681,8 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 // 		return 0;
 	}
 	
-	if(statmode>0)cout<<endl<<"Likelihood fit, fit goodness chi-squared is ..."<<endl;
+	if(statmode>0)cout<<endl<<"Likelihood fit, use 'chi-squared' with caution!"<<endl;
+	if(statmode>1)cout<<"Weighted Likelihood fit, errors can be weird. Recommend using error from integral form."<<endl;
 	
 	FullFitHolder* fHold = new FullFitHolder(fFit,fResult->GetCovarianceMatrix(),fPeakFunc.cBits);
 	

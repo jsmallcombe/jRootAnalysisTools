@@ -535,6 +535,9 @@ void j_gating_frame::UpdateInput()
 TVirtualPad* hold=gPad;
 
 //cout<<"UpdateInput "<<flush;
+
+	axis_down=0;axis_up=-1;
+	
 	delete proj;
 	delete proj_flow;
 
@@ -571,7 +574,7 @@ TVirtualPad* hold=gPad;
 	gate_hist=(TH1*)full->Clone(("gate_hist"+suffix).c_str());
 	delete free_hist;
 	free_hist=(TH1*)full->Clone(("free_hist"+suffix).c_str());
-	free_hist->SetLineColor(1);
+	free_hist->SetLineColor(kRed+1);
 	
 
 	UpdateSpecBack();
@@ -598,10 +601,13 @@ gPad=hold;
 //Make the 2 TSpectrum background histogram
 void j_gating_frame::UpdateSpecBack(){
 	delete specback;
+
+	proj->GetXaxis()->SetRange(1,-1);//Doesnt seem to have any issues with NewAxisDrawn()
 	if(backfit_mode==4)specback= TSpectrum::StaticBackground(proj,25);
 	else if(backfit_mode==5)specback= TSpectrum::StaticBackground(proj,10);
 	else specback=TSpectrum::StaticBackground(proj,30,"kBackOrder4");
 	specback->SetLineColor(6);
+	proj->GetXaxis()->SetRange(axis_down,axis_up);
 }
 
 //______________________________________________________________________________

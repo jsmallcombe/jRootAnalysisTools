@@ -1,4 +1,4 @@
-// James library master  25 Jan 2018
+// James library master  02 Feb 2018
 #include <james_effpeaks.h>
 #include <james_env.h>
 #include <james_fitholder.h>
