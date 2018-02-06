@@ -287,7 +287,8 @@ void j_gating_frame::NewAxisDrawn() //adjust sliders and control values for new 
 	axis_up=proj->GetXaxis()->GetLast();
 	
 	fHslider1->SetRange(axis_down,axis_up);	
-	fHslider2->SetRange(1,(axis_up-axis_down)*0.3);
+	fHslider2->SetRange(1,(axis_up-axis_down));
+// 	fHslider2->SetRange(1,(axis_up-axis_down)*0.3);
 	fHslider4->SetRange(axis_down,axis_up);	
 	
 	ValidateValues();
@@ -347,10 +348,10 @@ void j_gating_frame::FetchSliderValues() //copy slider values to control paramet
 	target_bin=fHslider1->GetPointerPosition();
 	gate_range=fHslider2->GetPosition();
 	
-	double over_speed=(double)gate_range/(double)(axis_up-axis_down);
-	if(over_speed>0.25){
-		gate_range=((over_speed-0.25)*35.0+0.25)*(axis_up-axis_down)+0.5;
-	}
+// 	double over_speed=(double)gate_range/(double)(axis_up-axis_down);
+// 	if(over_speed>0.25){
+// 		gate_range=((over_speed-0.25)*35.0+0.25)*(axis_up-axis_down)+0.5;
+// 	}
 
 	if(backfit_mode==3){//manual background fraction mode
 		backfrack=(double)fHslider3->GetPosition()/10000.0;
@@ -373,13 +374,13 @@ void j_gating_frame::ValuesToSliders() //copy control parameters to sliders
 	action_hold=true;
 		fHslider1->SetPosition(fit_down,fit_up);
 		fHslider1->SetPointerPosition(target_bin);
-		//fHslider2->SetPosition(gate_range);		
-			double over_speed=(double)gate_range/(double)(axis_up-axis_down);
-			if(over_speed>0.25){
-				fHslider2->SetPosition(((over_speed-0.25)*(1.0/35.0)+0.25)*(axis_up-axis_down)+0.5);
-			}else{
-				fHslider2->SetPosition(gate_range);
-			}
+		fHslider2->SetPosition(gate_range);		
+// 			double over_speed=(double)gate_range/(double)(axis_up-axis_down);
+// 			if(over_speed>0.25){
+// 				fHslider2->SetPosition(((over_speed-0.25)*(1.0/35.0)+0.25)*(axis_up-axis_down)+0.5);
+// 			}else{
+// 				fHslider2->SetPosition(gate_range);
+// 			}
 		fHslider3->SetPosition(backfrack*10000);
 		fHslider4->SetPosition(m_back_down,m_back_up);
 	action_hold=false;
