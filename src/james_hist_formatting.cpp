@@ -3,7 +3,11 @@
 
 void axislab(TH1* HH,string x,string y,string z){
 	HH->GetXaxis()->SetTitle(x.c_str());
-	if(y==""){
+	bool kev=(x.find("keV")<x.size());
+	bool mev=(x.find("MeV")<x.size());
+	
+	
+	if(y==""||mev||kev||y.find("ounts")<y.size()){
 		double w=HH->GetXaxis()->GetBinWidth(1);
 		stringstream ss;
 		ss<<"Counts";
@@ -14,12 +18,12 @@ void axislab(TH1* HH,string x,string y,string z){
 			ss<<"/"<<w;
 		}
 		
-		if(x.find("keV")<x.size()){
+		if(kev){
 			if(N)ss<<"/";
 			ss<<" keV";
 		}
 		
-		if(x.find("MeV")<x.size()){
+		if(mev){
 			if(N)ss<<"/";
 			ss<<" MeV";
 		}

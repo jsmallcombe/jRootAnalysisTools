@@ -197,7 +197,8 @@ class  Ultrapeak{
 		kBack	= BIT(1),
 		kStep	= BIT(2),
 		kPol2	= BIT(3),
-		k2Gaus	= BIT(4)
+		k2Gaus	= BIT(4),
+		kInflate= BIT(5)
 	};
 	static int PBits(int i) {return 0x1<<(i+6);}
 	
@@ -321,6 +322,8 @@ class  Ultrapeak{
 	// Calculate all the data of the ultra peak and store in the FullFitHolder vector
 	static void MakeData(FullFitHolder* fHold,double binwidth=1);
 	static void MakeData(FullFitHolder* fHold,TH1* hist);
+	static void InflateError(FullFitHolder* fHold);
+	
 
 	static void MakeData(vector< FullFitHolder* > in,TH1* hist){for(int i=0;(unsigned)i<in.size();i++)MakeData(in[i],hist);}
 	static void MakeData(vector< FullFitHolder* > in,double binwidth=1){for(int i=0;(unsigned)i<in.size();i++)MakeData(in[i],binwidth);}

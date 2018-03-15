@@ -49,7 +49,7 @@ void hformat(TH1*,bool setminzero=1);
 TH1* ExtreemRebin(TH1* target,TH1* data);
 
 //Make a Canvas with desired formatting
-//Can create mutliple layered transparent pads
+//Can create multiple layered transparent pads
 TCanvas* preapre_canvas(unsigned int n=1);
 
 //Title of hist are replaced with formatted text boxes drawn in current pad

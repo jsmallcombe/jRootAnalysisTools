@@ -43,13 +43,15 @@ class FullFitHolder: public TF1
     private:
 	vector< double > cVal;
     public: 
+	bool RedChiInflateErr;
+	    
 	//TMatrixDSym cCov has issue with = assignment because of dimensions
 	TMatrixD cCov;
 	TransientBitsClass<long> cBits;
 	   
 	// Constructors copy etc
 	FullFitHolder(TF1* sFit,TMatrixDSym sCov,TransientBitsClass<long> bits=0x0):FullFitHolder(sFit,(TMatrixD)sCov,bits){}
-	FullFitHolder(TF1* sFit=new TF1(),TMatrixD sCov=TMatrixD(),TransientBitsClass<long> bits=0x0):TF1(*sFit),cCov(sCov),cBits(bits){
+	FullFitHolder(TF1* sFit=new TF1(),TMatrixD sCov=TMatrixD(),TransientBitsClass<long> bits=0x0):TF1(*sFit),RedChiInflateErr(1),cCov(sCov),cBits(bits){
 		fNpx=1000;
 	}
 
@@ -76,8 +78,17 @@ class FullFitHolder: public TF1
 	// Methods
 	double ReducedChi(){if(GetNDF()>0)return GetChisquare()/GetNDF();else return 1E8;}
 // 	double Eval(double X=0){return cFit.Eval(X);}
-	double EvalError(double X=0){return AnalyticalFullCovError(this,&cCov,X);}
-	//TMath::StudentQuantile(0.5 + 0.67/2, GetNDF())*TMath::Sqrt(ReducedChi());
+	double EvalError(double X=0){
+		if(RedChiInflateErr){
+			double RedChi=ReducedChi();
+			if(RedChi>1&&RedChi<1E5){
+				return sqrt(RedChi)*AnalyticalFullCovError(this,&cCov,X);
+				//TMath::StudentQuantile(0.5 + 0.67/2, GetNDF())*TMath::Sqrt(ReducedChi());
+			}
+		}
+		return AnalyticalFullCovError(this,&cCov,X);
+	}
+	
 	
 	
 // 	operator TF1() { return cFit; }
@@ -110,8 +121,8 @@ class FullFitHolder: public TF1
 			B.SetPoint(i-1,x,y-ey);
 		}
 		DrawCopy(option);
-		A.DrawClone("same");
-		B.DrawClone("same");
+		A.DrawClone("samel");
+		B.DrawClone("samel");
 	}
 	
 	int Fit(TH1* in,string opt="RBMSE+"){return FitOb(in,opt);}

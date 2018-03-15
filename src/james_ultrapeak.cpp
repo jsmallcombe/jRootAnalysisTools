@@ -161,6 +161,20 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist){
 	}
 }
 
+void Ultrapeak::InflateError(FullFitHolder* fHold){
+	if(fHold->TestBit(Ultrapeak::kInflate))return;
+	double RedChi=fHold->ReducedChi();
+	if(RedChi>1&&RedChi<1E5){
+		RedChi=sqrt(RedChi);
+		for(int i=0;i<fHold->CVal(VN);i++){
+			double err=RedChi*fHold->CVal(VPAe(i));
+			fHold->CVal(VPAe(i),err);
+		}
+		fHold->SetBit(Ultrapeak::kInflate);
+	}
+	return;
+}
+
 void Ultrapeak::PrintTitles(ostream& ofs){
 	ofs<<endl<<setw(10)<<"Red.Chi."<<setw(11)<<"Cent."<<setw(11)<<"(True)"<<setw(11)<<"[error]";
 	ofs<<setw(11)<<"Area."<<setw(11)<<"[error]";
@@ -681,12 +695,18 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 // 		return 0;
 	}
 	
-	if(statmode>0)cout<<endl<<"Likelihood fit, use 'chi-squared' with caution!"<<endl;
-	if(statmode>1)cout<<"Weighted Likelihood fit, errors can be weird. Recommend using error from integral form."<<endl;
+	
+	if(statmode>0)cout<<endl<<"Likelihood fit, use 'chi-squared' with caution!"<<flush;
+	if(statmode>1)cout<<endl<<"Weighted Likelihood fit, errors can be weird. Recommend using error from integral form."<<flush;
 	
 	FullFitHolder* fHold = new FullFitHolder(fFit,fResult->GetCovarianceMatrix(),fPeakFunc.cBits);
 	
 	Ultrapeak::MakeData(fHold,fHist);
+	
+	if(statmode==0){
+		Ultrapeak::InflateError(fHold);
+		cout<<endl<<"Fit Areas Errors inflated by sqrt(RedChi)"<<flush;
+	}
 	
 	return fHold;	
 }
