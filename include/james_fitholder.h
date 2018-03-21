@@ -21,7 +21,9 @@
 #include <fstream>
 #include <algorithm>
 #include <TGraphErrors.h>
+#include <TMultiGraph.h>
 #include <TFitResult.h>
+
 
 #include "james_utility.h"
 
@@ -109,7 +111,7 @@ class FullFitHolder: public TF1
 // 	void Draw(){cFit.Draw();}
 // 	void DrawCopy(){cFit.DrawCopy();}
 
-	void DrawCopyBands(Option_t * option=""){
+	void DrawCopyBands(Option_t * option="",bool BOnly=false){
 		double xa,xb;GetRange(xa,xb);
 		TGraph A,B;
 
@@ -120,14 +122,15 @@ class FullFitHolder: public TF1
 			A.SetPoint(i-1,x,y+ey);
 			B.SetPoint(i-1,x,y-ey);
 		}
-		DrawCopy(option);
+		if(!BOnly)DrawCopy(option);
 		A.DrawClone("samel");
 		B.DrawClone("samel");
 	}
 	
 	int Fit(TH1* in,string opt="RBMSE+"){return FitOb(in,opt);}
 	int Fit(TGraph* in,string opt="RBMSE+"){return FitOb(in,opt);}
-		
+	int Fit(TMultiGraph* in,string opt="RBMSE+"){return FitOb(in,opt);}
+	
 	template<typename T>
 	int FitOb(T* in,string opt){
 		opt+="S";

@@ -199,10 +199,11 @@ void jSpecTool::ReMakeSpecBack(TH1* hist){
 	}
 }
 
-
+//Subtract/Rebin/Draw, following background calculations
 void jSpecTool::DoUpdate(bool saveaxis){TVirtualPad* hold=gPad;
 	if(!histin)return;
 
+	//Get the currently drawn axis
 	int axis_down=1,axis_up=-1;
 	TH1* hp=hist_capture(fCanvas1->GetCanvas());
 	if(hp&&saveaxis){
@@ -216,17 +217,22 @@ void jSpecTool::DoUpdate(bool saveaxis){TVirtualPad* hold=gPad;
 	
 	TH1 *H,*S=0;
 
+	//If remove oversubtraction
 	if(fCheck0->GetState()){
+		//OverSubMode
 		if(fCheck3->GetState())H=histsub;
 		else H=histzero;
 	}else{H=histin;}
 
-	hformat(H,false);	
 	
+	//If Hide Bin Errors
 	if(fCheck1->GetState())H=DrawCopyHistOpt(H);//Needed if any functions have been drawn
 	else H=H->DrawCopy();
 	
+	//H is now the draw copy, not modifying original
+	
 	if(specback){
+		// if Remove Background
 		if(fCheck2->GetState()){
 			if(!H->GetSumw2N())H->Sumw2();
 			H->Add(specback,-1.);
@@ -236,9 +242,12 @@ void jSpecTool::DoUpdate(bool saveaxis){TVirtualPad* hold=gPad;
 	}
 
 	if(rebin>1){
+		cout<<endl<<H;
 		H->Rebin(rebin);
 		if(S)S->Rebin(rebin);
 	}
+	
+	hformat(H,false);
 	
 	H->GetXaxis()->SetRange(axis_down,axis_up);
 

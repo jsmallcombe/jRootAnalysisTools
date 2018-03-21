@@ -7,7 +7,7 @@ void axislab(TH1* HH,string x,string y,string z){
 	bool mev=(x.find("MeV")<x.size());
 	
 	
-	if(y==""||mev||kev||y.find("ounts")<y.size()){
+	if(y==""||y.find("ounts")<y.size()){
 		double w=HH->GetXaxis()->GetBinWidth(1);
 		stringstream ss;
 		ss<<"Counts";
