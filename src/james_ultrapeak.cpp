@@ -98,7 +98,6 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
 	
 	// Dumb little offset from complex new peak thing 
 	double fCentOff=TrueCentroid(sCentroid,fParam[gPeakSigma],fParam[gPeakDecay],fParam[gPeakSharing]);
-	if(fHold->cBits.TestBit(k2Gaus))fCentOff=0;
 	fHold->CVal(VOff,fCentOff);
 	
 	for(int i=0;i<N;i++){
@@ -298,6 +297,8 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	fParam[gUltraPol0] = fRightHeight-fRightUser*fParam[gUltraPol1]; //intercept
 	fLin.SetParameters(fParam[gUltraPol0],fParam[gUltraPol1]);
 	fParam[gPeakSigma] = 2.5; // Peak sigma
+	fParam[gPeakSigmaB] = 1.5; // Peak sigma ratio for 2gaus
+	fParam[gPeakSigmaC] = 0.6; // Peak height ratio for 2gaus
 	fParam[gPeakDecay] = 3.0; // Decay of tail (beta)
 	fParam[gPeakSharing] = 0.95; // Peak/Tail Sharing parameter (0 - 1)
 	fParam[gPeakNH(0)] = abs(fHH-fLin.Eval(fPeaks[0]));// First Peak Height
@@ -329,8 +330,15 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	fPre->SetParName(gUltraOffsetOrPol2,"NULL");
 	fPre->SetParName(gUltraStep,"NULL");
 	fPre->SetParName(gPeakSigma,"Sigma");
-	if(twogaus)fPre->SetParName(gPeakSigmaB,"SigmaB");
-	else fPre->SetParName(gPeakDecay,"Decay");
+	fPre->SetParName(gPeakDecay,"Decay");
+	if(twogaus){
+		fPre->SetParName(gPeakSigmaB,"SigmaRatio");
+		fPre->SetParName(gPeakSigmaC,"TGHRatio");
+	}else{
+		fPre->SetParName(gPeakSigmaB,"na");
+		fPre->SetParName(gPeakSigmaC,"na");
+	}
+	
 	fPre->SetParName(gPeakSharing,"Sharing");
 	fPre->SetParName(gPeakNH(0),"Height");
 	fPre->SetParName(gPeakNC(0),"Centroid");
@@ -341,15 +349,22 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	fPre->FixParameter(gUltraOffsetOrPol2, 0);
 	fPre->FixParameter(gUltraStep, 0);
 	
+	fPre->FixParameter(gPeakSigmaB,2.0);
+	fPre->FixParameter(gPeakSigmaC,0.6);
+// 	if(twogaus){fPre->SetParLimits(gPeakSigmaB,1.01,5);}
+// 	else{fPre->FixParameter(gPeakSigmaB,0);}
+	
 	if(SigFree)fPre->SetParLimits(gPeakSigma, 1.0, 6.0);  // Sigma
 	else if(SigmaFE>0){
 		if(SigmaFE>SigmaF)fPre->SetParLimits(gPeakSigma,1E-3,SigmaF+SigmaFE);
 		fPre->SetParLimits(gPeakSigma,SigmaF-SigmaFE,SigmaF+SigmaFE);
-	}else fPre->FixParameter(gPeakSigma,SigmaF);
+	}else{
+		fPre->FixParameter(gPeakSigma,SigmaF);
+		fPre->FixParameter(gPeakSigmaB,2.0);
+	}
 	
 	if(DecFree){
-		if(twogaus)fPre->FixParameter(gPeakSigmaB, 5.0);  // Second Gaus
-		else if(fixgamma)fPre->SetParLimits(gPeakDecay, 1.0, 4.);  // Decay of tail (beta)
+		if(fixgamma)fPre->SetParLimits(gPeakDecay, 1.0, 4.);  // Decay of tail (beta)
 		else fPre->SetParLimits(gPeakDecay, 1.0, 60.);  // Decay of tail (beta)
 	}else if(DecayFE>0){
 		if(DecayFE>DecayF)fPre->SetParLimits(gPeakDecay,1E-3,DecayF+DecayFE);
@@ -357,8 +372,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	}else fPre->FixParameter(gPeakDecay,DecayF);
 		
 	if(ShareFree){
-		if(twogaus)fPre->FixParameter(gPeakSharing, 1.0);// Sharing parameter
-		else if(fixgamma)fPre->SetParLimits(gPeakSharing, 0.93, 1.);// Sharing parameter
+		if(fixgamma)fPre->SetParLimits(gPeakSharing, 0.93, 1.);// Sharing parameter
 		else fPre->SetParLimits(gPeakSharing, 0., 1.);    // Sharing parameter
 	}else if(ShareFE>0){
 		double l=ShareF-ShareFE,u=ShareF+ShareFE;
@@ -380,8 +394,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	}
 	
 	
-	
-	
+
 	//////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////// PRE FIT //////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////
@@ -482,10 +495,15 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	fFit->SetParName(gPeakSharing,"Sharing");
 	
 	if(twogaus){
-		fFit->SetParName(gPeakSigmaB,"SigmaB");
-		if(SigFree)fParam[gPeakSigma]=fParam[gPeakSigma]*0.5;
-		if(DecFree)fParam[gPeakSigmaB]=fParam[gPeakSigma]*4;
-		if(ShareFree)fParam[gPeakSharing]=0.8;
+		fFit->SetParName(gPeakSigmaB,"SigmaRatio");
+		fFit->SetParName(gPeakSigmaC,"TGHRatio");
+		fParam[gPeakSigmaB]=2.0;
+		fParam[gPeakSigmaC]=0.6;
+	}else{
+		fFit->SetParName(gPeakSigmaB,"na");
+		fFit->SetParName(gPeakSigmaC,"na");
+		fParam[gPeakSigmaB]=0.0;
+		fParam[gPeakSigmaC]=0.0;
 	}
 	
 	///////// Peak zero  ////////
@@ -571,25 +589,30 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	}
 
 	///////// Shape parameters ////////
-
-
+	
+	if(twogaus){
+		fFit->SetParLimits(gPeakSigmaB,1.01,5);
+		fFit->SetParLimits(gPeakSigmaC,0.01,0.99);
+	}else{
+		fFit->FixParameter(gPeakSigmaB,0.0);
+		fFit->FixParameter(gPeakSigmaC,0.0);
+	}
+	
 	if(SigFree)fFit->SetParLimits(gPeakSigma, fParam[gPeakSigma]*0.5, fParam[gPeakSigma]*2);// Sigma
 	else if(SigmaFE>0){
 		if(SigmaFE>SigmaF)fFit->SetParLimits(gPeakSigma,1E-3,SigmaF+SigmaFE);
 		else fFit->SetParLimits(gPeakSigma,SigmaF-SigmaFE,SigmaF+SigmaFE);
-	}else fFit->FixParameter(gPeakSigma,SigmaF);
-	
+	}else{
+		fFit->FixParameter(gPeakSigma,SigmaF);
+		fFit->FixParameter(gPeakSigmaB,2.0);
+	}
 	
 	if(DecFree){// Decay of tail (beta) (or second gaus)
-		if(twogaus){
-			fFit->SetParLimits(gPeakSigmaB,fParam[gPeakSigma]*2, fParam[gPeakSigma]*8);
-		}else{
-			double nsc=5.0;
-			if(fixgamma)nsc=2.0;
-			if(fParam[gPeakDecay]>fParam[gPeakSigma]*nsc){fParam[gPeakDecay]=fParam[gPeakSigma]*0.25;fFit->SetParameter(gPeakDecay,fParam[gPeakDecay]);}
-			fFit->SetParLimits(gPeakDecay, fParam[gPeakDecay]*0.5, fParam[gPeakSigma]*nsc);
-		// 	if(fixgamma&&fParam[gPeakSigma]>2)fFit->SetParLimits(gPeakDecay, fParam[gPeakDecay]*0.5, 10.);			
-		}
+		double nsc=5.0;
+		if(fixgamma)nsc=2.0;
+		if(fParam[gPeakDecay]>fParam[gPeakSigma]*nsc){fParam[gPeakDecay]=fParam[gPeakSigma]*0.25;fFit->SetParameter(gPeakDecay,fParam[gPeakDecay]);}
+		fFit->SetParLimits(gPeakDecay, fParam[gPeakDecay]*0.5, fParam[gPeakSigma]*nsc);
+	// 	if(fixgamma&&fParam[gPeakSigma]>2)fFit->SetParLimits(gPeakDecay, fParam[gPeakDecay]*0.5, 10.);
 	}else if(DecayFE>0){
 		if(DecayFE>DecayF)fFit->SetParLimits(gPeakDecay,1E-3,DecayF+DecayFE);
 		else fFit->SetParLimits(gPeakDecay,DecayF-DecayFE,DecayF+DecayFE);
@@ -597,13 +620,10 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 
 	
 	if(ShareFree){ // Sharing parameter
-		if(twogaus){
-			fFit->SetParLimits(gPeakSharing,0.3,1);//twogaus doesnt prefit this
-		}else{
-			if(fParam[gPeakSharing]>=0.6667)fFit->SetParLimits(gPeakSharing, fParam[gPeakSharing]*0.5, 1.0);		// Sharing (should never be >1)
-			else fFit->SetParLimits(gPeakSharing, fParam[gPeakSharing]*0.5, fParam[gPeakSharing]*1.5);		// Sharing (should never be >1)
-			if(fixgamma)fFit->SetParLimits(gPeakSharing,0.93,1.);			
-		}
+		fFit->FixParameter(gPeakSigmaC,fParam[gPeakSigmaC]);//Cannot have both components free, too many dof
+		if(fParam[gPeakSharing]>=0.6667)fFit->SetParLimits(gPeakSharing, fParam[gPeakSharing]*0.5, 1.0);		// Sharing (should never be >1)
+		else fFit->SetParLimits(gPeakSharing, fParam[gPeakSharing]*0.5, fParam[gPeakSharing]*1.5);		// Sharing (should never be >1)
+		if(fixgamma)fFit->SetParLimits(gPeakSharing,0.93,1.);
 	}else if(ShareFE>0){
 		double l=ShareF-ShareFE,u=ShareF+ShareFE;
 		if(u>1)u=1;if(l<0)l=0;

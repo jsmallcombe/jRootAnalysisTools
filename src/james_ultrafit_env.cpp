@@ -163,8 +163,8 @@ void UltraFitEnv::DialogBox() {
 				
 				fCheck2 = new TGCheckButton(ticks,"Twin Gaus");// A tick box with hover text belonging to a parent frame
 				fCheck2->SetState(kButtonUp);
-				fCheck2->SetToolTipText("Use the peak fit mode which has no tail\n but instead two Gaussians\n of different sigma.");
-				fCheck2->Connect("Clicked()","UltraFitEnv",this,"SwitchDecayLabel()");
+				fCheck2->SetToolTipText("Use the peak fit mode which adds a\n second Gaussians compontent with \n larger sigma.");
+// 				fCheck2->Connect("Clicked()","UltraFitEnv",this,"SwitchDecayLabel()");
 				
 
 			ticks->AddFrame(fCheck1,XX);
@@ -1058,9 +1058,8 @@ const char gHelpCanvas[] = "\n\
   by energy dependant physical effects which do not change rapidly.\n\
   Background across the fit region is approximated by a polynomial + an \n\
   optional step function constrained by the peak parameters. The step should be\n\
-  used when beak sizes are large compared to background.\n\
+  used when peak sizes are large compared to background.\n\
   Pol0, pol1 and pol2 backgrounds may be selected (pol2 are poorly constrained).\n\
-  Watch your fit's Reduced ChiSquards\n\
 \n\
   For multi-peak/degenerate fits peak separation are set rather than absolute\n\
   centroids. This provides more accurate fitting overall as it is less sensitive\n\
@@ -1107,15 +1106,6 @@ void UltraFitEnv::Help(){
 void UltraFitEnv::jSaveAs(){
 	if(gHist)HistSaveAs(gHist,cBar,GetCan());
 }
-
-void UltraFitEnv::SwitchDecayLabel(){
-	if(fCheck2->GetState()){
-		decaysigmablabel->SetText("SigmaB");
-		fCheck1->SetState(kButtonUp);
-	}
-	else decaysigmablabel->SetText("Decay  ");
-}
-
 
 void UltraFitEnv::ClearExclusion(){
 	cExClicker.clear();

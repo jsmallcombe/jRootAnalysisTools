@@ -132,7 +132,6 @@ class UltraFitEnv : public TQObject
 	
 	void PassNewHist(TH1*);
 	
-	void SwitchDecayLabel();
 	void ClearExclusion();
 	
     private:	    

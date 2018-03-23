@@ -1,221 +1,495 @@
 \documentclass[a4paper,10pt]{article}
 \usepackage[utf8]{inputenc}
+\usepackage[margin=0.5in]{geometry}
 \usepackage{amsmath}
 \usepackage{xfrac}
 
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{listings}
+
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{adjustbox}
+\graphicspath{{figures/}}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+
+\usepackage [english]{babel}
+\usepackage [autostyle, english = american]{csquotes}
+\MakeOuterQuote{"}
 
 %opening
-\title{Decay Peak Convolution for Fitting}
+\title{JAnalysisTools Manual}
 \author{J. T. Smallcombe}
 \begin{document}
 
 \maketitle
+\tableofcontents
 
-\section{Decay Peak}\label{sec:decpeak}
-%\section{}
-The following function taken from Radware peak an exponential decay convolved with a Gaussian broadening.
-This function was designed for fitting the small tails caused by charge trapping in germanium detectors.
-\begin{equation}\label{eq:raw}
-f(x) = 
-\mathrm{e}^{\left(\frac{x}{\beta}\right)} 
-\cdot
-\mathrm{erfc}\left[
-\frac{x}{\sigma\sqrt{2}}
-+
-\frac{\sigma}{\beta\sqrt{2}}
-\right].
-\end{equation}
-Here we have substituted $x=x-x_0$ to describe a peak centroid of 0.
-Two things must be noted:
-This function does not have unit height, it's height at 0 is give by:
-\begin{equation}
-f(0) = 
-\mathrm{erfc}\left[
-\frac{\sigma}{\beta\sqrt{2}}
-\right].
-\end{equation}
-Hence, the purpose of combining this peak with a standard Gaussian $g(x)$, a sharing parameter formula assuming unit heights of the form
-\begin{equation}\label{eq:comb1}
-y(x) = h \cdot 
-\left[
-g(x) \cdot\eta
-+
-f(x)
-\cdot(1-\eta)\right]
-\end{equation}
-is not valid. Furthermore, the maximum of the peak does not occur at 0, but at some negative value determined by $\beta$ and $\sigma$.
-For the purpose of physical description of some exponential curve (a lossy process) where $x_0$ is fixed to some absolute value such as $E_\gamma$ convolved with a Gaussian resolution this is correct.
-However, we suggest here that for the purposes of fitting, $x_0$ is usually constrained by the maximum value bin,
-hence for the purposes of fitting an offset is needed.
-\begin{equation}
-y(x) = h \cdot f(\chi)
-,\;\;
-\chi\equiv x-x_{max}(\beta,\sigma).
-\end{equation}
-An exact derivation of $x_{max}$ is beyond the scope of this work and an analytical approximation of the form
-\begin{equation}\label{eq:xmax}
-x_{max}(\beta,\sigma) =
-b\left(\mathrm{e}^{-\frac{\sigma}{a}}-1\right),\;\;a(\beta),\;b(\beta),
-\end{equation}
-where $a$ and $b$ are polynomials of $\beta$ determined in the range of interest can be used.
+\section{Introduction}
+This library designed to help working with root for analysis contains several GUI analysis tools and useful sets of functions. An explanation of some of the major components is given here, but subclasses and functions will not be detailed.
+Within the GUI classes hover over any control to view explanatory tooltip text.
+Various histogram presentation formating and automated fitting macros (for spectroscopic peaks and detector efficiency curves) are also included and may be documented later. 
 
+\section{Install}
+This library has only been tested with ROOT6, it does not currently have any other non-standard dependencies.
+Source the ROOT6 $thisroot.sh$.
+In the base directory of the library run:
+\lstset{language=bash}
+\begin{lstlisting}
+make clean
+make -j4
+source bin/thisjlib.sh
+root -l bin/root_start.C
+\end{lstlisting}
+If all worked well root started without error messages and is running with the library loaded.
+For future use add a source of $thisjlib.sh$ to your bashrc and add $gSystem->Load("libJanalysistools.so")$ to your root startup script.
 
-The integral of the peak is given by:
-\begin{equation}
-\int f(x)\;dx = 
-\beta\cdot
-\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
-\cdot
-\mathrm{erf}\left(\frac{x}{\sqrt{2}\sigma}\right)
-+
-\beta\cdot
-\mathrm{e}^{\frac{x}{\beta}}
-\cdot
-\mathrm{erfc}\left(\frac{\beta x+\sigma^2}{\sqrt{2}\sigma\beta}\right).
-\end{equation}
-Not both erf and complemetery erfc are present. The area of the peak is given by:
-\begin{equation}
-A_f = \int_{-\infty}^{+\infty} f(x)\;dx =
-2\cdot \beta\cdot \mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
-\end{equation}
-The second term does not contribute as erfc$(x)$ goes to zero at $+\infty$ and e$^x$ at $-\infty$.
-Erf$(x)$ goes to plus and minus 1 at $+\infty$ and $-\infty$ respectively so the results of the $x$ integration is a factor of 2.
-The cumulative distribution function is given by:
-\begin{equation}
-\begin{split}
-\mathrm{CDF}& \propto \int_{-\infty}^{X} f\;dx \\
-&=\left[
-\beta\cdot
-\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
-\cdot
-\mathrm{erf}\left(\frac{x}{\sqrt{2}\sigma}\right)
-+
-\beta\cdot
-\mathrm{e}^{\frac{x}{\beta}}
-\cdot
-\mathrm{erfc}\left(\frac{\beta x+\sigma^2}{\sqrt{2}\sigma\beta}\right)\right]_{-\infty}^{X} \\
-&=
-\beta\cdot
-\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
-\cdot
-\mathrm{erf}\left(\frac{X}{\sqrt{2}\sigma}\right)
-+
-\beta\cdot
-\mathrm{e}^{\frac{X}{\beta}}
-\cdot
-\mathrm{erfc}\left(\frac{\beta X+\sigma^2}{\sqrt{2}\sigma\beta}\right) \\
-&-
-\beta\cdot
-\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
-\cdot
-\mathrm{erf}\left(\frac{-\infty}{\sqrt{2}\sigma}\right)
-+
-\beta\cdot
-\mathrm{e}^{\frac{-\infty}{\beta}}
-\cdot
-\mathrm{erfc}\left(\frac{\beta -\infty+\sigma^2}{\sqrt{2}\sigma\beta}\right) \\
-&=
-\beta\cdot
-\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}
-\cdot\left[
-\mathrm{erf}\left(\frac{X}{\sqrt{2}\sigma}\right)+1\right]
-+
-\beta\cdot
-\mathrm{e}^{\frac{X}{\beta}}
-\cdot
-\mathrm{erfc}\left(\frac{\beta X+\sigma^2}{\sqrt{2}\sigma\beta}\right)\;. \\
-\end{split}
-\end{equation}
-Again, the second term of the integral goes to 0 at the $-\infty$ limit and erc$(-\infty)=-1$.
-Then to normalise this to 1 we should divide by the total integral to $+\infty$ i.e. the peak area $2\beta\mathrm{e}^{-\frac{\sigma^2}{2\beta^2}}$.
-\begin{equation}
-\mathrm{CDF}=
-0.5\cdot
-\left[
-1
-+
-\mathrm{erf}\left(\frac{X}{\sqrt{2}\sigma}\right)
-+
-\mathrm{e}^{\frac{X}{\beta}+\frac{\sigma^2}{2\beta^2}}
-\cdot
-\mathrm{erfc}\left(\frac{\beta X+\sigma^2}{\sqrt{2}\sigma\beta}\right)\right]\,. \\
-\end{equation}
-We then defined our step function $S_{f}$ as 1-CDF. The step function is already normalised to 1 so non-unity of the decay peak can be ignored.
-However, when using a sharing parameter which normalises to height (which is easiest for peak fitting) the ratio of step functions should be proportional to peak area.
+\newpage
+\section{jEnv Toolbar}
+A graphical session manager toolbar to handle grabbing (selecting) of histograms with no typing.
+To create a new instance simply type:
+\lstset{language=C++}
+\begin{lstlisting}
+new jEnv();
+\end{lstlisting}
+in a ROOT interactive session. A new window will open:
+\renewcommand{\labelenumi}{\Alph{enumi}}
+\begin{center}
+\begin{tabular}{ c c }
+\begin{minipage}{0.7\textwidth}
+\begin{enumerate}
+\item Grabbed Histogram Icon
+\item Open a new peak fitting environment (copy grabbed histogram if $TH1$)
+\item Open a TSpectrum Tool (if grabbed histogram is $TH1$)
+\item Open a new 2/3D gating tool (if grabbed histogram is $TH2/TH3$.)
+\item Open a new TBrowser and draw grabbed.
+\item Create a new canvas and draw a copy of grabbed
+\item Overlay a copy of grabbed in the NEXT clicked canvas
+\item Open a dialogue box to save grabbed to disk
+\item Close the toolbar.
+\item Exit root
+\item Open/Close the AddSub Tool panel.
+\end{enumerate} \end{minipage}
+&
+\raisebox{-.5\height}{\includegraphics[width=0.23\textwidth]{jEnvA.png}}
+\\
+\end{tabular}
+\end{center}
 
-\section{Combining the Two Peaks}
+\subsection{Histogram Grabbing}
+Whenever an instance of jEnv exists histogram grabbing is enabled in all $TCanvas$s, including those embedded in other classes/windows. Whenever a window containing a drawn histogram is clicked, a pointer to the first histogram of the frame is grabbed by jEnv and the small "Selected Histogram" icon will change. If a frame contains multiple histograms and you must click exactly on the desired histogram itself, not on the whitespace.
 
-For the purposes of fitting our peaks that can range from very small loss tails, equivalent to germanium $\gamma$-ray spectra, up tails that dominate the peak, we require some further thought.
-We wish to have a single control parameter $\eta$ which can range between 1 (completely Gaussian) and 0 (completely exponential). As mentioned in Section~\ref{sec:decpeak} the preferred simple method of Equation~\ref{eq:comb1} is not ideal as the parameter $h$ is set assuming unity of the combined peak, which is not achieved initially. We reform the definition of \ref{eq:comb1} in terms of a height $h_a$ specified at a point $a$, nominally the Gaussian centroid.
-\begin{equation}
-y(x) = h_a \cdot 
-\left[
-\frac{g(x)}{g(a)} \cdot\eta
-+
-\frac{f(x)}{f(a)}
-\cdot(1-\eta)\right]\,.
-\end{equation}
-If one were so inclined the formula could be re-written in terms of a new control parameter
-\begin{equation}
-y(x) = H \cdot 
-\left[
-g(x)\cdot\Gamma
-+
-f(x)
-\cdot(1-\Gamma)\right]\,.
-\end{equation}
-where
-\begin{equation}
-\Gamma=\frac{\frac{\eta}{g(a)}}{\frac{\eta}{g(a)} + \frac{(1-\eta)}{f(a)}}
-\end{equation}
-and
-\begin{equation}
-H=h_a \cdot\left( \frac{\eta}{g(a)} + \frac{(1-\eta)}{f(a)}\right)\,.
-\end{equation}
+\begin{figure*}[!h]
+\centering
+\includegraphics[width=0.3\textwidth]{jEnvB.png}
+\includegraphics[width=0.52\textwidth]{jEnvD.png}     
+\end{figure*}
 
-The combined peak area is subsequently give by:
-\begin{equation}
-A_{tot} = h_a \cdot 
-\left[
-\frac{A_g}{g(a)} \cdot\eta
-+
-\frac{A_f}{f(a)}
-\cdot(1-\eta)\right]\,.
-\end{equation}
-or
-\begin{equation}
-A_{tot} = H \cdot 
-\left[
-A_g\cdot\Gamma
-+
-A_f
-\cdot(1-\Gamma)\right]\,.
-\end{equation}
+Once a histogram is grabbed a copy of it will be passed to any of the functions of jEnv.
 
-We have already noted that for the purposes of fitting it is comfortable to define our height at the maximum of the peak rather than at the physically meaningful centroid. We know when Gaussian term dominates ($\eta=1$) the maximum is at 0 and when the exponential term dominates ($\eta=0$) the maximum is at $x_{max}$ (Equation~\ref{eq:xmax}). We make the approximation that $a$ varies linearly with $\eta$ and define $a=(1-\eta)x_{max}$. Finally, as we wish to input $x$ in terms of the peak maximum position $a$ and not the physically meaning 0 we must modify the input to the peak functions.
-\begin{equation}
-y(x) = H \cdot 
-\left[
-g(x+a)\cdot\Gamma
-+
-f(x+a)
-\cdot(1-\Gamma)\right]\,.
-\end{equation}
+\subsubsection{Histogram Lifetime}
+A histogram can go out of memory scope in several ways. For speed, as grabbing is done on EVERY canvas click, only a pointer is stored. jEnv will refuse to do anything with its histogram pointer until it has established it is valid. To check if a histogram is still in memory jEnv checks the histogram against roots list of object, however this object search has limitations. If this histogram is still drawn in the same canvas as when it was grabbed, it will be found.
+
+\newpage
+\subsection{Histogram AddSub Tool}
+Hidden in the side of jEnv is the AddSub tool. This is a simple tool to allow quick addition and subtraction of $TH1$s from anywhere. The tool even allows histograms with different binning, summing is done based on "user coordinates".
+Click either of the selected histograms windows $A$ or $B$ to assign the currently grabbed histogram from jEnv, at this point a copy IS saved. The projected histogram is then given by $A\pm B*f$ where f is the fraction specified by the slider. In the case of subtraction the area of B is first normalised to that of A. The resultant histogram can also be grabbed.
+
+\begin{center}
+\begin{tabular}{ c c }
+\begin{minipage}{0.4\textwidth}
+\begin{enumerate}
+\item Open/Close the AddSub Tool panel.
+\item Subtraction/Addition fraction $f$ slider.
+\item Selected Histogram A window/button
+\item Swap A B
+\item Selected Histogram B window/button
+\item Fraction $f$ text entry.
+\item Change between Subtraction/Addition.
+\item Hide/Show error bars when drawing.
+\item Result Window.
+\end{enumerate} \end{minipage}
+&
+\raisebox{-.5\height}{\includegraphics[width=0.55\textwidth]{jEnvC.png}}
+\\
+\end{tabular}
+\end{center}
+
+\bigskip
+\bigskip
+\section{Gating and Background Subtraction Tool}
+The gating tool is designed to provide live graphical gating and background subtraction for $TH2$ and $TH3$ histograms filled with any data. 
+A new instance can be created from the jEnv toolbar or typing any of the following:
+\lstset{language=C++}
+\begin{lstlisting}
+new jgating_tool();
+new jgating_tool(TH2*/TH3*);
+new jgating_tool(HistogramName);
+\end{lstlisting}
+where "HistogramName" is the name (not title) of a histogram open in memory. The call with no arguments will grab the most recently selected or drawn histogram. If no valid input is found a window will not appear. Please wait a moment for the window to appear when using $TH3$s, particularly if they are large.
+\begin{center}
+\includegraphics[width=0.55\textwidth]{toolA.png}
+\end{center}
+
+\subsection{Gating Window}
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{toolB.png}
+\end{center}
+\begin{enumerate}
+\item Overflow Peek - By default shown projection excludes the overflow bins of the other axis. Hold this button to see the projecting including overflow overlain  
+\item Show/Hide peak marker - By default text is shown indicating the centroid of the fitted peak.
+\item Axis Select - Change the axis on which gating performed. (USE TO RESET IF ERRORS OCCUR)
+\item Background Subtraction Type
+\item Projection Window - Window showing the current projection and gate, when appropriate shows also fit and background gate. You can double click in this window to move the gate.
+\item Gate Centre - Both text a entry boxes and output for the slider. In user coordinates, but input will be rounded to nearest bin. 
+\item Gate Width - As Gate Centre. 
+\item Background Fraction Text Box - This can be used as a text entry box when manual background fraction is enabled.
+\item Gate \& Fit Slider - Use the central slider to adjust the position of your gate. When background fit is enabled, use the outer edges of the slider to adjust the range of the fit relative to the gate position.
+\item Gate Width Slider
+\item Background Fraction slider - Can be used to manually adjust background fraction, when manual background fraction is enabled.
+\item Manual Background Gate - If manual background gate is selected, adjust the ends of this slider to define background gate (shown in black). This slider is hidden when not in use.
+\item Background Fraction Mode -
+Select how you would like to determine the background subtraction fraction, peak fit with fixed pol0 background, fit with auto-adjusting pol1 background, set manually OR use TSpectrum show background function (3 smoothing options pre-set).
+
+\centering\raisebox{-0.9\height}{\includegraphics[width=0.5\textwidth]{jGateD.png}\includegraphics[width=0.25\textwidth]{toolC.png}}
+
+\end{enumerate}
+
+\subsubsection{Background Subtraction Type}
+\begin{enumerate}
+\item Full - This mode takes the full projection of the target axis as the background spectrum. A good first approximation in situations where a background cannot be clearly defined.
+\item Compton - Background spectrum is formed by gating on the entire spectrum, including overflow, above the gate. Forms the best statistically sampled background spectrum for $\gamma$-ray gating. The background starts 2 bins above the gate or 2$\sigma$ if the fit is used. If directly adjacent to a spectrum dominating peak this may not be the best option. 
+\item Anti - The background gate is the entire spectrum excluding the data gate.
+\item None - No subtraction.
+\item Man - User specified manual gate. When selected an additional slider will be displayed and the selected gate will appear in the gating window. If the background gate encompasses the data gate that region will be excluded.
+\item ManRel - Relative position manual gate. As Man but the background gate will move when the data gate moves. Useful for scanning.
+\end{enumerate}
+
+\subsection{Result Window}
+\begin{center}
+\includegraphics[width=0.5\textwidth]{toolD.png}
+\end{center}
+\begin{enumerate}
+\item Draw Overlays - Show the total ungated-projection (scaled), or the currently subtracted background spectrum, overlain in the result window.
+\item Open Peak Fit Panel - Open an instance of $UltraFitEnv$, the fitting tool is "connected" to the result canvas and will connect with new input if the gate is changed. See Section \ref{sec:peakfit}.
+\item SaveAs -Save the histogram currently drawn in the result frame to a file. Opens a dialogue box.
+\item Hide Errs - Hide the error bars from background subtraction and draw histogram normally. Note: When selected fits performed with the ROOT FitPanel will not initially display, select the SAME drawing option to fix.
+\item Show/Hide Gate Summing Tool.
+\item Result Frame. Double clicking in this window will perform a quick Gaussian fit at the cursor and display the centroid.
+\item Rebin Result - Select a factor by which to rebin result histograms.
+\end{enumerate}
+
+\subsection{Gate Summing Tool}
+The Gate Summing Tool is used for saving the result histograms in memory after gating so that the results of multiple gates can be quickly summed.
+\begin{center}
+\begin{tabular}{ c c }
+\begin{minipage}{0.6\textwidth}
+\begin{enumerate}
+\item Show/Hide Gate Summing Tool.
+\item Create additional save slot.
+\item Draw a sum of the selected histograms in the result frame.
+\item Delete all histograms in summing tool memory.
+\item Sum Check - Use the check marks to selected which saved histograms will be added to the output.
+\item Save Buttons - Click to save/overwrite the current gating result histogram to a slot. The button will update with the centroid of the saved gate.
+\end{enumerate} \end{minipage}
+&
+\raisebox{-.5\height}{\includegraphics[width=0.2\textwidth]{jGateF.png}}
+\\
+\end{tabular}
+\end{center}
 
 
-For the unitary background step each contribution is simply weighted by the corresponding peak's contribution to the total peak area:
-\begin{equation}
-S_{tot}(x) = \cdot 
-\left[
-S_g(x-a)\cdot\epsilon
-+
-S_f(x-a)
-\cdot(1-\epsilon)\right]\,.
-\end{equation}
-where
-\begin{equation}
-\epsilon=\frac{A_g\Gamma}{A_g\Gamma + A_f(1-\Gamma)}
-\end{equation}
+\subsection{3D Gating Window}
+For the first gate on a $TH3$ there is significant amount of computation so this is not done live. The output of the first gate is only performed when a new projection is selected, a different background mode is selected or when the [Update] button is pressed.
+\begin{center}
+\includegraphics[width=0.95\textwidth]{toolE.png}
+\begin{enumerate}
+\item Update - Select after changing gate or background.
+\item 2D - Do not perform a second gate but instead pass the TH2 result to the result frame. The gate sum tool can also be used in this mode.
+\end{enumerate}
+\includegraphics[width=0.6\textwidth]{toolF.png}
+\end{center}
 
+\newpage
+\section{Peak Fitting Tool}\label{sec:peakfit}
+\begin{wrapfigure}[8]{r}{0.4\textwidth}
+\includegraphics[width=0.4\textwidth]{jFitB.png}
+\end{wrapfigure}
+The UltraFitEnv fitting environment is designed for the automatic fitting of Gaussian peaks convolved with exponential tails.
+The tool has some foibles that are absent from the root fitting environment, but it is far more tuned to the task of fitting spectra and saving the relevant data.
+A new instance can be created from the jEnv toolbar or typing:
+\lstset{language=C++}
+\begin{lstlisting}
+new UltraFitEnv();
+new UltraFitEnv(TH1*);
+new UltraFitEnv(0,TCanvas*);
+\end{lstlisting}
+The tool operates in two primary modes:
+\begin{itemize}
+\item A histogram may be captured and stored by the tool.
+\item A canvas can be linked to the tool, any new histogram drawn in that canvas will become the fitting target.
+\end{itemize}
+
+The fitting tool stores an internal copy of the histogram to avoid empty fitting segfaults. When the tool is "connected" it is to a selected canvas, not to a particular histogram. When a new histogram is drawn in the canvas the fitting tool updates it's internal histogram accordingly. Note: You cannot modify a histogram through the canvas the fitting tool is connected to (as the fitting tool performs $DrawCopy$ of it's internal histogram).
+
+In order to begin fitting click either $[$Capture Hist$]$ or $[$Link Canvas$]$ and then immediately click on the Canvas/Histogram you want to fit
+
+\subsection{Peak Fitting Toolbar}
+Many of the functions of toolbar are duplicated by keyboard shortcuts.
+\begin{center}
+\begin{tabular}{ c c }
+\raisebox{-.5\height}{\includegraphics[width=0.3\textwidth]{jFitC.png}}
+&
+\begin{minipage}{0.7\textwidth}
+\begin{enumerate}
+\item Open dialogue box and save the current histogram to disk.
+\item Capture subsequently selected histogram and draw a copy.
+\item Connect the fitting tool to the subsequently selected canvas.
+\item Open help window
+\item Re-Draw histogram and saved fits. (Reset problematic fit markers.)
+\item Clear the user-defined exclusion regions.
+\item Save the latest fit to the histogram and to the in memory fit data list. Fit will turn temporarily blue to confirm save.
+\item Delete all saved fit data from memory (Press twice).
+\item Print the in memory fit data list to the terminal.
+\item Save the in memory fit data list to disk file peakinfo.dat
+\item Perform a fit with the current selection/inputs.
+\item Change the background function of the fit.
+\item Place fit constraints on tail shape parameters. Suitable for $\gamma$-ray spectra \& problematic fits.
+\item Use the more complex "Twin Gaussian" fit function.
+\item Increase/decrease the number of peaks to fit.
+\item Hide/Show fit shape parameter controls.
+\end{enumerate} \end{minipage}
+\\
+\end{tabular}
+\end{center}
+
+\newpage
+\subsection{Peak Fitting Controls}
+While the mouse pointer is over the fitting canvas the following controls and short-cuts may be used:
+\begin{center}
+\begin{tabular}{ r l }
+$[Left Click]$ & Select peak.\\
+$[Ctrl]$ & Set manual bin select (default auto).\\
+$[Enter]$ & Fit.\\
+$[Middle Click]$ & Select fit-range.\\
+$[Shft]$ THEN $[Left$ $Click]$ & Select fit-range.\\
+$[Alt]$ THEN $[Left$ $Click]$x2 & Select exclusion region.\\
+$[+]$ & Increase the number of peaks.\\
+$[-]$ & Decrease the number of peaks.\\
+$[0]$-$[9]$ keys & Set the number of peaks.\\
+$[.]/[s]/[Del]$ & Save latest fit to list \& histogram.\\
+$[c]$ & Clear the selected exclusion region.\\
+\end{tabular}
+\end{center}
+
+Click to select a peak for fitting, marker lines will appear showing the target peaks and fitting range. By default the nearest peak will be selected, press $[$ctrl$]$ to switch to exact bin selection. An automatic fit range will be shown, this can be overridden by clicking with the middle mouse button. To ignore bins containing anomalous features, create an exclusion region by pressing the $[Alt]$ and then clicking the first and last bins of the region. Use $[Re-Draw\;Hist]$ to clear exclusion regions.
+  
+\subsection{Fit Function \& Logic}
+The peak function consists of a pure Gaussian + an exponential convolved with a Gaussian, similar to Radware. The ratio is controlled by a sharing parameter that can take values from 0 to 1. An analytical normalisation is applied to the exponential peak such that its maximum value is always 1. After a fit the output data contains both a centroid and a "True centroid". The centroid is the maximum of the combined peak, the true centroid corresponds to the centroid of the pure Gaussian component which would correspond to the physical spectroscopic value.  
+\\
+\\
+The tool is designed for fits over small energy regions, as such, all shape parameters of degenerate peaks are shared, as these parameters are dominated by energy dependant physical effects which do not change rapidly. Background across the fit region is approximated by a polynomial + an optional step function constrained by the peak parameters. The step should be used when peak sizes are large compared to background. Pol0, pol1 and pol2 backgrounds may be selected (pol2 are poorly constrained). 
+\\
+\\
+For very small numbers of counts the fit mode will automatically switch to Poisson Likelihood fitting rather than Pearson Chi Squared minimisation. Exclusion regions will not function for Likelihood fitting.
+\\
+\\
+A TwinGaus fit can be used when mixed resolution detector effects (such as Doppler shift) dominate. Each peak is fit with a narrow and a wide Gaussian with identical centroid. Background step is modified accordingly and all other fitting functionality remains the same. To avoid too many degrees of freedom the sigma ratio is highly constrained, also the relative proportion of the two Gaussian is fixed (default 0.6) and only allowed to vary if the Sharing parameter of the tail component is constrained or fixed (set to 1 to remove tail). The TwinGaus should only be used in the case of relatively isolated peaks.
+
+\subsection{Fit Inputs}
+For multi-peak/degenerate fits, peak separations are set rather than absolute centroids. This provides more accurate fitting overall as it is less sensitive to small deviations in the absolute scale i.e. poor calibration. The area ratio between peaks may also be set if it is in known. When inputting multiple peaks to a fit, any constrained peaks should immediately follow the peak to which they are fixed. Un-constrained peaks should be in ascending order.
+\lstset{language={},
+  literate=~{$\sim$}2,
+  upquote=true}
+\begin{lstlisting}
+Example: We have 3 peaks:
+           An unknown ~130 keV, a known 125 keV and a known 145 keV.
+           Inputs : A = 125
+                    B = A + 20
+		    C = 130
+          -We set the tool for 3 peaks
+          -Enter [20] in to the peak 0-1 "separation" input box.
+          -Click on each peak A and C in the histogram window.
+          -Click [Fit Peaks].
+\end{lstlisting}
+Note: When marking peaks in the fit canvas any peaks constrained to their neighbour do not need to be manually selected.
+\\
+\\
+For both separation and area ratio between peaks, the box should be left blank to free the fit. Uncertainties on both constraint parameters may also be added in the input box. If no error is given the parameter will be fixed. Only symmetric errors are currently supported. Plain text input is fairly robust and accepts ENSDF format errors:\\
+Example inputs :\quad0.051\qquad0.051(2)\qquad0.051 0.002\qquad0.051+-0.002\qquad5.1E-2+2E-3
+\label{sec:errors}
+\\
+\\
+For problematic fits the shape parameters (Sigma, Decay and Sharing) may be constrained. The bottom-most button on the panel [$\wedge$] will expose these options. As with centroid \& ratio these parameters may be fixed or given with uncertainties and should be left blank when not constrained.
+Alternately the Limit Tail check box applies preset limits on the tail parameters (Decay and Sharing) useful when fitting gamma spectra.
+\begin{center}
+\begin{tabular}{ c c }
+\raisebox{-.5\height}{\includegraphics[width=0.3\textwidth]{jFitD.png}}
+&
+\begin{minipage}{0.7\textwidth}
+\begin{enumerate}
+\item Number of peaks in fit.
+\item Centroid of peak 0. Updated on selection or fit.
+\item Fixed separation between peak 0 and peak 1.
+\item Fixed size ratio between peak 0 and peak 1.
+\item Centroid of peak 1. Updated on selection or fit.
+\item Hide/Show fit shape parameter controls.
+\item Fit shape parameter constraint inputs.
+\end{enumerate} \end{minipage}
+\\
+\end{tabular}
+\end{center}
+
+\section{TSpectrum Tool}
+The $TSpectrum Tool$ provides a gui interface for manipulating $TH1$ spectra, correcting over-subtraction and subtracting continuum background with the ROOT $TSpectrum$ class.
+
+\begin{center}
+\begin{tabular}{ c c }
+\begin{minipage}{0.35\textwidth}
+\begin{enumerate}
+\item Correct over-subtraction.  
+\item Hide/Show bin errors.
+\item Subtract TSpectrum background.
+\item View/Result Window.
+\item Rebin resultant histogram.
+\item TSpectrum options.
+\item TSpectrum smoothing iterations N.
+\item Selected option.
+\item Selected N.
+\item Enable over-subtracted background.
+\item Set minimum bin content to zero.
+\end{enumerate} \end{minipage}
+&
+\raisebox{-.5\height}{\includegraphics[width=0.65\textwidth]{TSpectrum1.png}}
+\\
+\end{tabular}
+\end{center}
+
+\subsection{TSpectrum Background}
+This tool allows experimenting with the different settings of TSpectrum graphically.
+One of the following options may be selected : $BackOrder2$, $BackOrder4$, $BackOrder6$, $BackOrder8$, $BackSmoothing3$, $BackSmoothing5$, $BackSmoothing7$, $BackSmoothing9$, $BackSmoothing11$, $BackSmoothing13$, $BackIncreasingWindow$, $Compton$. For details see the ROOT TSpectrum documentation. In general use the default $BackOrder2$ is sufficient and good agreement can be achieved with varying the number of iterations $N$. Occasional, in the case of over-subtraction, increasing to $BackSmoothing5$ or above may be needed. The $Compton$ option does not provide good background for a dense HPGe spectrum.
+\\
+When a good background is achieved you may elect to subtract it from the data with the $Remove Background$ tick button. Subtracting continuum background from TSpectrum is a matter of personal preference and is not scientifically rigorous. This can help fitting and automation.
+\begin{center}
+\includegraphics[width=0.5\textwidth]{TSpectrum4.png}
+\end{center}
+
+\subsection{Over-Subtracted Spectra}
+The tool's provisional feature to correct over-subtraction is intended for situations in which spectra were produced such that over-subtraction was unavoidable. The default TSpectrum behaviour will fail in the presence of over-subtraction. Click the $OverSubMode$ option and the tool will perform attempt to compensate. Note that this option will produce backgrounds that are too high when over-subtraction is not present.
+\begin{center}
+\includegraphics[width=0.5\textwidth]{TSpectrum2.png}
+\end{center}
+Additionally you may request to correct the over-subtracted histogram bins with the $Remove Oversub$ check box. Bins below the $TSpectrum$ line will be increased until they are within $1\sigma$. This is useful when one needs to use such a spectra in a subsequent subtraction and you wish to mistakenly avoid adding counts. Ideally one would find an alternate original subtraction to avoid the problem in the first place, but this tool is intended to provide one  solution, to be used with discretion, when there is not alternative.
+\begin{center}
+\includegraphics[width=0.5\textwidth]{TSpectrum3.png}
+\end{center}
+The $ZeroMin$ option simply sets that when performing a correction, no bin will be below zero. This accelerates the correction and is the default setting (irrespective of selection) when $Remove Oversub$ is selected but $OverSubMode$ is not.
+
+
+\section{Command Line and Script Peak Fitting}
+The following static function may be used to fit with Ultrapeak in scripts or on the command line:
+
+\lstset{language=C++}
+\begin{lstlisting}
+FullFitHolder* Ultrapeak::PeakFit(
+	TH1* HistogramToFit,
+	double FitRangeLeft,
+	double FitRangeRight,
+	vector< jPeakDat > ListOfPeaks,
+	int BackGroundMode = 0,
+	int PeakType = 0,
+	string SigmaParameterOveride="",
+	string DecayParameterOveride="",
+	string SharingParameterOveride="",
+	TH1* ExclusionHistogram=0
+);
+\end{lstlisting}
+
+The function returns a $FullFitHolder$ pointer. The pointer will =0 if the fit fails (so check!).
+The $FullFitHolder$ class that inherits from $TF1$, so all $TF1$ functions may be called.
+
+The area of peak $i$ can be retrieved from a returned $FullFitHolder$ by calling:
+\lstset{language=C++}
+\begin{lstlisting}
+ReturnedPointer->CVal(Ultrapeak::VPA(i));
+\end{lstlisting}
+
+The error of area i can be retrieved similarly by:
+\lstset{language=C++}
+\begin{lstlisting}
+ReturnedPointer->CVal(Ultrapeak::VPAe(i));
+\end{lstlisting}
+
+The centroids, "integral" and their respective errors can be fetched with $VPC$, $VPCe$, $VPI$ \& $VPIe$.
+
+
+\subsection{PeakFit Function Inputs}
+
+\renewcommand{\labelenumi}{\arabic{enumi}}
+\begin{itemize}
+	\item $ListOfPeaks$ consists of a $std::vector$ containing struct class $jPeakDat$ for each peak in the fit, see Section \ref{sec:jpeakdata} for details.
+	\item $BackGroundMode$ can take the following values:
+      \begin{enumerate}
+      \setcounter{enumi}{-1}
+      \item Constant + step under peaks
+      \item Linear highly constrained by the fit window
+      \item Linear
+      \item Linear very free downwards
+      \item Linear + step under peaks
+      \item Quadratic
+      \item Quadratic + step under peaks
+      \end{enumerate}
+    \item $PeakType$ can take the following values:
+      \begin{enumerate}
+      \setcounter{enumi}{-1}
+      \item Gaussian + exponential tail
+      \item Gaussian + small exponential tail
+      \item Two Gaussians with the same centroid 
+      \end{enumerate}
+    \item $SigmaParameterOveride$, $DecayParameterOveride$, $SharingParameterOveride$ - these allow changing of the peak shape values from their defaults. Defaults are optimised for HPGe and Si(Li) spectra in keV. If used, provide a number in the string, the new value will be fixed in the fit. If desired include and uncertainty in the string (as explained in Section \ref{sec:errors}) to free the parameter
+    \item $ExclusionHistogram$ should not be used in command line or script fitting.   
+\end{itemize}
+
+\subsection{jPeakDat}\label{sec:jpeakdata}
+The jPeakDat struct holds the basic information needed to pass the fit function.
+\lstset{language=C++}
+\begin{lstlisting}
+typedef struct jPeakDat{
+	double Centroid;
+	bool CentConstrained;
+	double CentError;
+	double Ratio;
+	double RatioError;// <=0 fixed param
+	jPeakDat(double c,bool cb=0,double ce=0,double r=0,double re=0):
+	Centroid(c),CentConstrained(cb),CentError(ce),Ratio(r),RatioError(re){}
+} jPeakDat;
+\end{lstlisting}
+
+Only centroid is required and it can be filled on construction. e.g.
+\lstset{language=C++}
+\begin{lstlisting}
+	ListOfPeaks.push_back(jPeakDat(1432.2));
+\end{lstlisting}
+
+\begin{itemize}
+\item $Centroid$ inputs in fitting are relative. The first peak centroid $ListOfPeaks[0].Centroid$ should be the absolute centroid, but for all other peaks $i>0$ the centroid should be relative, \\$ListOfPeaks[i].Centroid = centroid_i - centroid_{(i-1)}$
+\item $CentConstrained$ tells the fit program is $CentError$ should be used
+\item If $CentError\leq0$ the value of $Centroid$ will be fixed in the fit, else it will be given the range $\pm CentError$.
+\item If $Ratio\leq0$ it is not used and the ratio of peak areas is not constrained in the fit, if a value is given it sets $area_i/area_{(i-1)}$ (it has no effect for peak 0).
+\item  If $RatioError\leq0$ the value of $Ratio$ will be fixed in the fit, else it will be given the range $\pm RatioError$.
+\end{itemize}
+
+
+
+%\section{Histogram Formatting Functions}
 
 \end{document}

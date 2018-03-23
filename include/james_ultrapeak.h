@@ -41,10 +41,11 @@ const short gPeakBackC=2;
 const short gPeakBackD=3;
 const short gPeakSigma=4;
 const short gPeakDecay=5;
-const short gPeakSigmaB=gPeakDecay;
-const short gPeakSharing=6;
-inline short gPeakNH(unsigned short i){return i*2+7;}
-inline short gPeakNC(unsigned short i){return i*2+8;}
+const short gPeakSigmaB=6;
+const short gPeakSigmaC=7;
+const short gPeakSharing=8;
+inline short gPeakNH(unsigned short i){return i*2+9;}
+inline short gPeakNC(unsigned short i){return i*2+10;}
 
 
 inline double UniGaus(double& x,double& sig){return exp(-((x*x)/(sig*sig*2)));}
@@ -87,7 +88,7 @@ inline double DecGausMaxX(double& sig,double& dec){
 }
 
 ///////////////////////////////////////
-//    Combining the two peaks	     //
+//    DecGaus + UniGaus  	     //
 ///////////////////////////////////////
 
 // Returns the two peaks in their nominal form summed
@@ -100,18 +101,21 @@ inline double CombRDstep(double& x,double& sig,double& dec,double& b1){return Un
 // Given the usual 0-1 sharing parameter returns the area of the combined peak
 // Simply multiply by h_a
 inline double CombArea(double& sig,double& dec,double& eta){
-	double decX_0=DecGausMaxX(sig,dec)*(1-eta);  
-	double xeta=eta/UniGaus(decX_0,sig);//should be -X_0, but its symmetric
-	double zeta=(1-eta)/DecGaus(decX_0,sig,dec);
+	double decX_0=DecGausMaxX(sig,dec)*(1-eta);//The X value at which DecGaus is maximal 
+	double yuni=UniGaus(decX_0,sig);//The Y value of UniGaus at that point
+	double xeta=eta/yuni;//UniGaus sharing fraction / UniGaus Y value
+	double zeta=(1-eta)/DecGaus(decX_0,sig,dec);// DecGaus sharing fraction / DecGaus Y value
 	return UniGausArea(sig)*xeta + DecGausArea(sig,dec)*zeta;
+	// Peak is defined such that the height at decX_0 == 1
+	
+	//Old Version UniGausArea(sig)*eta + DecGausArea(sig,dec)*(1-eta)
 }
-inline double OldCombArea(double& sig,double& dec,double& eta){return UniGausArea(sig)*eta + DecGausArea(sig,dec)*(1-eta);}
 
 inline double TrueCentroid(double& cent,double& sig,double& dec,double& eta){return cent-DecGausMaxX(sig,dec)*(1-eta);}
 	
-///////////////////////////
-//    TF1 functions      //
-///////////////////////////
+/////////////////////////////////////////////
+//    TF1 functions DecGaus + UniGaus      //
+/////////////////////////////////////////////
 
 // This function parses the TF1 parameter list and the additional sharing
 // parameters to add together multiple peaks specified by relative distances
@@ -148,39 +152,75 @@ inline double MulitPeakBack(double *par,int Np,double& x,double& yeta){
 	return MulitPeakBackUni(par,Np,x,yeta)*par[gPeakBackB]+par[gPeakBackA];
 }
 
-// Simple linear background alternative
-inline double StepMulitPeak(double *par,int Np,double& x,double& hach,double& yeta){return hach*MulitPeak(par,Np,x,yeta)+MulitPeakBack(par,Np,x,yeta);}
-inline double LinearMulitPeak(double *par,int Np,double& x,double& hach,double& yeta){return hach*MulitPeak(par,Np,x,yeta)+x*par[gPeakBackB]+par[gPeakBackA];}
+
+////////////////////////////////////
+//     DecGaus + TwoUniGaus       //
+////////////////////////////////////
 
 
+inline double CombRDpeakTwo(double& x,double& sig1,double& sig2,double& TwoGausFrac,double& dec,double& eta){
+	double sigd=sig1*TwoGausFrac+sig2*(1-TwoGausFrac);
+	return (UniGaus(x,sig1)*TwoGausFrac+UniGaus(x,sig2)*(1-TwoGausFrac))*eta+DecGaus(x,sigd,dec)*(1-eta);
+}
 
-///////////////////////////////////////////
-//    New/Old Two Gaus Rather than Exp	 //
-///////////////////////////////////////////
+inline double CombRDstepTwo(double& x,double& sig1,double& sig2,double& TwoGausFrac,double& dec,double& b1){
+	double sigd=sig1*TwoGausFrac+sig2*(1-TwoGausFrac);
+	return (UniGausStep(x,sig1)*TwoGausFrac+UniGausStep(x,sig2)*(1-TwoGausFrac))*b1+DecGausStep(x,sigd,dec)*(1-b1);
+}
 
+
+inline double CombAreaTwo(double& sig1,double& sig2,double& TwoGausFrac,double& dec,double& eta){
+	double sigd=sig1*TwoGausFrac+sig2*(1-TwoGausFrac);
+	double decX_0=DecGausMaxX(sigd,dec)*(1-eta);
+	double xeta=eta/(UniGaus(decX_0,sig1)*TwoGausFrac+UniGaus(decX_0,sig2)*(1-TwoGausFrac));
+	double zeta=(1-eta)/DecGaus(decX_0,sigd,dec);
+	return (UniGausArea(sig1)*TwoGausFrac+UniGausArea(sig2)*(1-TwoGausFrac))*xeta + DecGausArea(sigd,dec)*zeta;
+}
+
+	
+/////////////////////////////////////////////
+//    TF1 functions DecGaus + TwoUniGaus   //
+/////////////////////////////////////////////
+
+// This function parses the TF1 parameter list and the additional sharing
+// parameters to add together multiple peaks specified by relative distances
+inline double MulitPeakTwo(double *par,int Np,double& x,double& yeta){
+	double ret=0;
+	double cent=0;
+	double a;
+	double sB=par[gPeakSigma]*par[gPeakSigmaB];
+	for(int i=0;i<Np;i++){cent+=par[gPeakNC(i)];
+		a=x-cent;
+		ret+=par[gPeakNH(i)]*CombRDpeakTwo(a,par[gPeakSigma],sB,par[gPeakSigmaC],par[gPeakDecay],yeta);}
+	return ret;
+}
+	
+// This function parses the TF1 parameter list and the additional sharing
 // parameters to add together peak background specified by relative distances
-inline double MulitPeakBackUni2Gaus(double *par,int Np,double& x,double& yeta){
-	double ret=0,sum=0,cent=0;
+inline double MulitPeakBackUniTwo(double *par,int Np,double& x,double& yeta){
+	double ret=0;
+	double sum=0;
+	double cent=0;
+	double a;
+	double sB=par[gPeakSigma]*par[gPeakSigmaB];
+	double TwoGausFrac=par[gPeakSigmaC];
+	
+	double a1 = UniGausArea(par[gPeakSigma])*TwoGausFrac+UniGausArea(sB)*(1-TwoGausFrac);
+	double a2 = DecGausArea(par[gPeakSigma],par[gPeakDecay]);
+	double b1 = a1*yeta/(a1*yeta+a2*(1-yeta));
+	
 	for(int i=0;i<Np;i++)sum+=par[gPeakNH(i)];
 	for(int i=0;i<Np;i++){cent+=par[gPeakNC(i)];
-		double a=x-cent;
-		ret+=(par[gPeakNH(i)]/sum)*(UniGausStep(a,par[gPeakSigma])*yeta+UniGausStep(a,par[gPeakSigmaB])*(1-yeta));
-	}
+		a=x-cent;
+		ret+=(par[gPeakNH(i)]/sum)*CombRDstepTwo(a,par[gPeakSigma],sB,TwoGausFrac,par[gPeakDecay],b1);}
 	return ret;
 }
 
-inline double MulitPeak2Gaus(double *par,int Np,double& x,double& yeta){
-	double ret=0,cent=0;
-	for(int i=0;i<Np;i++){cent+=par[gPeakNC(i)];
-		double a=x-cent;
-		ret+=par[gPeakNH(i)]*(UniGaus(a,par[gPeakSigma])*yeta+UniGaus(a,par[gPeakSigmaB])*(1-yeta));
-	}
-	return ret;
+inline double MulitPeakBackTwo(double *par,int Np,double& x,double& yeta){
+	return MulitPeakBackUniTwo(par,Np,x,yeta)*par[gPeakBackB]+par[gPeakBackA];
 }
 
-inline double CombArea2Gaus(double& sig,double& sigB,double& yeta){
-	return UniGausArea(sig)*yeta + UniGausArea(sigB)*(1-yeta);
-}
+
 
 ///////////////////////////////////////////
 //    Ultra peal class definition	 //
@@ -274,14 +314,32 @@ class  Ultrapeak{
 	
 	double operator() (double *x, double *p) {
 
+		// DecGaus is not max @ 0 and does not have height = 1
+		// User p[gPeakSharing] specifies the fraction of the height that is UniGaus
+		// From this we calculate a new sharing parameter yeta & scaling factor hach such that:
+		// y = hach * ( yeta*UniGaus + (1-yeta)*DecGaus)
+		// Will have a max height ~1
+		// Thus heigh parameters and sharing parameters can be given in terms of simple observable height
+		// Much easier for fitting but more complicated in the functions.
+		
 		// Complex sharing parameters for the decay peak are calculated here to save multiplication of effort
-		double a=DecGausMaxX(p[gPeakSigma],p[gPeakDecay])*(1-p[gPeakSharing]); 
+
+		
+		double TwoGausFrac=p[gPeakSigmaC];
+		double sigd=p[gPeakSigma];
+		if(TestBit(k2Gaus))sigd*=(TwoGausFrac+p[gPeakSigmaB]*(1-TwoGausFrac));
+	
+		double a=DecGausMaxX(sigd,p[gPeakDecay])*(1-p[gPeakSharing]); 
 		double X=x[0]+a;  
-		double xeta=p[gPeakSharing]/UniGaus(a,p[gPeakSigma]);
-		double zeta=(1-p[gPeakSharing])/DecGaus(a,p[gPeakSigma],p[gPeakDecay]);
+		double xeta;
+		if(TestBit(k2Gaus)){
+			double sB=p[gPeakSigma]*p[gPeakSigmaB];
+			xeta=p[gPeakSharing]/(UniGaus(a,p[gPeakSigma])*TwoGausFrac+UniGaus(a,sB)*(1-TwoGausFrac));
+		}else xeta=p[gPeakSharing]/UniGaus(a,p[gPeakSigma]);
+		double zeta=(1-p[gPeakSharing])/DecGaus(a,sigd,p[gPeakDecay]);
 		double yeta=xeta/(xeta+zeta);
 		double hach=xeta+zeta;
-		
+
 		// NOTE the following line removes
 		// complex sharing parameter normalisation behaviour 
 		// Use OldCombArea and ignore "TrueCentroid"
@@ -294,15 +352,16 @@ class  Ultrapeak{
 
 		double ret=0;
 		if(TestBit(kPeaks)){
-			if(TestBit(k2Gaus))ret+=MulitPeak2Gaus(P,N,x[0],p[gPeakSharing]);
+			if(TestBit(k2Gaus))ret+=hach*MulitPeakTwo(P,N,X,yeta);
 			else ret+=hach*MulitPeak(P,N,X,yeta);
 		}
+		//With new function it is possible to fix par[gPeakSigmaB]==1 and use MulitPeakTwo instead of MulitPeak
 		
 			
 		if(TestBit(kBack)){
 			ret+=P[gUltraPol0];
 			if(TestBit(kStep)){
-				if(TestBit(k2Gaus))ret+=P[gUltraStep]*MulitPeakBackUni2Gaus(P,N,x[0],p[gPeakSharing]);
+				if(TestBit(k2Gaus))ret+=P[gUltraStep]*MulitPeakBackUniTwo(P,N,X,yeta);
 				else ret+=P[gUltraStep]*MulitPeakBackUni(P,N,X,yeta);
 			}
 			if(TestBit(kPol2))ret+=x[0]*P[gUltraPol1]+x[0]*x[0]*P[gUltraOffsetOrPol2];
@@ -363,9 +422,12 @@ class  Ultrapeak{
 class  UltrapeakArea{
  public:
  
-  static double UltraPeakAreaFn(unsigned int& Np, double *p){return p[gPeakNH(Np)]*CombArea(p[gPeakSigma],p[gPeakDecay],p[gPeakSharing]);}
-  
-  static double UltraPeakAreaFn2Gaus(unsigned int& Np, double *p){return p[gPeakNH(Np)]*CombArea2Gaus(p[gPeakSigma],p[gPeakSigmaB],p[gPeakSharing]);}
+	static double UltraPeakAreaFn(unsigned int& Np, double *p){return p[gPeakNH(Np)]*CombArea(p[gPeakSigma],p[gPeakDecay],p[gPeakSharing]);}
+
+	static double UltraPeakAreaFnTwo(unsigned int& Np, double *p){
+		double sB=p[gPeakSigma]*p[gPeakSigmaB];
+		return p[gPeakNH(Np)]*CombAreaTwo(p[gPeakSigma],sB,p[gPeakSigmaC],p[gPeakDecay],p[gPeakSharing]);
+	}
   
 	unsigned int N_i;//Target peak 0-(N-1), not total number
 	TransientBitsClass<long> cBits;
@@ -379,7 +441,7 @@ class  UltrapeakArea{
 	double operator() (double *x, double *p) {
 		double *P=p;
 		if(N_i>0){Ultrapeak::FixParameters(p,para,N_i+1,cBits);P=para;}
-		if(cBits.TestBit(Ultrapeak::k2Gaus))return UltraPeakAreaFn2Gaus(N_i,P);
+		if(cBits.TestBit(Ultrapeak::k2Gaus))return UltraPeakAreaFnTwo(N_i,P);
 		else return UltraPeakAreaFn(N_i,P);
 	}
 };
