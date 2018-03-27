@@ -19,7 +19,7 @@ TVirtualPad* hold=gPad;
 	
 	
 	hidebinerrors=false;
-	background_mode=1;
+	background_mode=2;
 	backfit_mode=2;
 	xyz=0;
 	target_bin=20;
@@ -104,6 +104,7 @@ TVirtualPad* hold=gPad;
 			fRButton8 = new TGRadioButton(fBgroup2,"ManRel");
 			fRButton8->SetToolTipText("Relative Position Manual Background\n Manually select a second gate to produce a background spectrum.\n An additional slider will be displayed.\n This gate will move with the primary gate. Useful for scanning.");
 		fRButton5->SetState(kButtonDown);
+		background_mode=2;
 		fBgroup2->Show();
 		fBgroup2->Connect(" Clicked(Int_t)", "j_gating_frame", this,"ChangeBackMode(Int_t)");
 		fHframe0->AddFrame(fBgroup2, fBfly1);
