@@ -125,3 +125,6 @@ void ExtractErrorTest(string str){
 	ExtractError(str,v,e);
 	cout<<endl<<v<<" +- "<<e<<endl;
 }
+
+
+ClassImp(TH1Efficiency);

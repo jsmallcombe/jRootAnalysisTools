@@ -16,6 +16,8 @@
 #include <utility>
 #include <TF1.h>
 #include <TH1.h>
+#include <TGraph.h>
+#include <TArray.h>
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -144,5 +146,102 @@ inline double jsigfig(double in,int sf){
 
   return round(in/fac)*fac;
 }
+
+
+
+//////////////////////////////////////////////////////////
+//		efficiency fill histogram		//
+//////////////////////////////////////////////////////////
+
+//
+// A helper class for filling a TH1D based on efficiency
+// Acts primarily as a TH1D except data on efficiency and efficiency uncertainty are stored
+// And hence filling is overridden,
+// Correlated efficiency uncertainty is tallied once filling is completed.
+// Call FillFinish() (called automatically on Write)
+//
+
+class TH1Efficiency : public TH1D {
+  public:
+	TH1Efficiency(){};
+	TH1Efficiency(const char *name,const char *title,Int_t nbins,Double_t xlow,Double_t xup,TGraph *Eff,TGraph *Err=0):TH1D(name,title,nbins,xlow,xup){
+// 		fEstore.Set(TH1D::GetNcells());
+		fEstore.Set(fNcells);
+		fEff=(*Eff);
+		fDoErr=(Err);
+		FillFin=false;
+		if(fDoErr){
+			fErr=(*Err);
+		}
+	}
+	virtual ~TH1Efficiency(){}
+	
+
+	TH1Efficiency( const TH1Efficiency &obj){obj.Copy(*this);}//copy constructor
+	TH1Efficiency& operator=(const TH1Efficiency& obj){//assignment operator
+		obj.Copy(*this);
+		return *this;
+	}
+	void Copy(TObject &rhs) const {
+		TH1D::Copy(rhs);
+		static_cast<TH1Efficiency&>(rhs).fEff=fEff;
+		static_cast<TH1Efficiency&>(rhs).fErr=fErr;
+		static_cast<TH1Efficiency&>(rhs).fDoErr=fDoErr;
+		static_cast<TH1Efficiency&>(rhs).fEstore=fEstore;
+		return;                                      
+	}
+	
+	
+	Int_t Fill(double X){return Fill(X,X);}
+	Int_t Fill(double X,double eX){
+		if(FillFin)return 1;
+		double D=fEff.Eval(eX);
+		if(D>0){
+			Int_t N=TH1D::Fill(X,1/D);//Will correctly increment sumw2 by 1/D^2
+			if(N<0) return -1;
+			if(fDoErr){
+				double d=fErr.Eval(eX);
+				if(d>0){
+					fEstore.fArray[N]+=pow(d,2)/pow(D,3);
+					// ALTERANTIVE TO CURRENT METHOD // fSumw2.fArray[bin] += pow(d,2)/pow(D,4);
+				}
+			}
+			return N;
+		}
+		return -1;
+	}
+	// Could include Eff Err into sumw2 at fill time.
+	// However the end result is actually an overall smaller error as this ignores correlations between each fill
+
+	
+  	void FillFinish(){
+		if(fDoErr){
+			for (Int_t bin = 0; bin < fNcells; ++bin){
+				fSumw2.fArray[bin] += fEstore.fArray[bin]*TH1D::fArray[bin];
+				fEstore.fArray[bin]=0;
+			}
+			FillFin=true;
+		}
+	}
+	
+	Int_t Write(const char *name = 0,Int_t 	option = 0,Int_t bufsize = 0){
+		FillFinish();
+// 		return TObject::Write(name,option,bufsize);
+		
+		TH1D copy;
+		TH1D::Copy(copy);
+		return copy.Write(name,option,bufsize);
+	}
+	
+  private:
+	TGraph fEff;
+	TGraph fErr;
+	TArrayD fEstore;
+	bool fDoErr,FillFin;
+   private:
+	ClassDef(TH1Efficiency,1);
+};
+
+
 
 #endif
