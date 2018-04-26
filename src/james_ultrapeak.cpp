@@ -65,8 +65,10 @@ void Ultrapeak::DrawPeak(FullFitHolder* fFit,TCanvas* pad,TH1* fHist){
 	gPad->Update();
 }
 
+// Calculated the peak error based on fit parameters
+// If binwidth!=1 is provided the areas will be accordingly corrected
 void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
-	
+
 	// Prepare by getting all the info
 	double fLower,fUpper;
 	fHold->GetRange(fLower,fUpper);
@@ -79,18 +81,7 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
 // 	string fName="Bkgd Grad";
 // 	if(strcmp(fHold->GetParName(1), fName.c_str())==0)step=0;
 	
-	// Prepare our functions
-	Ultrapeak fPeakFunc(N,fHold->cBits);
-	TF1 fInte("fInte",fPeakFunc,fLower,fUpper,fHold->GetNpar());
-	fInte.SetParameters(fParam);
-	double fIntegral=fInte.Integral(fLower,fUpper);
-	fPeakFunc.SetBit(kBack,0);
-	TF1 fPeaks("fPeaks",fPeakFunc,fLower,fUpper,fHold->GetNpar());
-	fPeaks.SetParameters(fParam);
-	double fIntegralPeaks=fPeaks.Integral(fLower,fUpper);
-	
 	// Start calculating and adding things
-	
 	fHold->CVal(VChi,fHold->ReducedChi());
 	
 	double sCentroid=0;// Because peaks are relative
@@ -118,30 +109,39 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
 		fHold->CVal(VPA(i),sA/binwidth);
 		fHold->CVal(VPAe(i),sE/binwidth);
 	}
-	fHold->CVal(VBI,(fIntegral-fIntegralPeaks)/binwidth);//The integral of the background over the fit area
 }
 
-
+// Calculate areas based on fit function and integration
+// Requires the histogram that was the target of the fit
 void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist){
-	MakeData(fHold,hist->GetXaxis()->GetBinWidth(1));
-	
-	// Prepare by getting all the info
-	double fLower,fUpper;
-	fHold->GetRange(fLower,fUpper);
-	int N=NfromTF1(fHold);//number of peaks
-	fHold->CVal(VN,N);
-	
 	double fParam[48];
 	fHold->GetParameters(fParam);
-
-	// Start calculating and adding things
+	int N=NfromTF1(fHold);//number of peaks	
+	
+	//Calculate the function areas
+	MakeData(fHold,hist->GetXaxis()->GetBinWidth(1));
+	
+	// Calculate full integrals
+	double fLower,fUpper;
+	fHold->GetRange(fLower,fUpper);
 	int l=hist->FindBin(fLower);
 	int u=hist->FindBin(fUpper);
+	fLower=hist->GetXaxis()->GetBinLowEdge(l);
+	fUpper=hist->GetXaxis()->GetBinUpEdge(u);
+
+	double total=hist->Integral(l,u);
 	
-	double total=hist->Integral(l+1,u-1);
-	total+=(hist->GetBinContent(l)+hist->GetBinContent(u))*0.5;
-	double peakcounts=total-fHold->CVal(VBI);
-	double peakcerror=sqrt(total)+sqrt(fHold->CVal(VBI));
+	// Prepare our functions
+	Ultrapeak fPeakFunc(N,fHold->cBits);
+	fPeakFunc.SetBit(kPeaks,0);
+	TF1 fBack("fBack",fPeakFunc,fLower,fUpper,fHold->GetNpar());
+	fBack.SetParameters(fParam);
+	double fIntegralBack=fBack.Integral(l,u);
+	fHold->CVal(VBI,fIntegralBack);//The integral of the background over the fit area
+	
+	// Start calculating and adding things
+	double peakcounts=total-fIntegralBack;
+	double peakcerror=sqrt(total)+sqrt(fIntegralBack);
 
 	for(int i=0;i<N;i++){
 		UltrapeakFrac fPeakFrac(N,i,fHold->cBits);
@@ -192,10 +192,16 @@ void Ultrapeak::PrintData(FullFitHolder* fHold,bool titles,double binwidth,ostre
 	if(fHold->CValS()<VPAe(N-1))MakeData(fHold,binwidth);
 
 	for(int i=0;i<N;i++){
+		//New error check
+		double delta_A=fHold->CVal(VPA(i))-fHold->CVal(VPI(i));
+		double sumerr=fHold->CVal(VPAe(i))+fHold->CVal(VPIe(i));
+		bool fiterr=(abs(delta_A)>sumerr);
+		
 		ofs<<endl<<setw(10)<<fHold->CVal(VChi);//chi
 		ofs<<" "<<setw(10)<<fHold->CVal(VPC(i))<<" "<<setw(10)<<fHold->CVal(VPC(i))+fHold->CVal(VOff)<<" "<<setw(10)<<fHold->CVal(VPCe(i));
 		ofs<<" "<<setw(10)<<fHold->CVal(VPA(i))<<" "<<setw(10)<<fHold->CVal(VPAe(i));
 		ofs<<" "<<setw(10)<<fHold->CVal(VPI(i))<<" "<<setw(10)<<fHold->CVal(VPIe(i))<<flush;
+		if(fiterr)ofs<<" Err."<<flush;
 	}	
 }
 

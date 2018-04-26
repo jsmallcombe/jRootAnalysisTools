@@ -113,7 +113,7 @@ void ExtractError(string str,double& value,double& error){
 					break;
 
 			if((unsigned)strval.find(".")<digits)sf--;
-			error=error*pow(10,floor(log10(value))-sf+1);
+			error=error*pow(10,floor(log10(abs(value)))-sf+1);
 // 			cout<<endl<<error<<endl;
 		}
 	}
@@ -124,6 +124,106 @@ void ExtractErrorTest(string str){
 	double v,e;
 	ExtractError(str,v,e);
 	cout<<endl<<v<<" +- "<<e<<endl;
+}
+
+
+void ExtractAsymError(string str,double& value,double& errorup,double& errordwn){
+	value=0;	
+	errorup=-1;
+	errordwn=-1;	
+
+	unsigned int l=str.size();
+	if(l<1)return;
+	
+	char symb[6]={'+','-',' ','(',')','\t'};
+	vector<unsigned int> type;
+	vector<string> substr;
+	unsigned int lasttype=100;
+	unsigned int count=0;
+	for(unsigned int i=0;i<l;++i){
+		bool special=0;
+		int thistype=-1;
+		for(int j=0;j<6;++j){
+			if(symb[j]==str[i]){
+				//exception for exponents
+				if(i>0){
+					if(j<2&&(str[i-1]=='e'||str[i-1]=='E')){
+						continue;
+					}
+				}
+				special=1;
+				thistype=j;	
+			}
+		}
+		
+		//If this character is special
+		if(special){
+			if(count){//There was any length of non special (i.e. a number)
+				substr.push_back(str.substr(i-count,count));
+				type.push_back(lasttype);
+			}
+			lasttype=thistype;
+			count=0;
+		}else{
+			count++;
+			if(i==(l-1)){//If its the end of string
+				substr.push_back(str.substr(l-count,count));
+				type.push_back(lasttype);
+			}
+		}
+	}
+	
+	unsigned int s=substr.size();
+	if(s<1)return;
+	value=std::atof(substr[0].c_str());
+	if(type[0]==1)value=-abs(value);//Because we took off any signs
+	
+	if(s<2)return;
+	
+	// Calculate the scale applied to significant figure errors //
+	
+	unsigned int digits=substr[0].size();
+	unsigned int exp=substr[0].find("e");
+	unsigned int EXP=substr[0].find("E");
+	if(exp<digits)digits=exp;
+	if(EXP<digits)digits=EXP;
+	unsigned int sf=digits;
+	for(unsigned int i=0;i<digits;i++)
+		if(substr[0][i]=='0')sf--;
+		else if(substr[0][i]!='.')break;
+
+	if((unsigned)substr[0].find(".")<digits)sf--;
+	double scale=pow(10,floor(log10(abs(value)))-sf+1);
+	
+	//////
+	
+	double err=std::atof(substr[1].c_str());
+	if(type[1]==3){//If bracketed significant figure error
+		//If error value is <1 or non-integer, it isn't a sf error
+			if(!(err<1||int(err)<err))err*=scale;
+	}
+	
+	if(type[1]==1)errordwn=abs(err);//abs should be unnecessary is char part works right 
+	else errorup=abs(err);
+	
+	if(s>2){
+		err=std::atof(substr[2].c_str());
+		if(type[2]==3){//If bracketed significant figure error
+			//If error value is <1 or non-integer, it isn't a sf error
+				if(!(err<1||int(err)<err))err*=scale;
+		}
+	}
+	
+	if(errordwn<0)errordwn=abs(err);
+	if(errorup<0)errorup=abs(err);
+	
+	return;
+}
+
+void ExtractAsymErrorTest(string str){
+	double v,u,d;
+	ExtractAsymError(str,v,u,d);
+	cout<<endl<<v<<" + "<<u<<" - "<<d<<endl;
 }
 
 

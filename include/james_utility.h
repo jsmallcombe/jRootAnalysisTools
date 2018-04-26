@@ -130,6 +130,10 @@ void ExtractError(string str,double& value,double& error);
 void ExtractErrorTest(string str);
 
 
+void ExtractAsymError(string str,double& value,double& errorup,double& errordwn);
+
+void ExtractAsymErrorTest(string str);
+
 //////////////////////////////////////////////////////////
 //		mini maths functions			//
 //////////////////////////////////////////////////////////

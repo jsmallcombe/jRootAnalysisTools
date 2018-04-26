@@ -218,7 +218,7 @@ TCanvas* draw_hist_bisect(TH1* bottom,TH1* top){
 	top->GetYaxis()->SetNdivisions(5,5,0);
 	bottom->GetYaxis()->SetNdivisions(5,5,0);
 	
-	TPad* p=(TPad*)canv->cd(1);bottom->Draw();
+	TPad* p=(TPad*)canv->cd(1);bottom->Draw("hist");
 	
 	//Whitebox covering top number
 	TBox *box = new TBox();
@@ -230,7 +230,7 @@ TCanvas* draw_hist_bisect(TH1* bottom,TH1* top){
 	p->AbsPixeltoY(abs(p->VtoPixel(0.7))));
 
 	p=(TPad*)canv->cd(2);
-	top->Draw();
+	top->Draw("hist");
 	draw_corrected_titles(top);
 	TQObject::Connect(p, "RangeChanged()", 0, 0,"RangeChangeBisectCanvasBoth()");
 	TQObject::Connect(canv, "ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0, 0,"PostUpdateCanvasUpdateCall(Int_t,Int_t,Int_t,TObject*)");

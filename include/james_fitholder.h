@@ -111,7 +111,8 @@ class FullFitHolder: public TF1
 // 	void Draw(){cFit.Draw();}
 // 	void DrawCopy(){cFit.DrawCopy();}
 
-	void DrawCopyBands(Option_t * option="",bool BOnly=false){
+	
+	vector<TGraph*> DrawCopyBands(Option_t * option="",bool BOnly=false){
 		double xa,xb;GetRange(xa,xb);
 		TGraph A,B;
 
@@ -123,8 +124,12 @@ class FullFitHolder: public TF1
 			B.SetPoint(i-1,x,y-ey);
 		}
 		if(!BOnly)DrawCopy(option);
-		A.DrawClone("samel");
-		B.DrawClone("samel");
+		
+		vector<TGraph*> ret;
+		ret.push_back((TGraph*)A.DrawClone("samel"));
+		ret.push_back((TGraph*)B.DrawClone("samel"));
+		
+		return ret;
 	}
 	
 	int Fit(TH1* in,string opt="RBMSE+"){return FitOb(in,opt);}
