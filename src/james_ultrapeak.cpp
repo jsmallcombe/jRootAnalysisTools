@@ -136,7 +136,7 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist){
 	fPeakFunc.SetBit(kPeaks,0);
 	TF1 fBack("fBack",fPeakFunc,fLower,fUpper,fHold->GetNpar());
 	fBack.SetParameters(fParam);
-	double fIntegralBack=fBack.Integral(l,u);
+	double fIntegralBack=fBack.Integral(fLower,fUpper)/hist->GetXaxis()->GetBinWidth(1);
 	fHold->CVal(VBI,fIntegralBack);//The integral of the background over the fit area
 	
 	// Start calculating and adding things
