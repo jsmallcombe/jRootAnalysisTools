@@ -192,7 +192,7 @@ jhistquestion::jhistquestion(vector<string> butnam,TH1* hist) : TGMainFrame(gCli
 	if(butnam.size()<1)return;
 	if(butnam[0].size()<1)return;
 	
-	fCanvas1 = new TRootEmbeddedCanvas("", this, 800, 600);
+	fCanvas1 = new TRootEmbeddedCanvas("", this, 1800,700);
 	fCanvas1->GetCanvas()->SetBorderMode(0);
 // 	fCanvas1->GetCanvas()->SetMargin(0.1,0.01,0.05,0.01);	
 	AddFrame(fCanvas1, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0));	

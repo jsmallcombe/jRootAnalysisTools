@@ -48,21 +48,26 @@ void hformat(TH1*,bool setminzero=1);
 //Reformat a histogram into a totally different binning (obviously there is information loss)
 TH1* ExtreemRebin(TH1* target,TH1* data);
 
+//Apply chossen margins
+void ReMargin(TVirtualPad*);
+
 //Make a Canvas with desired formatting
 //Can create multiple layered transparent pads
-TCanvas* preapre_canvas(unsigned int n=1);
+TCanvas* preapre_canvas(unsigned int n=1,bool heightset=false);
 
 //Title of hist are replaced with formatted text boxes drawn in current pad
 void draw_corrected_titles(TH1* hist);
 
-//Apply hformat preapre_canvas & preapre_canvas
+//Apply hformat  & preapre_canvas
 TCanvas* DrawHformat(TH1* HH,bool setminzero);
 
 //Prepare and draw fn for 2-hist canvases
 TCanvas* preapre_canvas_bisect();
 TCanvas* preapre_canvas_inset();
-TCanvas* draw_hist_inset(TH1* main,TH1* inset);
-TCanvas* draw_hist_bisect(TH1* bottom,TH1* top);
+TCanvas* draw_hist_inset(TH1* main,TH1* inset,int pixX=-1,int pixY=-1);
+TCanvas* draw_hist_bisect(TH1* bottom,TH1* top,int pixX=-1,int pixY=-1);
+
+void AxisYWhiteBox(TVirtualPad* p=gPad,double NDCY=0.55,double NDCX=0.14);
 
 //Draw_hist_bisect with some specific labels added
 TCanvas* draw_electron_gamma(TH1* electron,TH1* gamma);
@@ -82,7 +87,6 @@ void PadNDCtoUser(vector<double>& x,vector<double>& y,TVirtualPad* pad,bool reve
 void PadNDCtoUser(double& x,double& y,TVirtualPad* pad,bool reverse=false);
 void PadNDCtoUser(double& x,double& y,double* xy,bool reverse=false);
 
-void ReMargin(TVirtualPad*);
 
 //Draw a formatted copy in a new window
 TCanvas* HistDrawCopy(TH1* hist,bool opt=true);//opt="hist" hide errors

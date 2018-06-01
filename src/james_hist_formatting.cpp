@@ -123,21 +123,28 @@ TH1* ExtreemRebin(TH1* target,TH1* data){
 	return target;
 }
 
+
+void ReMargin(TVirtualPad* pad){
+	pad->SetMargin(0.15,0.05,0.15,0.05);
+}
+
 static unsigned int global_canvas_iterator=0;
-TCanvas* preapre_canvas(unsigned int n){
+TCanvas* preapre_canvas(unsigned int n,bool heightset){
 	TCanvas *canv = new TCanvas(("AutoCan"+to_string(global_canvas_iterator)).c_str(), "AutoCan",100,100,900,600);
 	global_canvas_iterator++;
 	canv->Divide(n);
-	for(unsigned int i=1;i<=n;i++){
-		TVirtualPad* p=canv->cd(i);
+	double height=(1-0.05-0.15)/n;
+	for(unsigned int i=0;i<n;i++){
+		TVirtualPad* p=canv->cd(i+1);
 		p->SetPad(0,0,1,1);
 		p->SetFrameBorderMode(0);
 		p->SetFillStyle(4000);
-		p->SetBottomMargin(0.15);
-		p->SetTopMargin(0.05);
-		p->SetRightMargin(0.05);
-		p->SetLeftMargin(0.15);
 		p->SetFrameLineWidth(2);
+		ReMargin(p);
+		if(heightset){
+			p->SetBottomMargin(0.15+i*height);
+			p->SetTopMargin(0.05+(n-i-1)*height);
+		}
 	}
 	return canv;
 }
@@ -152,7 +159,7 @@ void draw_corrected_titles(TH1* hist){
 	latex->SetTextFont(22);
 	latex->SetTextAlign(22);
 	latex->SetTextAngle(90);
-	latex->DrawLatexNDC(0.05,0.55,hist->GetYaxis()->GetTitle());
+	latex->DrawLatexNDC(0.04,0.55,hist->GetYaxis()->GetTitle());
 	latex->SetTextAngle(0);
 	latex->DrawLatexNDC(0.55,0.05,hist->GetXaxis()->GetTitle());
 	delete latex;
@@ -160,12 +167,12 @@ void draw_corrected_titles(TH1* hist){
 
 
 TCanvas* preapre_canvas_bisect(){
-	TCanvas *canv = preapre_canvas(2);
+	TCanvas *canv = preapre_canvas(2,true);
 	canv->SetTitle("BisectCanvas");
-	TVirtualPad* p=canv->cd(1);
-	p->SetTopMargin(0.45);
-	p=canv->cd(2);
-	p->SetBottomMargin(0.55);
+// 	TVirtualPad* p=canv->cd(1);
+// 	p->SetTopMargin(0.45);
+// 	p=canv->cd(2);
+// 	p->SetBottomMargin(0.55);
 	return canv;
 }
 
@@ -181,10 +188,17 @@ TCanvas* preapre_canvas_inset(){
 }
 
 
-TCanvas* draw_hist_inset(TH1* main,TH1* inset){
+TCanvas* draw_hist_inset(TH1* main,TH1* inset,int pixX,int pixY){
+	main->SetMaximum(-1111);//Important if rebinned earlier. If setting manual, do after
+	inset->SetMaximum(-1111);
+	
 	TCanvas *canv = preapre_canvas_inset();
 	canv->SetTitle(main->GetTitle());
 	hformat(main);hformat(inset);
+	
+	if(pixX>0&&pixY>0){
+		canv->SetWindowSize(pixX,pixY);
+	}
 	
 	TAxis* ax[2]={inset->GetXaxis(),inset->GetYaxis()};
 	for(int i=0;i<2;i++){
@@ -195,16 +209,24 @@ TCanvas* draw_hist_inset(TH1* main,TH1* inset){
 		ax[i]->SetTickLength(0.02);
 	}
 	
-	canv->cd(1);main->Draw();
+	canv->cd(1);main->Draw("hist");
 	draw_corrected_titles(main);
 
-	canv->cd(2);inset->Draw();
+	canv->cd(2);inset->Draw("hist");
 	
 	return canv;
 }
 
-TCanvas* draw_hist_bisect(TH1* bottom,TH1* top){
+TCanvas* draw_hist_bisect(TH1* bottom,TH1* top,int pixX,int pixY){
+	bottom->SetMaximum(-1111);//Important if rebinned earlier. If setting manual, do after
+	top->SetMaximum(-1111);
+	
 	TCanvas *canv = preapre_canvas_bisect();
+	
+	if(pixX>0&&pixY>0){
+		canv->SetWindowSize(pixX,pixY);
+	}
+	
 	canv->SetTitle(bottom->GetTitle());
 	hformat(bottom);hformat(top);
 	
@@ -221,13 +243,7 @@ TCanvas* draw_hist_bisect(TH1* bottom,TH1* top){
 	TPad* p=(TPad*)canv->cd(1);bottom->Draw("hist");
 	
 	//Whitebox covering top number
-	TBox *box = new TBox();
-	box->SetFillColor(0);
-	p->Update();//To load in the new coords properly
-	box->DrawBox(p->PixeltoX(p->UtoPixel(0)),
-	p->AbsPixeltoY(abs(p->VtoPixel(0.5))),
-	p->PixeltoX(p->UtoPixel(0.14)),
-	p->AbsPixeltoY(abs(p->VtoPixel(0.7))));
+	AxisYWhiteBox();
 
 	p=(TPad*)canv->cd(2);
 	top->Draw("hist");
@@ -238,6 +254,17 @@ TCanvas* draw_hist_bisect(TH1* bottom,TH1* top){
 	return canv;	
 }
 
+void AxisYWhiteBox(TVirtualPad* p,double NDCY,double NDCX){
+	TBox *box = new TBox();
+	box->SetFillColor(0);
+	p->cd();
+	p->Update();//To load in the new coords properly
+	box->DrawBox(p->PixeltoX(p->UtoPixel(0)),
+	p->AbsPixeltoY(abs(p->VtoPixel(NDCY))),
+	p->PixeltoX(p->UtoPixel(NDCX)),
+	p->AbsPixeltoY(abs(p->VtoPixel(1))));
+	delete box;
+}
 
 TCanvas* draw_electron_gamma(TH1* electron,TH1* gamma){
 	axislabelkev(gamma);
@@ -405,9 +432,6 @@ void PadNDCtoUser(double& x,double& y,double* xy,bool reverse){
 	}
 }
 
-void ReMargin(TVirtualPad* pad){
-	pad->SetMargin(0.15,0.05,0.15,0.05);
-}
 
 TCanvas* HistDrawCopy(TH1* hist,bool opt){
 	if(hist){
