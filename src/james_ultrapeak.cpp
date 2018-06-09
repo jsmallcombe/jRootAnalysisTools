@@ -114,13 +114,16 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
 // Calculate areas based on fit function and integration
 // Requires the histogram that was the target of the fit
 void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist){
+
+	//Calculate the area from the peak function
+	MakeData(fHold,hist->GetXaxis()->GetBinWidth(1));
+	
+	//Calculate the area from the histogram integral
+	
 	double fParam[48];
 	fHold->GetParameters(fParam);
 	int N=NfromTF1(fHold);//number of peaks	
-	
-	//Calculate the function areas
-	MakeData(fHold,hist->GetXaxis()->GetBinWidth(1));
-	
+		
 	// Calculate full integrals
 	double fLower,fUpper;
 	fHold->GetRange(fLower,fUpper);
@@ -141,7 +144,7 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist){
 	
 	// Start calculating and adding things
 	double peakcounts=total-fIntegralBack;
-	double peakcerror=sqrt(total)+sqrt(fIntegralBack);
+	double peakcerror=sqrt(total+fIntegralBack);
 
 	for(int i=0;i<N;i++){
 		UltrapeakFrac fPeakFrac(N,i,fHold->cBits);
@@ -151,7 +154,7 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist){
 		double pFE=AnalyticalFullCovError(&fFrac,fHold->GetCov());
 		
 		double peak=peakcounts*pF;
-		double peakerror=(pFE/pF)*(pFE/pF)+(peakcerror/peakcounts)*(peakcerror/peakcounts);	
+		double peakerror=pow(pFE/pF,2)+pow(peakcerror/peakcounts,2);	
 		peakerror=sqrt(peakerror)*peak;
 		// Integral Area Count
 	
@@ -200,8 +203,12 @@ void Ultrapeak::PrintData(FullFitHolder* fHold,bool titles,double binwidth,ostre
 		ofs<<endl<<setw(10)<<fHold->CVal(VChi);//chi
 		ofs<<" "<<setw(10)<<fHold->CVal(VPC(i))<<" "<<setw(10)<<fHold->CVal(VPC(i))+fHold->CVal(VOff)<<" "<<setw(10)<<fHold->CVal(VPCe(i));
 		ofs<<" "<<setw(10)<<fHold->CVal(VPA(i))<<" "<<setw(10)<<fHold->CVal(VPAe(i));
-		ofs<<" "<<setw(10)<<fHold->CVal(VPI(i))<<" "<<setw(10)<<fHold->CVal(VPIe(i))<<flush;
-		if(fiterr)ofs<<" Err."<<flush;
+		if(fHold->CVal(VPI(i))>0){
+			ofs<<" "<<setw(10)<<fHold->CVal(VPI(i))<<" "<<setw(10)<<fHold->CVal(VPIe(i))<<flush;
+			if(fiterr)ofs<<" Err."<<flush;
+		}else{
+			ofs<<" "<<setw(10)<<" -"<<" "<<setw(10)<<" -"<<flush;
+		}
 	}	
 }
 
@@ -727,7 +734,14 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	
 	FullFitHolder* fHold = new FullFitHolder(fFit,fResult->GetCovarianceMatrix(),fPeakFunc.cBits);
 	
-	Ultrapeak::MakeData(fHold,fHist);
+	if(fExHist){
+		//This form does not calculate the integral answers because an exclusion histogram was used
+		Ultrapeak::MakeData(fHold,fHist->GetXaxis()->GetBinWidth(1));
+		fHold->CVal(VPIe(NfromTF1(fHold)-1),0);
+	}else{
+		Ultrapeak::MakeData(fHold,fHist);
+	}
+
 	
 	if(statmode==0){
 		Ultrapeak::InflateError(fHold);

@@ -661,11 +661,11 @@ void j_gating_frame::ChangeBackFit(const Int_t id)
 		fFitFcn->SetRange(0,0);
 	}
 	
-	DoAutoFit();
-	
 	if(backfit_mode>3){//TSpectrum
 		UpdateSpecBack();
 	}
+	
+	DoAutoFit();
 	
 	if(doupdraw){//TSpectrum
 		UpdateDraw();
