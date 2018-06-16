@@ -26,6 +26,15 @@
 
 using namespace std;
 
+inline int HType(TH1* H){
+	if(H){
+		if(H->InheritsFrom("TH3"))return 3;
+		if(H->InheritsFrom("TH2"))return 2;
+		if(H->InheritsFrom("TH1"))return 1;
+	}
+	return 0;
+}
+
 //////////////////////////////////////////////////
 //	FUNCTIONS FOR EQUATION EVALUATION	//
 //////////////////////////////////////////////////
@@ -245,6 +254,8 @@ class TH1Efficiency : public TH1D {
    private:
 	ClassDef(TH1Efficiency,1);
 };
+
+
 
 
 

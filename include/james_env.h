@@ -26,6 +26,7 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TBranch.h>
+#include <TStopwatch.h>
 
 #include "james_utility.h"
 #include "james_ultrafit_env.h"
@@ -66,6 +67,7 @@ class CCframe : public TRootEmbeddedCanvas {
 class jEnv : public TGMainFrame {
 
 private:
+	TStopwatch Stop;
 	CCframe *fCanvas1;
 	UltraFitEnv* fFitPanel;
 	jSpecTool* fSpecTool;

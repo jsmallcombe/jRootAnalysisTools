@@ -103,13 +103,7 @@ TH1* CCframe::Hist(){
 }
 
 int CCframe::Type(){
-	TH1* H=Hist();
-	if(H){
-		if(H->InheritsFrom("TH3"))return 3;
-		if(H->InheritsFrom("TH2"))return 2;
-		if(H->InheritsFrom("TH1"))return 1;
-	}
-	return 0;
+	return HType(Hist());
 }
 		
 		
@@ -125,6 +119,8 @@ TVirtualPad* hold=gPad;
 	char buf[32];	//A buffer for processing text through to text boxes
 	SetCleanup(kDeepCleanup);
 	gSubtract=true;
+	
+	Stop.Start();
 
 	TGLayoutHints* ExpandX= new TGLayoutHints(kLHintsExpandX,5,5,3,2);
 	
@@ -328,7 +324,7 @@ void jEnv::GrabB(Int_t c,Int_t a,Int_t b,TObject* d){if(c==1)Grab(1);}
 void jEnv::Grab(int i){
 	TH1** H=&AHist;string S="AddSubHoldHistA";
 	if(i){H=&BHist;S="AddSubHoldHistB";}
-	if(fCanvas1->Type()==1){
+	if(fCanvas1->Type()<3){
 		if(*H)delete *H;
 		*H=(TH1*)fCanvas1->Hist()->Clone(S.c_str());
 		DrawAB(i);
@@ -346,7 +342,7 @@ void jEnv::DrawAB(int i){
 		H->GetXaxis()->SetLabelSize(0);
 		H->GetYaxis()->SetLabelSize(0);
 		H->SetStats(kFALSE);
-		H->DrawCopy();
+		H->DrawCopy("histcol");
 	}else{
 		Can->Clear();
 	}
@@ -366,74 +362,102 @@ void jEnv::Swap(){
 }
 
 
-void jEnv::DoSlider(){TVirtualPad* hold=gPad;
-	
+void jEnv::DoSlider(){	
 	double frac=fHslider1->GetPosition()/500.0;
 	double fracfrac=0.03;
 	
+	UpdateText();
+	
 	if(AHist&&BHist){
-		int rmin=1;
-		int rmax=-1;
-		
-		//Check the 2 ranges
-		double AXt=AHist->GetXaxis()->GetXmax();
-		double AXb=AHist->GetXaxis()->GetXmin();
-		double BXt=BHist->GetXaxis()->GetXmax();
-		double BXb=BHist->GetXaxis()->GetXmin();
-		double ranges=(AXt-AXb)/(BXt-BXb);
-		if(AXt<BXb||BXt<AXb)return;
+		int Type=HType(AHist);
+		if(Type==HType(BHist)){
 			
-		TH1* back;
-		bool backtmp=false;
-		
-		//Get the B hist in the right form
-		if((AHist->GetNbinsX()!=BHist->GetNbinsX())||
-		   (ranges<0.999)||(ranges>1.001)){
-			back=(TH1*)AHist->Clone();
-			back->Reset();
-			ExtreemRebin(back,BHist);
-			backtmp=true;
+			if(Type==2){
+				if(Stop.RealTime()<4){
+// 					cout<<endl<<"NO TIME "<<Stop.CpuTime()<<endl;
+					Stop.Start(kFALSE);	
+					return;
+				}
+// 				cout<<endl<<"GOOD TIME"<<endl;
+				Stop.Start();
+			}
+			
+			int rmin=1;
+			int rmax=-1;
+			
+			//Check the 2 ranges
+			double AXt=AHist->GetXaxis()->GetXmax();
+			double AXb=AHist->GetXaxis()->GetXmin();
+			double BXt=BHist->GetXaxis()->GetXmax();
+			double BXb=BHist->GetXaxis()->GetXmin();
+			double ranges=(AXt-AXb)/(BXt-BXb);
+			if(AXt<BXb||BXt<AXb)return;
+				
+			TH1* back=BHist;
+			bool backtmp=false;
+			
+			//Get the B hist in the right form
+			if((AHist->GetNbinsX()!=BHist->GetNbinsX())||
+			(ranges<0.999)||(ranges>1.001)){
+				if(Type==2)return;
+				back=(TH1*)AHist->Clone();
+				back->Reset();
+				ExtreemRebin(back,BHist);
+				backtmp=true;
+			}
+			
+			if(Type==2){
+				AXt=AHist->GetYaxis()->GetXmax();
+				AXb=AHist->GetYaxis()->GetXmin();
+				BXt=BHist->GetYaxis()->GetXmax();
+				BXb=BHist->GetYaxis()->GetXmin();
+				ranges=(AXt-AXb)/(BXt-BXb);
+				if((AXt<BXb||BXt<AXb)||(AHist->GetNbinsY()!=BHist->GetNbinsY())||
+				(ranges<0.999)||(ranges>1.001)){
+					return;
+				}
+			}
+			
+			
+			//Delete the previous result and get axis info
+			if(SumHist){
+				rmin=SumHist->GetXaxis()->GetFirst();
+				rmax=SumHist->GetXaxis()->GetLast();
+				delete SumHist;SumHist=0;
+			}
+			
+			//Do add/subtraction
+			if(gSubtract){
+				SumHist=scaled_back_subtract(AHist,back,frac,fracfrac);
+			}else{
+	// 			SumHist=scaled_addition(AHist,back,frac,fracfrac);//Decided no scaling for addition
+				SumHist=(TH1*)AHist->Clone();
+				SumHist->Add(back,frac);
+			}
+			
+			if(backtmp)delete back;
+			
+			//Draw new results with and adjust axis
+			TVirtualPad* hold=gPad;
+			result->GetCanvas()->cd();
+				// SumHist->GetXaxis()->SetLabelSize();
+				// SumHist->GetYaxis()->SetLabelSize();
+				if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
+				stringstream ss;ss<<"AddSubResultHist"<<SumNameItt;
+				SumHist->SetName(ss.str().c_str());
+				hformat(SumHist,0);
+				// SumHist->SetMinimum(SumHist->GetBinContent(SumHist->GetMinimumBin()));
+				if(fCheck1->GetState())SumHist->Draw("hiscol");else SumHist->Draw("col");
+			result->GetCanvas()->Modified();
+			result->GetCanvas()->Update();
+			gPad=hold;
 		}else{
-			back=BHist;
+			result->GetCanvas()->Clear();
 		}
-		
-		//Delete the previous result and get axis info
-		if(SumHist){
-			rmin=SumHist->GetXaxis()->GetFirst();
-			rmax=SumHist->GetXaxis()->GetLast();
-			delete SumHist;SumHist=0;
-		}
-		
-		//Do add/subtraction
-		if(gSubtract){
-			SumHist=scaled_back_subtract(AHist,back,frac,fracfrac);
-		}else{
-// 			SumHist=scaled_addition(AHist,back,frac,fracfrac);//Decided no scaling for addition
-			SumHist=(TH1*)AHist->Clone();
-			SumHist->Add(back,frac);
-		}
-		
-		if(backtmp)delete back;
-		
-		//Draw new results with and adjust axis
-		result->GetCanvas()->cd();
-			// SumHist->GetXaxis()->SetLabelSize();
-			// SumHist->GetYaxis()->SetLabelSize();
-			if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
-			stringstream ss;ss<<"AddSubResultHist"<<SumNameItt;
-			SumHist->SetName(ss.str().c_str());
-			hformat(SumHist,0);
-			// SumHist->SetMinimum(SumHist->GetBinContent(SumHist->GetMinimumBin()));
-			if(fCheck1->GetState())SumHist->Draw("hist");else SumHist->Draw();
-		result->GetCanvas()->Modified();
-		result->GetCanvas()->Update();
 	}else{
 		result->GetCanvas()->Clear();
 	}
-	
-	UpdateText();
-	
-gPad=hold;}
+}
 
 void jEnv::DoText(){
 	double backfrack=atof(fTbh1->GetString());
