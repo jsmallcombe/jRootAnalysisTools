@@ -1,5 +1,40 @@
 #include "james_effpeaks.h"
 
+
+vector<TF1*> MegaEffAuto(TGraphErrors * graph){
+	
+	vector<TF1*> ret;
+	ret.push_back(auto_radeff_scaled(graph,false));
+	ret[0]->SetName("radefffalse");
+	ret.push_back(auto_radeff_scaled(graph,true));
+	ret.push_back(prepare_stefeff(graph));
+	ret.push_back(prepare_gosiaA(graph));
+	ret.push_back(prepare_gosiaB(graph));
+	
+	ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
+	
+	for(unsigned int i=0;i<ret.size();i++){
+		cout<<endl<<endl<<"Fit for efficiency function "<<ret[i]->GetName()<<endl;
+		ret[i]->SetLineColor(i+1);
+		ret[i]->SetNpx(999);
+		graph->Fit(ret[i],"RSE+");
+	}
+	return ret;
+}
+
+vector<FullFitHolder*> MegaEffAutoFH(TGraphErrors * graph){
+	vector<TF1*> ret=MegaEffAuto(graph);
+	vector<FullFitHolder*> RET;	
+	for(unsigned int i=0;i<ret.size();i++){
+		RET.push_back(new FullFitHolder(ret[i]));
+		RET[i]->Fit(graph,"QRSEN");
+	}
+	return RET;
+}
+
+
+///
+
 double radeffscadef[7]={7.01,0.1465,6.98145,-0.0424513,0.0151779,3.25807,1};
 
 TF1* rad_eff_scaled(TGraphErrors * graph){
@@ -116,4 +151,36 @@ TF1* prepare_stefeff(TGraphErrors * graph){
 	newer->SetParameters(-0.14,0.052,-2308,0.1);
 	graph->Fit(newer,"QNR");
 	return newer;
+}
+
+
+
+TF1* prepare_gosiaA(TGraphErrors * graph){
+	TF1 tmphigh("tmphigh",GosiaHigh,250,3000,6);
+	tmphigh.FixParameter(4,0);
+	tmphigh.FixParameter(5,0);
+	graph->Fit(&tmphigh,"RNQ");
+	
+	TF1 *GosiaAdh=new TF1("GosiaAdhoc",GosiaAdhoc,50,2000,6);
+	GosiaAdh->SetParameters(tmphigh.GetParameters());
+	GosiaAdh->SetParameter(4,1);
+	GosiaAdh->FixParameter(5,4);
+	graph->Fit(GosiaAdh,"QNR");
+	
+	return GosiaAdh;
+}
+
+TF1* prepare_gosiaB(TGraphErrors * graph){
+	TF1 tmphigh("tmphigh",GosiaHigh,250,3000,6);
+	tmphigh.FixParameter(4,0);
+	tmphigh.FixParameter(5,0);
+	graph->Fit(&tmphigh,"RNQ");
+	
+	TF1 *GosiaWood=new TF1("GosiaWoodsac",GosiaWoodsac,50,2000,6);
+	GosiaWood->SetParameters(tmphigh.GetParameters());
+	GosiaWood->SetParameter(4,50);
+	GosiaWood->SetParameter(5,0.1);
+	graph->Fit(GosiaWood,"NRQ");
+	
+	return GosiaWood;
 }

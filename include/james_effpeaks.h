@@ -25,14 +25,14 @@
 #include <TMath.h>
 
 #include "james_utility.h"
+#include "james_fitholder.h"
 
 #include <iostream>
 using namespace std;
 
-extern double radeffscadef[7];
-
-TF1* rad_eff_scaled(TGraphErrors * graph);//Return a "scaleradeff" with some default values.
-TF1* rad_eff();//Return a "radeff" with some default values.
+// Fit all of the below functions
+vector<TF1*> MegaEffAuto(TGraphErrors * graph);
+vector<FullFitHolder*> MegaEffAutoFH(TGraphErrors * graph);
 
 //
 // These function do all the needed pre work 
@@ -41,12 +41,31 @@ TF1* rad_eff();//Return a "radeff" with some default values.
 // TFitResultPtr fResult=graph->Fit(TF!,"RSE+");
 // TMatrixD matrix =fResult->GetCovarianceMatrix()
 //
-TF1* auto_radeff_scaled(TGraphErrors * graph,bool byparts=false);//Return a "scaleradeff" fit to the data.// USE THIS ONE
-TF1* radeff_by_parts(TGraphErrors * graph,bool scaled);//Return a "scaleradeff" OR "radeff" fit by parts
+
+//Return a "scaleradeff" fit to the data.
+TF1* auto_radeff_scaled(TGraphErrors * graph,bool byparts=false);// USE THIS ONE
+
+//Return a "scaleradeff" OR "radeff" fit by parts
+TF1* radeff_by_parts(TGraphErrors * graph,bool scaled);
 //scaleradeff scale parameter is returned fixed
 
 //Returns a "stefeff" fit to data
 TF1* prepare_stefeff(TGraphErrors * graph);
+
+//Returns a "GosiaWoodsac" fit to data
+TF1* prepare_gosiaA(TGraphErrors * graph);
+
+//Returns a "GosiaAdhoc" fit to data
+TF1* prepare_gosiaB(TGraphErrors * graph);
+
+
+//
+// Under the hood functions
+//
+
+extern double radeffscadef[7];
+TF1* rad_eff_scaled(TGraphErrors * graph);//Return a "scaleradeff" with some default values.
+TF1* rad_eff();//Return a "radeff" with some default values.
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
@@ -81,7 +100,7 @@ inline Double_t radeff(Double_t *x, Double_t *par){
 	
 }
 
-//A 7 parameter scaled radware gamma effciency function for TF1 use
+//A 7 parameter scaled radware gamma efficiency function for TF1 use
 inline Double_t scaleradeff(Double_t *x, Double_t *par){
 	double ret=radeff(x,par)*abs(par[6]);
 // 	if(ret<0)ret=0;
@@ -89,7 +108,7 @@ inline Double_t scaleradeff(Double_t *x, Double_t *par){
 	
 }
 
-//A 4 parameter simple gamma effciency function for TF1 use
+//A 4 parameter simple gamma efficiency function for TF1 use
 inline Double_t stefeff(Double_t *x, Double_t *par){
 	
 	if(x[0]<1)return 0;
@@ -106,7 +125,7 @@ inline Double_t stefeff(Double_t *x, Double_t *par){
 	return d*par[3];
 }
 
-//A 5 parameter simple gamma effciency function for TF1 use
+//A 5 parameter simple gamma efficiency function for TF1 use
 inline Double_t stefeffwonky(Double_t *x, Double_t *par){
 	
 	if(x[0]<1)return 0;
@@ -121,6 +140,30 @@ inline Double_t stefeffwonky(Double_t *x, Double_t *par){
 	if(d<0)return 0;
 
 	return d*(par[3]+par[4]*x[0]);
+}
+
+
+//A 3 parameter high energy gamma efficiency function from gosia gremlin
+inline Double_t GosiaHigh(Double_t *x, Double_t *par){
+	if(x[0]<1)return 0;
+        double xx=log(x[0]/50.);
+	double ret=0;
+	for(int i=0;i<4;i++){
+		ret+=par[i]*pow(xx,i);
+	}
+	return exp(ret);
+}
+
+//A 5 parameter gamma efficiency function from gosia gremlin
+inline Double_t GosiaAdhoc(Double_t *x, Double_t *par){
+	if(x[0]<1)return 0;
+	double xx=log(x[0]/50.);
+	return GosiaHigh(x,par)*exp(-abs(par[4])/pow(xx,abs(par[5])+1));
+}
+
+//A 5 parameter gamma efficiency function from gosia gremlin
+inline Double_t GosiaWoodsac(Double_t *x, Double_t *par){
+	return GosiaHigh(x,par)/(1.0+exp((abs(par[4])-x[0])/abs(par[5])));
 }
 
 #endif
