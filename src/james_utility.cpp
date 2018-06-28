@@ -228,3 +228,4 @@ void ExtractAsymErrorTest(string str){
 
 
 ClassImp(TH1Efficiency);
+ClassImp(TH2Efficiency);
