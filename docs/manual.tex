@@ -100,8 +100,9 @@ A histogram can go out of memory scope in several ways. For speed, as grabbing i
 
 \newpage
 \subsection{Histogram AddSub Tool}
-Hidden in the side of jEnv is the AddSub tool. This is a simple tool to allow quick addition and subtraction of $TH1$s from anywhere. The tool even allows histograms with different binning, summing is done based on "user coordinates".
-Click either of the selected histograms windows $A$ or $B$ to assign the currently grabbed histogram from jEnv, at this point a copy IS saved. The projected histogram is then given by $A\pm B*f$ where f is the fraction specified by the slider. In the case of subtraction the area of B is first normalised to that of A. The resultant histogram can also be grabbed.
+Hidden in the side of jEnv is the AddSub tool. This is a simple tool to allow quick addition and subtraction of histograms from anywhere. The tool even allows histograms with different binning, summing is done based on "user coordinates".
+Click either of the selected histograms windows $A$ or $B$ to assign the currently grabbed histogram from jEnv, at this point a copy IS saved. The projected histogram is then given by $A\pm B*f$ where f is the fraction specified by the slider. In the case of scaled subtraction "ScaleSub" the area of B is first normalised to that of A. The resultant histogram can also be grabbed.
+TH2s may also be used, though only with identical binning. When using TH2s a 4 second delay is enforced between updates.
 
 \begin{center}
 \begin{tabular}{ c c }

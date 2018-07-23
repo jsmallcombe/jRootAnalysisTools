@@ -301,7 +301,7 @@ class TH2Efficiency : public TH2D {
 			if(N<0) return -1;
 			if(fDoErr){
 				double d=fErr.Eval(eX);
-				double d2=fErr.Eval(eX);
+				double d2=fErr.Eval(eY);
 				if(d>0){
 					fEstore.fArray[N]+=d/(D*scale);
 					fEstore2.fArray[N]+=d2/(D2*scale);
@@ -311,9 +311,7 @@ class TH2Efficiency : public TH2D {
 		}
 		return -1;
 	}
-	// Could include Eff Err into sumw2 at fill time.
-	// However the end result is actually an overall smaller error as this ignores correlations between the efficiency in each fill
-
+	Int_t FillSymt(double X,double eX,double Y,double eY){Fill(Y,eY,X,eX);return Fill(X,eX,Y,eY);}
 	
   	void FillFinish(){
 		if(fDoErr&&fSumw2.fN == fNcells){

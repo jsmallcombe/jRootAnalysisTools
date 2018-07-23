@@ -78,7 +78,7 @@ private:
 	TGTextEntry* fTeh1;
 	TGCheckButton* fCheck1;
 	TGTextBuffer  *fTbh1;
-	bool gSubtract;
+	int gSubtract;
 	TGTextButton* addsubclick;
 	static int SumNameItt;
 	bool gDrawSame;

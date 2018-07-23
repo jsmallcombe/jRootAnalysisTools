@@ -118,7 +118,7 @@ TVirtualPad* hold=gPad;
 	SetWindowName("jEnv");
 	char buf[32];	//A buffer for processing text through to text boxes
 	SetCleanup(kDeepCleanup);
-	gSubtract=true;
+	gSubtract=0;
 	
 	Stop.Start();
 
@@ -190,7 +190,7 @@ TVirtualPad* hold=gPad;
 			sprintf(buf, "%.1f", 0.0);fTbh1->AddText(0, buf);
 			FracControl->AddFrame(fTeh1);
 			
-			addsubclick = new TGTextButton(FracControl," Sub ");
+			addsubclick = new TGTextButton(FracControl,"   Add  ");
 			addsubclick->Connect("Clicked()","jEnv",this,"AddSubButton()");
 			FracControl->AddFrame(addsubclick);
 			
@@ -427,12 +427,15 @@ void jEnv::DoSlider(){
 			}
 			
 			//Do add/subtraction
-			if(gSubtract){
-				SumHist=scaled_back_subtract(AHist,back,frac,fracfrac);
-			}else{
+			if(gSubtract==0){
 	// 			SumHist=scaled_addition(AHist,back,frac,fracfrac);//Decided no scaling for addition
 				SumHist=(TH1*)AHist->Clone();
 				SumHist->Add(back,frac);
+			}else if(gSubtract==1){
+				SumHist=(TH1*)AHist->Clone();
+				SumHist->Add(back,-frac);
+			}else{
+				SumHist=scaled_back_subtract(AHist,back,frac,fracfrac);
 			}
 			
 			if(backtmp)delete back;
@@ -477,11 +480,16 @@ void jEnv::UpdateText(){
 }
 
 void jEnv::AddSubButton(){
-	gSubtract=!gSubtract;
-	if(gSubtract)
-		addsubclick->SetText(" Sub ");
-	else
-		addsubclick->SetText(" Add ");
+	gSubtract++;
+	if(gSubtract>2)gSubtract=0;
+	
+	if(gSubtract==0){
+		addsubclick->SetText("   Add  ");
+	}else if(gSubtract==1){
+		addsubclick->SetText("   Sub  ");
+	}else{
+		addsubclick->SetText("ScaleSub");
+	}	
 	gClient->NeedRedraw(addsubclick);
 	DoSlider();
 }
