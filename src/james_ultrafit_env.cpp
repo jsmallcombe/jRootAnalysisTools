@@ -21,7 +21,8 @@ gPad=hold;};
 UltraFitEnv::~UltraFitEnv(){
 	if(cBar!=0){TQObject::Disconnect(cBar);cBar->Cleanup();delete cBar;}
 	KillCan();
-	if(gHist){delete gHist;gHist=0;} // No idea, old segfault
+// 	if(gHist){delete gHist;gHist=0;} // No idea, old segfault
+	gHist=0;
 	ClearFits();
 };
 
@@ -129,6 +130,11 @@ void UltraFitEnv::DialogBox() {
 		button->Connect("Clicked()","UltraFitEnv",this,"ExportFits()");
 		button->SetToolTipText("Save the peak data for the list of\n saved fits in plain text to the file\n peakinfo.dat (overwrites)");
 		cFrame->AddFrame(button,ExpandX);
+		
+		button = new TGTextButton(cFrame,"Load Session");
+		button->Connect("Clicked()","UltraFitEnv",this,"LoadSession()");
+		button->SetToolTipText("Load a session saved with Export Peak Info");
+		cFrame->AddFrame(button,ExpandX);		
 		
 		button = new TGTextButton(cFrame,"");//Just filler
 		cFrame->AddFrame(button,ExpandX);	
@@ -1018,8 +1024,90 @@ void UltraFitEnv::ExportFits(){
 	else Ultrapeak::PrintData(cFitList,1,outFile);
 	
 	outFile.close();
-	cout << "Peak info for "<<cFitList.size()<<" fits exported!" << endl;
+	
+	TFile outFileR("peakinfo.root","RECREATE");
+	outFileR.cd();
+	if(gHist)gHist->Write();
+	for(unsigned int i=0;i<cFitList.size();i++){
+		stringstream ss;
+		ss<<"FIT_"<<i;
+		cFitList[i]->Write(ss.str().c_str());
+	}
+	outFileR.Close();
+	
+	cout<< "Peak info for "<<cFitList.size()<<" fits exported!" << endl;
 	cSaveConf=false;
+	
+}
+
+void UltraFitEnv::LoadSession(){
+	TFile* file =RootFileLoad(cBar);
+	if(file){
+		LoadSession(file);
+	}
+	
+}
+
+void UltraFitEnv::LoadSession(string file){
+	
+	gROOT->cd();
+	TFile* infile=new TFile(file.c_str(),"READ");
+	gROOT->cd();
+	if(infile->IsOpen()){
+		LoadSession(infile);
+		infile->Close();
+	}else{
+		cout<<file<<" not opened."<<endl;
+	}
+}
+
+void UltraFitEnv::LoadSession(TFile* file){
+
+	TIter next(file->GetListOfKeys());
+	TKey *key;
+	TH1* hist=0;
+	while ((key = (TKey*)next())) {
+		TClass *cl = gROOT->GetClass(key->GetClassName());
+		if (cl->InheritsFrom("TH1")){
+			hist=(TH1*)key->ReadObj();
+			break;
+		}
+	}
+	
+	if(hist){
+		SetNewHist(hist);
+		ImportPeaks(file);
+	}
+
+}
+	
+void UltraFitEnv::ImportPeaks(string file){
+	
+	TFile* infile=new TFile(file.c_str(),"READ");
+	if(infile->IsOpen()){
+		ImportPeaks(infile);
+		infile->Close();
+	}else{
+		cout<<file<<" not opened."<<endl;
+	}
+}
+
+void UltraFitEnv::ImportPeaks(TFile* file){
+	gROOT->cd();
+	ClearFits();
+	TIter next(file->GetListOfKeys());
+	TKey *key;
+	while ((key = (TKey*)next())) {
+		string n=key->GetClassName();
+		if(n=="FullFitHolder"){
+			FullFitHolder* fit=(FullFitHolder*)key->ReadObj()->Clone();
+			fit->Refresh(Ultrapeak(Ultrapeak::NfromTF1(fit),fit->cBits));
+			cFitList.push_back(fit);
+			if(gHist)Ultrapeak::DrawPeak(fit,0,gHist);
+		}
+	}
+	cGoodFit=false;
+	DrawgHist();
 }
 
 void UltraFitEnv::PrintFits(){

@@ -210,12 +210,12 @@ class TH1Efficiency : public TH1D {
 	Int_t Fill(double X,double eX){
 		if(FillFin)return 1;
 		double D=fEff.Eval(eX);
-		if(D>0){
+		if(D>1E-6){
 			Int_t N=TH1D::Fill(X,1/D);//Will correctly increment sumw2 by 1/D^2
 			if(N<0) return -1;
 			if(fDoErr){
 				double d=fErr.Eval(eX);
-				if(d>0){
+				if(d>0&&d<D){
 					fEstore.fArray[N]+=d/pow(D,2);
 				}
 			}
@@ -258,6 +258,7 @@ class TH1Efficiency : public TH1D {
 
 class TH2Efficiency : public TH2D {
   public:
+	bool asymmetric; 
 	TH2Efficiency(){};
 	TH2Efficiency(const char *name,const char *title,Int_t nbins,Double_t xlow,Double_t xup,Int_t nbinsy,Double_t ylow,Double_t yup,double ggfracin,TGraph *Eff,TGraph *Err=0):TH2D(name,title,nbins,xlow,xup,nbinsy,ylow,yup){
 // 		fEstore.Set(TH1D::GetNcells());
@@ -270,8 +271,17 @@ class TH2Efficiency : public TH2D {
 		if(fDoErr){
 			fErr=(*Err);
 		}
+		asymmetric=false;
 	}
 	virtual ~TH2Efficiency(){}
+	
+	
+	// While this class is primarily for gamma gamma histograms,
+	// this option sets only the x axis to be efficiency corrected
+	// the is free to be a normal counter/variable 
+	void SetAsymmetric(){
+		asymmetric=true;
+	}
 	
 
 	TH2Efficiency( const TH2Efficiency &obj){obj.Copy(*this);}//copy constructor
@@ -291,20 +301,22 @@ class TH2Efficiency : public TH2D {
 	
 	
 	Int_t Fill(double X,double Y){return Fill(X,X,Y,Y);}
+	Int_t Fill(double X,double eX,double Y){return Fill(X,eX,Y,Y);}
 	Int_t Fill(double X,double eX,double Y,double eY){
 		if(FillFin)return 1;
 		double D=fEff.Eval(eX);
 		double D2=fEff.Eval(eY);
-		if(D>0&&D2>0){
+		if(asymmetric)D2=1;
+		if(D>1E-4&&D2>1E-4){
 			double scale=D*D2*ggfrac;
 			Int_t N=TH2D::Fill(X,Y,1/scale);
 			if(N<0) return -1;
 			if(fDoErr){
 				double d=fErr.Eval(eX);
 				double d2=fErr.Eval(eY);
-				if(d>0){
+				if(d>0&&d<D&&d2>0&&d2<D2){
 					fEstore.fArray[N]+=d/(D*scale);
-					fEstore2.fArray[N]+=d2/(D2*scale);
+					if(!asymmetric)fEstore2.fArray[N]+=d2/(D2*scale);
 				}
 			}
 			return N;

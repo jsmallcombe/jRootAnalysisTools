@@ -98,6 +98,8 @@ class UltraFitEnv : public TQObject
 	void PrintFits();
 	void ExportFits();
 	void SetSep(unsigned int fN,double fS,double fSe=-1);
+	void ImportPeaks(string file);
+	void LoadSession(string file);
 
 	///////////////////////////////////////////////////////////////////////////
 	//////// Methods For The Graphical Interface ////////
@@ -124,6 +126,8 @@ class UltraFitEnv : public TQObject
 	void DrawgHist();
 	void ClearFits();
 	void ClearFitsD();
+	
+	void LoadSession();
 	
 	void HideShape();
 	
@@ -182,6 +186,8 @@ class UltraFitEnv : public TQObject
 	void HideCanvas();
 	void ShowCanvas();
 	void ReDrawFrames();
+	void LoadSession(TFile* file);
+	void ImportPeaks(TFile* file);
 	
 	vector< double > GetClicks(int=3);
 	void RemoveLines();

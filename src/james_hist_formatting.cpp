@@ -484,10 +484,10 @@ TH1* DrawCopyHistOpt(TH1* hist){
 
 
 //Mostly stolen from TRootCanvas.cxx
-static const char *HistSaveAsTypes[] = { "PDF",          "*.pdf",
-                                      "ROOT macros",  "*.C",
-                                      "ROOT files",   "*.root",
+static const char *HistSaveAsTypes[] = { "PDF",   "*.pdf",
+					"ROOT files",   "*.root",
                                       "PNG",          "*.png",
+                                      "ROOT macros",  "*.C",
                                       "All files",    "*",
                                       0,              0 };
 void HistSaveAs(TH1* hist, TGWindow *window,TPad* pad){
@@ -559,3 +559,51 @@ again:
 	}
 
 }
+
+static const char *FileLoadTypes[] = {"ROOT files",   "*.root",
+					"ROOT files",   "*.root",
+                                      0,              0 };
+				      
+TFile* RootFileLoad(TGWindow *window){
+		//Save the stuff for the next loop;
+		static TString dir(".");
+		static Int_t typeidx = 2;
+		static Bool_t overwr = kFALSE;
+		
+		TGFileInfo fi;//Root class for containing save/open file info
+		
+		//initialise fi			
+		TString workdir = gSystem->WorkingDirectory();
+		fi.fFileTypes   = FileLoadTypes;
+		fi.fIniDir      = StrDup(dir);
+		fi.fFileTypeIdx = typeidx;
+		fi.fOverwrite = overwr;
+		
+		//This appears to halt the process until close
+		new TGFileDialog(gClient->GetRoot(), window, kFDOpen, &fi);
+// 		new TGFileDialog(fClient->GetDefaultRoot(), this, kFDSave, &fi);
+
+		gSystem->ChangeDirectory(workdir.Data());
+		
+		if(!fi.fFilename) return 0;
+		
+		TString fn = fi.fFilename;
+		TString ft = fi.fFileTypes[fi.fFileTypeIdx+1];
+		
+		dir     = fi.fIniDir;
+		typeidx = fi.fFileTypeIdx;
+		overwr  = fi.fOverwrite;
+		
+		if(fn.EndsWith(".root")){
+			gROOT->cd();
+			TFile* infile=new TFile(fn,"READ");
+			gROOT->cd();
+			if(infile->IsOpen()){
+				return infile;
+			}
+		}
+		
+		return 0;
+
+}
+

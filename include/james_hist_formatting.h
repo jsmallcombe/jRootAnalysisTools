@@ -98,4 +98,9 @@ TH1* DrawCopyHistOpt(TH1* hist);
 
 void HistSaveAs(TH1* hist, TGWindow *window=0,TPad* pad=0);
 
+TFile* RootFileLoad(TGWindow *window=0);
+
+
+
+
 #endif // #ifdef jameshistfor_h
