@@ -400,7 +400,7 @@ void jgating_tool::StoreHistograms(Int_t i){
 		uint select=i/2;
 	// 	cout<<endl<<endl<<i<<endl<<endl;
 		if(select<savehists.size()){
-			if(savehists[select])delete savehists[select];savehists[select]=0;
+			if(savehists[select]){delete savehists[select];}savehists[select]=0;
 
 // 			savehists[select]=new TH1F();
 // 			gJframe2->output_hist_point->Copy(*savehists[select]);

@@ -68,7 +68,7 @@ TVirtualPad* hold=gPad;
 	TGHorizontalFrame* orderframe = new TGHorizontalFrame(this, 0, 0, 0);
 	label = new TGLabel(orderframe, "   Background Opt  ");
 	orderframe->AddFrame(label);
-	fHslider2 = new TGHSlider(orderframe, abs(BackOpt.size()-1), kSlider2);
+	fHslider2 = new TGHSlider(orderframe, (unsigned int)BackOpt.size() - 1, kSlider2);
 	fHslider2->SetPosition(0);
 	fHslider2->Connect("PositionChanged(Int_t)", "jSpecTool", this, "UpdateSpecBack()");
 	orderframe->AddFrame(fHslider2, ffExpandXpad);

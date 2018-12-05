@@ -389,7 +389,8 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 		else fPre->SetParLimits(gPeakSharing, 0., 1.);    // Sharing parameter
 	}else if(ShareFE>0){
 		double l=ShareF-ShareFE,u=ShareF+ShareFE;
-		if(u>1)u=1;if(l<0)l=0;
+		if(u>1)u=1;
+		if(l<0)l=0;
 		fPre->SetParLimits(gPeakSharing,l,u);
 	}else fPre->FixParameter(gPeakSharing,ShareF);	
 
@@ -639,7 +640,8 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 		if(fixgamma)fFit->SetParLimits(gPeakSharing,0.93,1.);
 	}else if(ShareFE>0){
 		double l=ShareF-ShareFE,u=ShareF+ShareFE;
-		if(u>1)u=1;if(l<0)l=0;
+		if(u>1)u=1;
+		if(l<0)l=0;
 		fFit->SetParLimits(gPeakSharing,l,u);
 	}else fFit->FixParameter(gPeakSharing,ShareF);	
 

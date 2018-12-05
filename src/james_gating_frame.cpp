@@ -742,7 +742,7 @@ void j_gating_frame::UpdateCanvas()
 	selected->GetXaxis()->SetRange(gate_down,gate_up);
 
 	//New optional fit centroid text
-	if(peaknumremove)fCanvas1->GetCanvas()->GetListOfPrimitives()->Remove(peaknumremove);peaknumremove=0;
+	if(peaknumremove){fCanvas1->GetCanvas()->GetListOfPrimitives()->Remove(peaknumremove);}peaknumremove=0;
 	if(fCheck2->GetState()&&backfit_mode<3){
 		TVirtualPad* hold=gPad;
 		fCanvas1->GetCanvas()->cd();
