@@ -156,7 +156,6 @@ class UltraFitEnv : public TQObject
 	vector< FullFitHolder* > cFitList;
 	vector< TText > cPeakLabels;
 	vector< TText > cSaveLabels;
-	
 	TStopwatch Stop;
 	
 	TGComboBox *fCombo;
@@ -175,6 +174,8 @@ class UltraFitEnv : public TQObject
 	TGTextEntry* cNpd;
 	TGTextEntry* cZc;//zeroth peak centroid
 	
+	TGTextEntry* fZERO;//zeroth peak centroid override
+	
 	unsigned int cNfit;//Keeps track of the current number of peaks, heavily trusted in terms of the above vectors
 	unsigned int cNfree;
 	
@@ -190,6 +191,8 @@ class UltraFitEnv : public TQObject
 	void ReDrawFrames();
 	void LoadSession(TFile* file);
 	void ImportPeaks(TFile* file);
+    
+    void ExportSession(TString FileName="peakinfo.dat");
 	
 	vector< double > GetClicks(int=3);
 	void RemoveLines();

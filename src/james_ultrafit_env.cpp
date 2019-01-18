@@ -59,7 +59,9 @@ void UltraFitEnv::DialogBox() {
 		
 // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
 		TGTextButton *button;
-		TGLayoutHints* buff= new TGLayoutHints(0,5,5,3,2);
+		TGLayoutHints* buffright= new TGLayoutHints(kLHintsRight,5,5,3,2);
+		TGLayoutHints* buffleft= new TGLayoutHints(kLHintsLeft,5,5,3,2);
+		TGLayoutHints* buff= new TGLayoutHints(kLHintsLeft,5,5,3,2);
 		TGLayoutHints* ExpandX= new TGLayoutHints(kLHintsExpandX,5,5,3,2);
 		TGLayoutHints* ExpandXz= new TGLayoutHints(kLHintsExpandX,0,0,0,0);
 		TGLayoutHints* YY= new TGLayoutHints(kLHintsCenterY,8,8,3,3);
@@ -195,22 +197,30 @@ void UltraFitEnv::DialogBox() {
 // 		
 		TGHorizontalFrame* fHframeN = new TGHorizontalFrame(cFrame, 0, 0, 0);
 
+        
+			fZERO = new TGTextEntry(fHframeN,new TGTextBuffer(5));
+                fZERO->Connect("TextChanged(char*)", "UltraFitEnv", this,"TextToSep()");//Continually does things while typing is occurring, so only link to simple fn
+                fZERO->SetDefaultSize(60,25);
+                fZERO->SetToolTipText("Peak Zero\n Centroid x.size())");
+            fHframeN->AddFrame(fZERO,buffleft);
+     // 				
+			cZc = new TGTextEntry(fHframeN,new TGTextBuffer(5));
+				cZc->SetDefaultSize(50,25);
+				cZc->SetEnabled(0);
+				cPTbox.push_back(cZc);			
+				cZc->SetToolTipText("Centroid\n Peak 0 absolute centroid\n Selected/Result.");
+			fHframeN->AddFrame(cZc,buffright);
+            
 			cNpd=new TGTextEntry(fHframeN,new TGTextBuffer(5));
 				cNpd->SetText("1");
 				cNpd->SetDefaultSize(25,25);
 				cNpd->Connect("TextChanged(char*)","UltraFitEnv",this,"SetN()");
 				cNpd->SetEnabled(0);
 				cNpd->SetToolTipText("Current number of peaks to fit.");
-			fHframeN->AddFrame(cNpd,buff);
-// 				
-			cZc = new TGTextEntry(fHframeN,new TGTextBuffer(5));
-				cZc->SetDefaultSize(50,25);
-				cZc->SetEnabled(0);
-				cPTbox.push_back(cZc);			
-				cZc->SetToolTipText("Centroid\n Peak 0 absolute centroid\n Selected/Result.");
-			fHframeN->AddFrame(cZc,buff);
+			fHframeN->AddFrame(cNpd,buffright);
+
 // 		
-		cFrame->AddFrame(fHframeN,new TGLayoutHints(kLHintsRight));
+		cFrame->AddFrame(fHframeN,new TGLayoutHints(kLHintsExpandX));
 		
 		cShapePane= new TGVerticalFrame(cFrame);
 			TGHorizontalFrame* shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
@@ -786,15 +796,30 @@ void UltraFitEnv::UpdateLines(){
 vector< jPeakDat > UltraFitEnv::MakePeakList(){
 	//cout<<endl<<"ERROR IN FN X"<<flush;
 	
-	vector< double > fC= GetClicks(cNfree);//Get the absolute peak positions of any NOT fixed peaks
 	vector< jPeakDat > fPass;	
-	
-	fPass.push_back(jPeakDat(fC[0],0,-1,-1,-1));// first peak
-	double prevpos=fC[0];
+	vector< double > fC;
+	int sClick=1;
+     
+    //Check if zero is manually set
+	string Zstr=fZERO->GetBuffer()->GetString();
+	if(Zstr.size()>0){
+        double Zval,Zerr=-1;
+		ExtractError(Zstr,Zval,Zerr);
+        fPass.push_back(jPeakDat(Zval,1,Zerr,-1,-1));// first peak
+        
+        fC= GetClicks(cNfree-1);//Get the absolute peak positions of any NOT fixed peaks
+        sClick=0;
+        
+	}else{
+        fC= GetClicks(cNfree);//Get the absolute peak positions of any NOT fixed peaks
+        fPass.push_back(jPeakDat(fC[0],0,-1,-1,-1));// first peak
+    }
+       
+
+    double prevpos=fPass[0].Centroid;
 	cZc->SetText(TString::Format("%.1f",prevpos));
 	gClient->NeedRedraw(cZc);	
 
-	int sClick=1;
 	for(unsigned int i=0;i<cNfit-1;i++){
 		
 		double Pval,Perr=-1,Rval=-1,Rerr=-1;
@@ -1033,7 +1058,19 @@ void UltraFitEnv::ExportFits(){
 	
 	outFile.close();
 	
-	TFile outFileR("peakinfo.root","RECREATE");
+	ExportSession();
+	
+	cout<< "Peak info for "<<cFitList.size()<<" fits exported!" << endl;
+	cSaveConf=false;
+	
+}
+
+
+void UltraFitEnv::ExportSession(TString FileName){
+    
+	if(cFitList.size()==0)return;
+
+    TFile outFileR(FileName,"RECREATE");
 	outFileR.cd();
 	if(gHist)gHist->Write();
 	for(unsigned int i=0;i<cFitList.size();i++){
@@ -1042,10 +1079,6 @@ void UltraFitEnv::ExportFits(){
 		cFitList[i]->Write(ss.str().c_str());
 	}
 	outFileR.Close();
-	
-	cout<< "Peak info for "<<cFitList.size()<<" fits exported!" << endl;
-	cSaveConf=false;
-	
 }
 
 void UltraFitEnv::LoadSession(){
@@ -1203,7 +1236,12 @@ void UltraFitEnv::jSaveAs(){
     GetCan()->SetCrosshair(0);
     Stop.Stop();
     Stop.Reset();
-	if(gHist)HistSaveAs(gHist,cBar,GetCan());
+	if(gHist){
+        TString fileN=HistSaveAs(gHist,cBar,GetCan());
+		if(fileN.EndsWith(".root")){
+            ExportSession(fileN);//Overwrite it with session file
+        }
+    }
     Stop.Start();
 }
 

@@ -525,7 +525,7 @@ static const char *HistSaveAsTypes[] = { "PDF",   "*.pdf",
                                       "ROOT macros",  "*.C",
                                       "All files",    "*",
                                       0,              0 };
-void HistSaveAs(TH1* hist, TGWindow *window,TPad* pad){
+TString HistSaveAs(TH1* hist, TGWindow *window,TPad* pad){
 if(hist){
 		//Save the stuff for the next loop;
 		static TString dir(".");
@@ -547,7 +547,7 @@ if(hist){
 
 		gSystem->ChangeDirectory(workdir.Data());
 		
-		if (!fi.fFilename) return;
+		if (!fi.fFilename) return TString();
 		
 		TString fn = fi.fFilename;
 		TString ft = fi.fFileTypes[fi.fFileTypeIdx+1];
@@ -591,8 +591,10 @@ again:
 			break;
 			}
 		}
+		
+		return fn;
 	}
-
+    return TString();
 }
 
 static const char *FileLoadTypes[] = {"ROOT files",   "*.root",

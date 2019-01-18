@@ -105,7 +105,7 @@ TCanvas* HistDrawCopyPeaker(TH1* hist,bool opt=true);//opt="hist" hide errors
 TH1* DrawHistOpt(TH1* hist,bool copy=false,bool same=false);
 TH1* DrawCopyHistOpt(TH1* hist);
 
-void HistSaveAs(TH1* hist, TGWindow *window=0,TPad* pad=0);
+TString HistSaveAs(TH1* hist, TGWindow *window=0,TPad* pad=0);
 
 TFile* RootFileLoad(TGWindow *window=0);
 

@@ -99,22 +99,29 @@ Once a histogram is grabbed a copy of it will be passed to any of the functions 
 A histogram can go out of memory scope in several ways. For speed, as grabbing is done on EVERY canvas click, only a pointer is stored. jEnv will refuse to do anything with its histogram pointer until it has established it is valid. To check if a histogram is still in memory jEnv checks the histogram against roots list of object, however this object search has limitations. If this histogram is still drawn in the same canvas as when it was grabbed, it will be found.
 
 \newpage
-\subsection{Histogram AddSub Tool}
-Hidden in the side of jEnv is the AddSub tool. This is a simple tool to allow quick addition and subtraction of histograms from anywhere. The tool even allows histograms with different binning, summing is done based on "user coordinates".
-Click either of the selected histograms windows $A$ or $B$ to assign the currently grabbed histogram from jEnv, at this point a copy IS saved. The projected histogram is then given by $A\pm B*f$ where f is the fraction specified by the slider. In the case of scaled subtraction "ScaleSub" the area of B is first normalised to that of A. The resultant histogram can also be grabbed.
+\subsection{Histogram AddSubCompare Tool}
+Hidden in the side of jEnv is the AddSubCompare tool. This is a simple tool to allow quick addition/subtraction and comparison of histograms from anywhere in the ROOT session.
+Click either of the selected histograms windows $A$ or $B$ to assign the currently grabbed histogram from jEnv, at this point a copy IS saved.
+
+
+When the additions/subtraction function is selected the projected histogram is then given by $A\pm B*f$ where f is the fraction specified by the slider. 
+In the case of scaled "ScaleAdd/Sub" the area of B is first normalised to that of A. The resultant histogram can also be grabbed. The tool even allows combination of histograms with different binning, summing is done based on "user coordinates".
 TH2s may also be used, though only with identical binning. When using TH2s a 4 second delay is enforced between updates.
+
+
+Additional TH1 comparison modes have been added which overlay the two histograms, either with an adjustable scaling factor, or with a user set bin offset (Output histograms can be selected as new inputs to combine the two effects).
 
 \begin{center}
 \begin{tabular}{ c c }
 \begin{minipage}{0.4\textwidth}
 \begin{enumerate}
 \item Open/Close the AddSub Tool panel.
-\item Subtraction/Addition fraction $f$ slider.
+\item Fraction $f$ slider.
 \item Selected Histogram A window/button
-\item Swap A B
+\item Swap inputs A and B
 \item Selected Histogram B window/button
 \item Fraction $f$ text entry.
-\item Change between Subtraction/Addition.
+\item Change between functions.
 \item Hide/Show error bars when drawing.
 \item Result Window.
 \end{enumerate} \end{minipage}
@@ -255,13 +262,15 @@ Many of the functions of toolbar are duplicated by keyboard shortcuts.
 \item Open dialogue box and save the current histogram to disk.
 \item Capture subsequently selected histogram and draw a copy.
 \item Connect the fitting tool to the subsequently selected canvas.
-\item Open help window
+\item Open help window.
+\item Show/Hide centroid labels of completed fits.
 \item Re-Draw histogram and saved fits. (Reset problematic fit markers.)
 \item Clear the user-defined exclusion regions.
 \item Save the latest fit to the histogram and to the in memory fit data list. Fit will turn temporarily blue to confirm save.
 \item Delete all saved fit data from memory (Press twice).
 \item Print the in memory fit data list to the terminal.
-\item Save the in memory fit data list to disk file peakinfo.dat
+\item Save the in memory fit data list to disk files peakinfo.dat and peakinfo.root
+\item Open load dialogue to restore a session saved with "Export Peak Info".
 \item Perform a fit with the current selection/inputs.
 \item Change the background function of the fit.
 \item Place fit constraints on tail shape parameters. Suitable for $\gamma$-ray spectra \& problematic fits.
@@ -294,6 +303,20 @@ $[c]$ & Clear the selected exclusion region.\\
 
 Click to select a peak for fitting, marker lines will appear showing the target peaks and fitting range. By default the nearest peak will be selected, press $[$ctrl$]$ to switch to exact bin selection. An automatic fit range will be shown, this can be overridden by clicking with the middle mouse button. To ignore bins containing anomalous features, create an exclusion region by pressing the $[Alt]$ and then clicking the first and last bins of the region. Note, using $[Re-Draw\;Hist]$ will clear exclusion regions.
   
+\subsection{Saving and Loading}
+After completing fits there are 2 stages to saving. The first is to add the fit to the saved-fit list of the current session.
+This is done with with the $[.]/[s]/[Del]$ keyboard shortcuts or the [Save Peak Info] button.
+Any fits saved to the session list will be drawn in the result window with [Re-Draw Hist] is selected, printed to terminal when [Print Peak Info] is selected and saved to disk when [Export Peak Info] is selected.  
+\\
+\\
+When fits are saved to disk a plain text file peakinfo.dat containing the centroids, areas and errors is saved, along with a peakinfo.root file containing the full histogram and fit details in a format that can be loaded into root at a later date.
+If peakinfo.dat exists in the current directory a terminal warning message will apear, click [Export Peak Info] to overwrite the file.
+The [SaveAs] button at the top of a tool can be used to save an image file of the histograms and fits, or to save the current session to a user specified root file.
+\\
+\\
+The [Load Session] button can be used to read a saved session root file which will overwrite any currently selected histograms, and the current session saved-fit list, with those from the file.
+The [Clear Saved Peaks] button will clear the current session list and redraw the histogram with no fits, the button must be pressed twice to confirm the action (This has no effect on fit files saved to disk).
+
 \subsection{Fit Function \& Logic}
 The peak function consists of a pure Gaussian + an exponential convolved with a Gaussian, similar to Radware. The ratio is controlled by a sharing parameter that can take values from 0 to 1. An analytical normalisation is applied to the exponential peak such that its maximum value is always 1. After a fit the output data contains both a centroid and a "True centroid". The centroid is the maximum of the combined peak, the true centroid corresponds to the centroid of the pure Gaussian component which would correspond to the physical spectroscopic value.  
 \\
@@ -356,6 +379,7 @@ Alternately the Limit Tail check box applies preset limits on the tail parameter
 \end{tabular}
 \end{center}
 
+\newpage
 \section{TSpectrum Tool}
 The $TSpectrum Tool$ provides a gui interface for manipulating $TH1$ spectra, correcting over-subtraction and subtracting continuum background with the ROOT $TSpectrum$ class.
 
@@ -374,6 +398,8 @@ The $TSpectrum Tool$ provides a gui interface for manipulating $TH1$ spectra, co
 \item Selected N.
 \item Enable over-subtracted background.
 \item Set minimum bin content to zero.
+\item Flip histogram bin contents in X.
+
 \end{enumerate} \end{minipage}
 &
 \raisebox{-.5\height}{\includegraphics[width=0.65\textwidth]{TSpectrum1.png}}
