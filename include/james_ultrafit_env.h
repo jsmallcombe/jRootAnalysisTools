@@ -48,6 +48,7 @@
 #include <TTree.h>
 #include <TBranch.h>
 #include <TGComboBox.h>
+#include <TStopwatch.h>
 
 // #include "Math/GSLIntegrator.h"
 // #include "Math/WrappedTF1.h"
@@ -156,6 +157,7 @@ class UltraFitEnv : public TQObject
 	vector< TText > cPeakLabels;
 	vector< TText > cSaveLabels;
 	
+	TStopwatch Stop;
 	
 	TGComboBox *fCombo;
 	bool fFitFinished;

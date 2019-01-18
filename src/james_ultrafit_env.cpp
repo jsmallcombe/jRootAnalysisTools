@@ -10,6 +10,7 @@ int UltraFitEnv::UltraFitEnv_iterator = 0;
 UltraFitEnv::UltraFitEnv(TH1* fHist,TCanvas* fCan, double iSepA,double iSepB,double iSepC):TQObject(),
 cBar(0),cFrame(0),cPan(0),cCan(0),gHist(0),gHistDrawn(0),gHistDrawnName(""),cShift(0),cCtrl(0),cAlt(0),cGoodFit(0),cSaveConf(0),cClearConf(0),cNfit(1),cNfree(1)
 {TVirtualPad* hold=gPad;
+    Stop.Start();
 	if(iSepA!=0)SetSep(2,iSepA);
 	if(iSepB!=0)SetSep(3,iSepB);
 	if(iSepC!=0)SetSep(4,iSepC);
@@ -669,7 +670,14 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 		fCan->SetCrosshair(0);
 	}else{
 		if (event==kMouseEnter){
-			fCan->SetCrosshair(1);
+            
+            // Convoluted solution to crosshairs in saved images
+            if(Stop.RealTime()>1){
+					fCan->SetCrosshair(1);
+            }else{
+					Stop.Start(kFALSE);	
+            }
+			
 			return;
 		}
 		
@@ -1192,7 +1200,11 @@ void UltraFitEnv::Help(){
 }
 
 void UltraFitEnv::jSaveAs(){
+    GetCan()->SetCrosshair(0);
+    Stop.Stop();
+    Stop.Reset();
 	if(gHist)HistSaveAs(gHist,cBar,GetCan());
+    Stop.Start();
 }
 
 void UltraFitEnv::ClearExclusion(){

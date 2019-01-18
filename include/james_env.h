@@ -88,6 +88,7 @@ private:
 	void Grab(int);
 	void DrawAB(int);
 	void UpdateText();
+    double Abinwidth;
 	
 public:
 	jEnv();

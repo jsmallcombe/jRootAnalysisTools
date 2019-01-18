@@ -41,10 +41,14 @@ TVirtualPad* hold=gPad;
 	fCheck2->SetState(kButtonUp);
 	fCheck2->Connect(" Clicked()", "jSpecTool", this,"DoUpdate()");
 	fCheck2->SetToolTipText("Subtract the background");	
+    
+    TGTextButton *InvertButton = new TGTextButton(fHframe0,"  Invert  ");
+    InvertButton->Connect("Clicked()","jSpecTool",this,"Invert()");
 
 	fHframe0->AddFrame(fCheck0);
 	fHframe0->AddFrame(fCheck1);
 	fHframe0->AddFrame(fCheck2);
+	fHframe0->AddFrame(InvertButton);
 
 	fCanvas1 = new TRootEmbeddedCanvas(("Embedded"+make_iterator()).c_str(), this, 800, 600);
 	fCanvas1->GetCanvas()->SetName(("ResultCan"+make_iterator()).c_str());
@@ -242,7 +246,7 @@ void jSpecTool::DoUpdate(bool saveaxis){TVirtualPad* hold=gPad;
 	}
 
 	if(rebin>1){
-		cout<<endl<<H;
+// 		cout<<endl<<H;
 		H->Rebin(rebin);
 		if(S)S->Rebin(rebin);
 	}
@@ -320,4 +324,15 @@ void jSpecTool::RemovalProcess(TH1* hist,int start){
 		}
 		if(n>50)Itter=false;
 	}
+}
+
+
+void jSpecTool::Invert(){
+    TH1* H=histin;
+    if(H){
+        histin=0;
+        invert(H);
+        NewInput(H);
+        delete H;
+    }
 }

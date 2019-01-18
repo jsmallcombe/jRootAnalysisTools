@@ -1,5 +1,39 @@
 #include "james_hist_formatting.h"
 
+void invert(TH1* h){
+   TH1* tmpclone=(TH1*)h->Clone("tmpclone");
+   h->Reset();
+   int N=h->GetNbinsX();
+   for(int i=1;i<=N;i++){
+        h->SetBinContent(i,tmpclone->GetBinContent(N-i+1));
+        h->SetBinError(i,tmpclone->GetBinError(N-i+1));
+   }
+   delete tmpclone;
+}
+
+void transpose_bins(TH1* h, int binshift){
+   int N=h->GetNbinsX();
+   if(abs(binshift)>=N)return;
+    
+   TH1* tmpclone=(TH1*)h->Clone("tmpclone");
+   h->Reset();
+   for(int i=1;i<=N;i++){
+        int b=i-binshift;
+        if(b>0&&b<N){
+            h->SetBinContent(i,tmpclone->GetBinContent(b));
+            h->SetBinError(i,tmpclone->GetBinError(b));
+        }
+   }
+   delete tmpclone;
+}
+
+
+void transpose_axis(TH1* h, double minX){
+    TAxis* x=h->GetXaxis();
+    double min=x->GetXmin();
+    double max=x->GetXmax();
+    x->SetLimits(minX,minX+max-min);
+}
 
 void axislab(TH1* HH,string x,string y,string z){
 	HH->GetXaxis()->SetTitle(x.c_str());
@@ -76,6 +110,7 @@ TCanvas* DrawHformat(TH1* HH,bool setminzero){
 
 
 TH1* ExtreemRebin(TH1* target,TH1* data){
+    target->Reset();
 	TAxis* tAx=target->GetXaxis();
 	TAxis* dAx=data->GetXaxis();
 
@@ -88,7 +123,7 @@ TH1* ExtreemRebin(TH1* target,TH1* data){
 		vector<int> overlapedbins;
 		
 		while(tAx->GetBinLowEdge(j)<=dBinUpper){
-			if(j>=target->GetNbinsX())break;
+			if(j>target->GetNbinsX())break;
 			if(tAx->GetBinUpEdge(j)>=dBinLower)overlapedbins.push_back(j);
 			if(tAx->GetBinUpEdge(j)<dBinUpper)j++;else break;
 		}

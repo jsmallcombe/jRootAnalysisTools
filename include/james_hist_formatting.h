@@ -36,6 +36,15 @@
 
 using namespace std;
 
+//Invert a histogram about its central bin, useful for certain fitting functions
+void invert(TH1*);
+
+//Shift the data in bin units
+void transpose_bins(TH1* h, int binshift);
+
+//Shift the axis
+void transpose_axis(TH1* h, double minX=0);
+
 //Add axis labels y="Counts/div" automatically if left blank
 void axislab(TH1*,string,string="",string="");
 

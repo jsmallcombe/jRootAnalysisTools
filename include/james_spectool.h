@@ -68,6 +68,7 @@ public:
 	void RemovalPublic(TH1*,bool=true);
 	void RemovalProcess(TH1*,int);
 	void NewInput(TH1*);
+    void Invert();
 		
 	ClassDef(jSpecTool, 1)
 };

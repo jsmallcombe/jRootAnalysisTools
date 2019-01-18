@@ -175,11 +175,6 @@ TVirtualPad* hold=gPad;
 		addsub->AddFrame(ABswap,new TGLayoutHints(kLHintsCenterX, 1, 1, 1, 1));
 		
 		TGHorizontalFrame* FracControl= new TGHorizontalFrame(addsub);
-			fHslider1 = new TGHSlider(FracControl,500, kSlider2);
-			fHslider1->Connect("PositionChanged(Int_t)", "jEnv", this, "DoSlider()");
-			fHslider1->SetRange(0,500);
-			fHslider1->SetPosition(0);
-			FracControl->AddFrame(fHslider1,new TGLayoutHints(kLHintsExpandX, 1, 1, 1, 1));
 		
 			fTeh1 = new TGTextEntry(FracControl, fTbh1 = new TGTextBuffer(5));//Create some text entry boxes 
 			fTeh1->SetToolTipText("Subtraction/Addition Fraction");
@@ -190,7 +185,7 @@ TVirtualPad* hold=gPad;
 			sprintf(buf, "%.1f", 0.0);fTbh1->AddText(0, buf);
 			FracControl->AddFrame(fTeh1);
 			
-			addsubclick = new TGTextButton(FracControl,"   Add  ");
+			addsubclick = new TGTextButton(FracControl,"     Add/Sub     ");
 			addsubclick->Connect("Clicked()","jEnv",this,"AddSubButton()");
 			FracControl->AddFrame(addsubclick);
 			
@@ -200,8 +195,15 @@ TVirtualPad* hold=gPad;
 			fCheck1->SetToolTipText("Hide Bin Errors on drawn histograms");
 			FracControl->AddFrame(fCheck1);
 		
-			
-		addsub->AddFrame(FracControl,new TGLayoutHints(kLHintsExpandX, 1, 1, 1, 1));
+		addsub->AddFrame(FracControl,new TGLayoutHints(kLHintsCenterX, 2, 2, 2, 2));
+        
+		TGHorizontalFrame* FracSlider= new TGHorizontalFrame(addsub);
+			fHslider1 = new TGHSlider(FracSlider,1000, kSlider2);
+			fHslider1->Connect("PositionChanged(Int_t)", "jEnv", this, "DoSlider()");
+			fHslider1->SetRange(-500,500);
+			fHslider1->SetPosition(0);
+			FracSlider->AddFrame(fHslider1,new TGLayoutHints(kLHintsExpandX, 1, 1, 1, 1));
+		addsub->AddFrame(FracSlider,new TGLayoutHints(kLHintsExpandX, 1, 1, 1, 1));
 		
 		result= new TRootEmbeddedCanvas("histaddres",addsub,600,400);
 		result->GetCanvas()->SetMargin(0.12,0.04,0.12,0.05);
@@ -281,6 +283,7 @@ void jEnv::DrawSmHere(TPad* pad,TObject* obj,Int_t event){
 		TVirtualPad* hold=gPad;
 		pad->cd();
 		hformat(SameSave,0);
+        SameSave->SetLineColor(2);
 		DrawHistOpt(SameSave,true,true);
 		sender->Modified();
 		sender->Update();
@@ -336,7 +339,11 @@ void jEnv::Grab(int i){
 void jEnv::DrawAB(int i){
 	TVirtualPad* hold=gPad;
 	TH1* H=AHist;TCanvas* Can=A->GetCanvas();
-	if(i){H=BHist;Can=B->GetCanvas();}
+	if(i){
+        H=BHist;Can=B->GetCanvas();
+    }else{
+        Abinwidth=H->GetXaxis()->GetBinWidth(1);
+    }
 	if(H){
 		Can->cd();
 		H->GetXaxis()->SetLabelSize(0);
@@ -362,17 +369,24 @@ void jEnv::Swap(){
 }
 
 
-void jEnv::DoSlider(){	
-	double frac=fHslider1->GetPosition()/500.0;
-	double fracfrac=0.03;
+void jEnv::DoSlider(){
+    int slidepos=fHslider1->GetPosition();
+	double frac=slidepos/500.0;
+	double fracfrac=0.03;//Arbitrary summing fraction error 
 	
 	UpdateText();
 	
 	if(AHist&&BHist){
 		int Type=HType(AHist);
 		if(Type==HType(BHist)){
-			
+            
 			if(Type==2){
+                if(gSubtract>1){
+                    gSubtract=-1;
+                    AddSubButton();
+                    return;
+                }
+                
 				if(Stop.RealTime()<4){
 // 					cout<<endl<<"NO TIME "<<Stop.CpuTime()<<endl;
 					Stop.Start(kFALSE);	
@@ -427,30 +441,54 @@ void jEnv::DoSlider(){
 			}
 			
 			//Do add/subtraction
-			if(gSubtract==0){
-	// 			SumHist=scaled_addition(AHist,back,frac,fracfrac);//Decided no scaling for addition
-				SumHist=(TH1*)AHist->Clone();
-				SumHist->Add(back,frac);
-			}else if(gSubtract==1){
-				SumHist=(TH1*)AHist->Clone();
-				SumHist->Add(back,-frac);
-			}else{
-				SumHist=scaled_back_subtract(AHist,back,frac,fracfrac);
-			}
 			
+            switch(gSubtract) {
+                case 1 :    SumHist=scaled_addition(AHist,back,frac,fracfrac);
+                            //SumHist=scaled_back_subtract(AHist,back,frac,-fracfrac);
+                            break;
+                case 2 :    SumHist=(TH1*)back->Clone();
+                            SumHist->Scale((frac+1)*AHist->Integral()/back->Integral());
+                            break;
+                case 3 :    SumHist=(TH1*)back->Clone();
+                            transpose_bins(SumHist,slidepos);
+                            break;
+                default :   SumHist=(TH1*)AHist->Clone();
+                            SumHist->Add(back,frac);   
+                            break;
+            }
+			stringstream ss;ss<<"AddSubResultHist"<<SumNameItt;
+			SumHist->SetName(ss.str().c_str());
+
 			if(backtmp)delete back;
 			
 			//Draw new results with and adjust axis
 			TVirtualPad* hold=gPad;
 			result->GetCanvas()->cd();
-				// SumHist->GetXaxis()->SetLabelSize();
-				// SumHist->GetYaxis()->SetLabelSize();
-				if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
-				stringstream ss;ss<<"AddSubResultHist"<<SumNameItt;
-				SumHist->SetName(ss.str().c_str());
-				hformat(SumHist,0);
-				// SumHist->SetMinimum(SumHist->GetBinContent(SumHist->GetMinimumBin()));
-				if(fCheck1->GetState())SumHist->Draw("hiscol");else SumHist->Draw("col");
+                
+                if(gSubtract>1){
+                    TH1* H;
+                    if(fCheck1->GetState())H=AHist->DrawCopy("hist");else   H=AHist->DrawCopy(""); 
+                    hformat(H,0); 
+                    if(rmax>rmin)H->GetXaxis()->SetRange(rmin,rmax);
+                    if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
+                    
+                    SumHist->SetLineColor(2);
+                    if(fCheck1->GetState())SumHist->Draw("histsame");else SumHist->Draw("same");
+                }else{
+                    hformat(SumHist,0);
+                    if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
+                    if(fCheck1->GetState())SumHist->Draw("hiscol");else SumHist->Draw("col"); 
+                }
+                
+                
+// 			if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
+//             hformat(SumHist,0);
+//             if(fCheck1->GetState())SumHist->Draw("hiscol");else SumHist->Draw("col");
+//             if(gSubtract>1){
+//                 if(fCheck1->GetState())AHist->Draw("histsame");else AHist->Draw("same");  
+//                 SumHist->SetLineColor(2);
+//             }
+            
 			result->GetCanvas()->Modified();
 			result->GetCanvas()->Update();
 			gPad=hold;
@@ -464,7 +502,13 @@ void jEnv::DoSlider(){
 
 void jEnv::DoText(){
 	double backfrack=atof(fTbh1->GetString());
-	backfrack*=500;
+    
+    if(gSubtract==3){
+        backfrack/=Abinwidth;
+    }else{
+        backfrack*=500;
+    }
+    
 	fHslider1->SetPosition(backfrack);
 	DoSlider();
 }
@@ -472,7 +516,17 @@ void jEnv::DoText(){
 void jEnv::UpdateText(){
 	char buf[32];
 	//update the text now the sliders have moved
-	sprintf(buf, "%.3f", fHslider1->GetPosition()/500.0);
+    
+    
+    if(gSubtract==3){
+        int s=floor(log10(Abinwidth)); if(s>0)s=0;
+        stringstream format;
+        format<<"%."<<abs(s)<<"f";
+        sprintf(buf, format.str().c_str(), fHslider1->GetPosition()*Abinwidth);
+    }else{
+        sprintf(buf, "%.3f", fHslider1->GetPosition()/500.0);
+    }  
+    
 	fTbh1->Clear();	fTbh1->AddText(0, buf);
 	fTeh1->SetCursorPosition(fTeh1->GetCursorPosition());fTeh1->Deselect();
 	gClient->NeedRedraw(fTeh1);
@@ -481,15 +535,21 @@ void jEnv::UpdateText(){
 
 void jEnv::AddSubButton(){
 	gSubtract++;
-	if(gSubtract>2)gSubtract=0;
-	
-	if(gSubtract==0){
-		addsubclick->SetText("   Add  ");
-	}else if(gSubtract==1){
-		addsubclick->SetText("   Sub  ");
-	}else{
-		addsubclick->SetText("ScaleSub");
-	}	
+    
+	if(gSubtract>3)gSubtract=0;
+    
+    switch(gSubtract) {
+    case 0 : addsubclick->SetText("   Add/Sub   ");
+             break;       
+    case 1 : addsubclick->SetText("Scale Add/Sub");
+             break;
+    case 2 : addsubclick->SetText("Scale Compare");
+             break;
+    case 3 : addsubclick->SetText("Shift Compare");
+             break;
+    }
+
+	fHslider1->SetPosition(0);
 	gClient->NeedRedraw(addsubclick);
 	DoSlider();
 }
