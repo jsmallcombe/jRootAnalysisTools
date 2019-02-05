@@ -42,25 +42,34 @@ using namespace std;
 //current_capture_frame
 class CCframe : public TRootEmbeddedCanvas {
 	private:
-		TH1* current;//Never owns
+		TObject* current;//Never owns
 		TPad* currentpad;//Never owns
 		TCanvas* currentcan;//Never owns
-		string histname;
-		void SetNewHist(TH1* fH,TPad* Pad,TCanvas* Can);
+		string fName;
+		void SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can);
 		bool pause;
+        TClass *fClass;
+        bool fNamed;
+        
 	public:
 		CCframe(const char * name = 0,const TGWindow * p = 0,UInt_t w = 10,UInt_t h = 10,UInt_t options = kSunkenFrame | kDoubleBorder,Pixel_t 	back = GetDefaultFrameBackground());
 		~CCframe();
-		
+        void SetClass(TClass*);
+        
 		TH1* Hist();
+		TObject* Object();
 		
 		int Type();
 
 		void TrackCaptureHistogram(TPad*,TObject*,Int_t);
 	
 		std::vector< TCanvas* > CFriends;
+        
+        void NewObject(){
+            Emit("NewObject()");
+        }
 		
-	ClassDef(CCframe, 1)
+	ClassDef(CCframe, 2)
 };
 
 
@@ -120,7 +129,24 @@ public:
 	void AddSubButton();
 	
 
-	ClassDef(jEnv, 1)
+	ClassDef(jEnv, 2)
+};
+
+
+
+class jScale : public TGMainFrame {
+
+private:
+	CCframe *fCanvas1,*fCanvas2;
+	TRootEmbeddedCanvas *result;
+
+public:
+	jScale();
+	virtual ~jScale(){};
+    
+	void NewInput();
+
+	ClassDef(jScale, 1)
 };
 
 #endif

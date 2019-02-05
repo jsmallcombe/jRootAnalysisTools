@@ -4,6 +4,8 @@ CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t op
 	this->GetCanvas()->SetMargin(0,0,0,0);
 	TQObject::Connect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", "CCframe", this,"TrackCaptureHistogram(TPad*,TObject*,Int_t)");
 	gPad=hold;
+    fClass=TH1::Class();
+    fNamed=TH1::Class()->InheritsFrom("TNamed");
 }
 
 CCframe::~CCframe(){
@@ -12,6 +14,16 @@ CCframe::~CCframe(){
 // 	TQObject::Disconnect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", 0, "CaptureCanvas(TPad*,TObject*,Int_t)");
 // 	Disconnect(0,this,0);
 // 	TQObject::Disconnect((TCanvas*)this);
+}
+
+
+void CCframe::SetClass(TClass* iClass){
+    fClass=iClass;
+    fNamed=iClass->InheritsFrom("TNamed");
+    this->GetCanvas()->Clear();
+    current=0;
+    currentpad=0;
+    currentcan=0;
 }
 
 
@@ -30,72 +42,87 @@ void CCframe::TrackCaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 		}
 
 		if(obj){
-			TH1* fH=0;
-			if(obj->InheritsFrom("TH1"))fH=(TH1*)obj;//If click was exactly on a histogram?
-			else fH=hist_capture(pad);//Else find first histogram this pad has
+			TObject* fH=0;
+			if(obj->InheritsFrom(fClass))fH=obj;//If click was exactly on a histogram?
+			else fH=obj_capture(fClass,pad);//Else find first object this pad has
+// 			else fH=hist_capture(pad);//Else find first histogram this pad has
 			
-			if(fH)SetNewHist(fH,pad,sender);
+			if(fH)SetNewObject(fH,pad,sender);
 			return;
 		}
 	}
 }
 
-void CCframe::SetNewHist(TH1* fH,TPad* Pad,TCanvas* Can){
+void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can){
 	if(fH!=current){
 		current=fH;
 		currentpad=Pad;
 		currentcan=Can;
-		histname=current->GetName();
+        if(fNamed)fName=current->GetName();
 		TVirtualPad* hold=gPad;
 		this->GetCanvas()->cd();
-		if(fH->InheritsFrom("TH3")){
-			this->GetCanvas()->Clear();
-			TText t;
-			t.SetTextAlign(22);
-			t.SetTextSize(.6);
-			t.DrawTextNDC(.5,.5,"TH3");
-		}else{
-// 			double xt=fH->GetXaxis()->GetLabelSize();
-// 			double yt=fH->GetYaxis()->GetLabelSize();
-			TH1* H=fH->DrawCopy("COLZ");
-			H->GetXaxis()->SetLabelSize(0);
-			H->GetYaxis()->SetLabelSize(0);
-			H->SetStats(kFALSE);			
-// 			fH->GetXaxis()->SetLabelSize(xt);
-// 			fH->GetYaxis()->SetLabelSize(yt);
-		}
+        
+        //Drawing Options
+		if(HType(fH)){
+            if(HType(fH)==3){
+                this->GetCanvas()->Clear();
+                TText t;
+                t.SetTextAlign(22);
+                t.SetTextSize(.6);
+                t.DrawTextNDC(.5,.5,"TH3");
+            }else{
+                TH1* H=((TH1*)fH)->DrawCopy("COL");
+                H->GetXaxis()->SetLabelSize(0);
+                H->GetYaxis()->SetLabelSize(0);
+                H->SetStats(kFALSE);
+            }
+		}else if(fH->InheritsFrom("TGraph")){
+            gPad->Update();
+            ((TGraph*)fH)->DrawClone("al");
+        }
 		this->GetCanvas()->Modified();
 		this->GetCanvas()->Update();
 		gPad=hold;
+        NewObject();
 	}
 }
 
 TH1* CCframe::Hist(){
-
+        if(fClass->InheritsFrom("TH1")){
+            return (TH1*)Object();
+        }
+        return 0;
+}
+    
+    
+TObject* CCframe::Object(){
 	if(current){
-		TObject* Ob = gROOT->FindObject(histname.c_str());
-// 		cout<<endl<<"Checking if histogram pointer "<<current<<" is valid: "<<Ob<<endl;
-		if(Ob)if(Ob->InheritsFrom("TH1"))return (TH1*)Ob;
-		//Often fails because FindObject has limitations in terms of directories and drawn histograms we might have grabbed.
-		//If the canvas is still drawn we might still be able to grab the histogram
+        TObject* Ob;
+        if(fNamed&&fName.size()){
+            Ob = gROOT->FindObject(fName.c_str());
+    // 		cout<<endl<<"Checking if histogram pointer "<<current<<" is valid: "<<Ob<<endl;
+            if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
+            //Often fails because FindObject has limitations in terms of directories and drawn histograms we might have grabbed.
+            //If the canvas is still drawn we might still be able to grab the histogram
+        }
 		
 		TPad* Pad=(TPad*)gROOT->GetListOfCanvases()->FindObject(currentpad);
 // 		cout<<endl<<"Checking if pad pointer "<<currentpad<<" is in gROOT->GetListOfCanvases() :"<<Pad<<endl;
 		if(Pad){
 			Ob=Pad->GetListOfPrimitives()->FindObject(current);
-			if(Ob)if(Ob->InheritsFrom("TH1"))return (TH1*)Ob;
+			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
 		}
 		
 		TCanvas* Can=(TCanvas*)gROOT->GetListOfCanvases()->FindObject(currentcan);
 // 		cout<<endl<<"Checking if canvas pointer "<<currentcan<<" is in gROOT->GetListOfCanvases() :"<<Can<<endl;
 		if(Can){
 			Ob=Can->GetListOfPrimitives()->FindObject(current);
-			if(Ob)if(Ob->InheritsFrom("TH1"))return (TH1*)Ob;
+			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
 			
 			Pad=(TPad*)Can->GetListOfPrimitives()->FindObject(currentpad);
 			if(Pad){
 				Ob=Pad->GetListOfPrimitives()->FindObject(current);
-				if(Ob)if(Ob->InheritsFrom("TH1"))return (TH1*)Ob;
+				if(Ob)if(Ob->InheritsFrom(fClass))return (TH1*)Ob;
 			}
 		}
 	}
@@ -553,3 +580,93 @@ void jEnv::AddSubButton(){
 	gClient->NeedRedraw(addsubclick);
 	DoSlider();
 }
+
+
+////////////////////////////////////////////////////////////////
+
+jScale::jScale() : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame){
+TVirtualPad* hold=gPad;
+	SetWindowName("jScale");
+	SetCleanup(kDeepCleanup);
+	
+
+	TGLayoutHints* ExpandX= new TGLayoutHints(kLHintsExpandX,5,5,3,2);
+	
+	TGHorizontalFrame* inputframe = new TGHorizontalFrame(this);
+		fCanvas1 = new CCframe("Embedded1", inputframe, 100, 100);
+        fCanvas1->Connect("NewObject()","jScale",this,"NewInput()");
+		inputframe->AddFrame(fCanvas1);
+		fCanvas2 = new CCframe("Embedded2", inputframe, 100, 100);
+        fCanvas2->SetClass(TGraph::Class());
+        fCanvas2->Connect("NewObject()","jScale",this,"NewInput()");
+		inputframe->AddFrame(fCanvas2);
+	this->AddFrame(inputframe,ExpandX);
+	
+    
+    result= new TRootEmbeddedCanvas("scaledhistcan",this,600,400);
+		result->GetCanvas()->SetMargin(0.12,0.04,0.12,0.05);
+		result->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ClickPeakDrawConnect(Int_t,Int_t,Int_t,TObject*)");
+		result->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ToolTipHide()");//added because this embedded canvas put tooltip at wrong coordinates on screen
+
+	this->AddFrame(result,ExpandX);
+    
+	MapSubwindows();
+	Resize(GetDefaultSize());
+	MapWindow();
+    
+    
+	fCanvas1->CFriends.push_back(fCanvas2->GetCanvas());
+	fCanvas1->CFriends.push_back(result->GetCanvas());
+	fCanvas2->CFriends.push_back(fCanvas1->GetCanvas());
+	fCanvas2->CFriends.push_back(result->GetCanvas());
+	
+gPad=hold;
+}
+
+
+void jScale::NewInput(){
+    TH1* H=fCanvas1->Hist();
+    TGraph* G=(TGraph*)fCanvas2->Object();
+    if(HType(H)&&G&&HType(H)<3){
+        TH1* scaled=(TH1*)H->Clone();
+        scaled->Reset();
+        bool Y=(HType(H)==2);
+        int NX=H->GetNbinsX();
+        int ny=0;
+        int NY=0;
+        if(Y){
+            ny=1;
+            NY=H->GetNbinsY();
+        }
+        
+        for(int x=1;x<=NX;x++){
+            double efX=G->Eval(H->GetXaxis()->GetBinCenter(x));
+            
+            for(int y=ny;y<=NY;y++){
+                int bin=H->GetBin(x,y);
+                double n=H->GetBinContent(bin);
+                double efY=1;
+                if(Y){
+                    efY=G->Eval(H->GetYaxis()->GetBinCenter(y));
+                }
+                scaled->SetBinContent(bin,n/(efY*efX));
+            }
+        }
+        
+        
+//         Draw new results with and adjust axis
+        TVirtualPad* hold=gPad;
+        result->GetCanvas()->cd();
+            hformat(scaled,0);
+            scaled->DrawCopy("hiscol");
+            delete scaled;
+//             gPad->Update();
+//             G->DrawClone("al");
+        result->GetCanvas()->Modified();
+        result->GetCanvas()->Update();
+        gPad=hold;
+    }
+}
+
+
+
