@@ -205,7 +205,7 @@ gPad=hold;
 jgating_tool::~jgating_tool()
 {
 	if(fFitPanel){delete fFitPanel;}
-	if(fTip){fTip->Hide();delete fTip;}
+// 	if(fTip){fTip->Hide();delete fTip;} // Seems have created many crashes recently 
 	if(fInputStore){delete fInputStore;}
 	
 	

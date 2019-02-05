@@ -584,7 +584,7 @@ void jEnv::AddSubButton(){
 
 ////////////////////////////////////////////////////////////////
 
-jScale::jScale() : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame){
+jScale::jScale() : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),gg(0){
 TVirtualPad* hold=gPad;
 	SetWindowName("jScale");
 	SetCleanup(kDeepCleanup);
@@ -605,8 +605,8 @@ TVirtualPad* hold=gPad;
     
     result= new TRootEmbeddedCanvas("scaledhistcan",this,600,400);
 		result->GetCanvas()->SetMargin(0.12,0.04,0.12,0.05);
-		result->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ClickPeakDrawConnect(Int_t,Int_t,Int_t,TObject*)");
-		result->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ToolTipHide()");//added because this embedded canvas put tooltip at wrong coordinates on screen
+// 		result->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ClickPeakDrawConnect(Int_t,Int_t,Int_t,TObject*)");
+// 		result->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ToolTipHide()");//added because this embedded canvas put tooltip at wrong coordinates on screen
 
 	this->AddFrame(result,ExpandX);
     
@@ -627,7 +627,14 @@ gPad=hold;
 void jScale::NewInput(){
     TH1* H=fCanvas1->Hist();
     TGraph* G=(TGraph*)fCanvas2->Object();
-    if(HType(H)&&G&&HType(H)<3){
+    
+    if(G){
+        if(gg)delete gg;
+        gg=(TGraph*)G->Clone();
+    }
+    
+//     cout<<endl<<H<<endl<<gg<<endl;
+    if(HType(H)&&gg&&HType(H)<3){
         TH1* scaled=(TH1*)H->Clone();
         scaled->Reset();
         bool Y=(HType(H)==2);
@@ -640,14 +647,14 @@ void jScale::NewInput(){
         }
         
         for(int x=1;x<=NX;x++){
-            double efX=G->Eval(H->GetXaxis()->GetBinCenter(x));
+            double efX=gg->Eval(H->GetXaxis()->GetBinCenter(x));
             
             for(int y=ny;y<=NY;y++){
                 int bin=H->GetBin(x,y);
                 double n=H->GetBinContent(bin);
                 double efY=1;
                 if(Y){
-                    efY=G->Eval(H->GetYaxis()->GetBinCenter(y));
+                    efY=gg->Eval(H->GetYaxis()->GetBinCenter(y));
                 }
                 scaled->SetBinContent(bin,n/(efY*efX));
             }

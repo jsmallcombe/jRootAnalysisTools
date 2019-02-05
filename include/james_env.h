@@ -139,10 +139,13 @@ class jScale : public TGMainFrame {
 private:
 	CCframe *fCanvas1,*fCanvas2;
 	TRootEmbeddedCanvas *result;
+    TGraph *gg;
 
 public:
 	jScale();
-	virtual ~jScale(){};
+	virtual ~jScale(){
+        if(gg)delete gg;
+    };
     
 	void NewInput();
 
