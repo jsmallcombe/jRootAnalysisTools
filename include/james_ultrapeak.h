@@ -73,7 +73,7 @@ inline double DecGausStep(double& x,double& sig,double& dec){return 1-DecGausCFD
 inline double DecGausArea(double& sig,double& dec){return 2*dec*exp(-((sig*sig)/(2*dec*dec)));}
 
 //An analytical approach to the X value of peak maximum, valid in the range sigma 0.1-10 decay 1-100
-inline double DecGausMaxX(double& sig,double& dec){
+inline double OldDecGausMaxX(double& sig,double& dec){
 	double a=1.39065*pow(dec,0.785742);
 	a+=dec*-0.429206;
 	a+=dec*dec*0.000356727;
@@ -87,6 +87,11 @@ inline double DecGausMaxX(double& sig,double& dec){
 	
 	return (exp(-sig/a)-1)*b;
 }
+
+//An analytical approach to the X value of decay peak maximum
+// Switched to a TGraph, more accurate (and negligably faster)
+// Valid in the range 10^-4<=(sigma/decay)<=35
+double DecGausMaxX(double& sig,double& dec);
 
 ///////////////////////////////////////
 //    DecGaus + UniGaus  	     //
@@ -407,6 +412,9 @@ class  Ultrapeak{
 	
 	static FullFitHolder* QuickPeakFit(TH1* fHist,double fLeftUser,double fRightUser);
 
+    
+    //A TGraph used for the numberical solution to the decay peak
+	static TGraph DecayXR10;
 };
 
 
