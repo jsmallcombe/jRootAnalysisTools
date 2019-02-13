@@ -48,6 +48,7 @@ const short gPeakSharing=8;
 inline short gPeakNH(unsigned short i){return i*2+9;}
 inline short gPeakNC(unsigned short i){return i*2+10;}
 
+const short gPeakNlimit=10;
 
 inline double UniGaus(double& x,double& sig){return exp(-((x*x)/(sig*sig*2)));}
 
@@ -279,7 +280,7 @@ class  Ultrapeak{
 		SetBit(kBack,b);
 		SetBit(kStep,s);
 		SetBit(k2Gaus,g);
-		if(N>10)N=10;
+		if(N>gPeakNlimit)N=gPeakNlimit;
 	}
 	Ultrapeak(int n,TransientBitsClass<long> b):N(n),cBits(b){}
 	Ultrapeak(int n,long b):N(n),cBits(b){}	
@@ -325,8 +326,15 @@ class  Ultrapeak{
 		// From this we calculate a new sharing parameter yeta & scaling factor hach such that:
 		// y = hach * ( yeta*UniGaus + (1-yeta)*DecGaus)
 		// Will have a max height ~1
-		// Thus heigh parameters and sharing parameters can be given in terms of simple observable height
+		// Thus height parameters and sharing parameters can be given in terms of simple observable height
 		// Much easier for fitting but more complicated in the functions.
+        
+        // The "centroid" that is fit is actually the Y-max
+        // A true centroid is calcuated from sharing and decay parameters.
+        // This is useful for initial fit estimations,
+        // but problematic for inputing peaks with known true centroids (energy).
+        // In such cases the decay/sharing parameters may be fixed,
+        // so that the TrueCentroid offset can be calcualted.
 		
 		// Complex sharing parameters for the decay peak are calculated here to save multiplication of effort
 
@@ -386,7 +394,7 @@ class  Ultrapeak{
 	
 	// Calculate all the data of the ultra peak and store in the FullFitHolder vector
 	static void MakeData(FullFitHolder* fHold,double binwidth=1);
-	static void MakeData(FullFitHolder* fHold,TH1* hist);
+	static void MakeData(FullFitHolder* fHold,TH1* hist,bool exclusion=true);
 	static void InflateError(FullFitHolder* fHold);
 	
 
@@ -442,7 +450,7 @@ class  UltrapeakArea{
 	TransientBitsClass<long> cBits;
 	double para[48];
 	
-	UltrapeakArea(int n,TransientBitsClass<long> bits):N_i(n),cBits(bits){if(N_i>9)N_i=9;}
+	UltrapeakArea(int n,TransientBitsClass<long> bits):N_i(n),cBits(bits){if(N_i>gPeakNlimit)N_i=gPeakNlimit;}
 	UltrapeakArea(int n,long bits):UltrapeakArea(n,TransientBitsClass<long>(bits)){}
 	UltrapeakArea(int n=0):UltrapeakArea(n,3){}
 	~UltrapeakArea(){};
@@ -461,29 +469,53 @@ class  UltrapeakArea{
 class  UltrapeakFrac{
  public:
  
-	static double UltrapeakFracFn(unsigned int& Np, unsigned int& i,double *p){
-		double sum=0;
-		for(unsigned int j=0;j<Np;j++)sum+=p[gPeakNH(j)];
-		return p[gPeakNH(i)]/sum;
-	}
- 
+    vector<int> S;
 	unsigned int N;//total number
 	unsigned int N_i;//Target peak 0-(N-1), not total number
 	TransientBitsClass<long> cBits;
 	double para[48];
 	
-	UltrapeakFrac(int n,int i,TransientBitsClass<long> bits):N(n),N_i(i),cBits(bits){if(N>10)N=10;}
-	UltrapeakFrac(int n,int i,long bits):UltrapeakFrac(n,i,TransientBitsClass<long>(bits)){}
+	UltrapeakFrac(vector<int> s,int n,int i,TransientBitsClass<long> bits):S(s),N(n),N_i(i),cBits(bits){if(N>gPeakNlimit)N=gPeakNlimit;}
+	UltrapeakFrac(vector<int> s,int n,int i,long bits):UltrapeakFrac(s,n,i,TransientBitsClass<long>(bits)){}
 	UltrapeakFrac(){};
 	~UltrapeakFrac(){};
 	
 	double operator() (double *x, double *p) {
 		double *P=p;
 		if(N>0){Ultrapeak::FixParameters(p,para,N+1,cBits);P=para;}
-		if(N>N_i)return UltrapeakFracFn(N,N_i,P);
+		if(N>N_i){
+            double sum=0;
+            for(unsigned int s=0;s<S.size();s++)sum+=P[gPeakNH(S[s])];
+            return P[gPeakNH(N_i)]/sum;
+        }
 		return 0;
 	}
 
+};
+
+
+// Made to be operated with the same parameter list as Ultrapeak as a TF1,
+// even though it has no x dependence.
+// Give it an incorrect N and it will F U up.
+class  UltrapeakCentroid{
+ public:
+  
+	unsigned int N_i;//Target peak 0-(N-1), not total number
+	TransientBitsClass<long> cBits;
+	double para[48];
+	
+	UltrapeakCentroid(int n,TransientBitsClass<long> bits):N_i(n),cBits(bits){if(N_i>gPeakNlimit)N_i=gPeakNlimit;}
+	UltrapeakCentroid(int n,long bits):UltrapeakCentroid(n,TransientBitsClass<long>(bits)){}
+	UltrapeakCentroid(int n=0):UltrapeakCentroid(n,3){}
+	~UltrapeakCentroid(){};
+	
+	double operator() (double *x, double *p) {
+        double sCentroid=0;
+        for(unsigned int i=0;i<=N_i;i++){
+            sCentroid+=p[gPeakNC(i)];
+        }
+        return TrueCentroid(sCentroid,p[gPeakSigma],p[gPeakDecay],p[gPeakSharing]);
+	}
 };
 
 

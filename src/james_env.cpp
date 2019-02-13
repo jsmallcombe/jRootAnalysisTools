@@ -652,14 +652,16 @@ void jScale::NewInput(){
             for(int y=ny;y<=NY;y++){
                 int bin=H->GetBin(x,y);
                 double n=H->GetBinContent(bin);
+                double e=H->GetBinError(bin);
                 double efY=1;
                 if(Y){
                     efY=gg->Eval(H->GetYaxis()->GetBinCenter(y));
                 }
-                scaled->SetBinContent(bin,n/(efY*efX));
+                double scale=1/(efY*efX);
+                scaled->SetBinContent(bin,n*scale);
+                scaled->SetBinError(bin,e*scale);
             }
         }
-        
         
 //         Draw new results with and adjust axis
         TVirtualPad* hold=gPad;
