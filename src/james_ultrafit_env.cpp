@@ -158,10 +158,9 @@ void UltraFitEnv::DialogBox() {
 				fCombo->AddEntry("pol0+step",0);
 				fCombo->AddEntry("pol1 fixed",1);
 				fCombo->AddEntry("pol1",2);
-				fCombo->AddEntry("pol1 down",3);
-				fCombo->AddEntry("pol1+step",4);
-				fCombo->AddEntry("pol2",5);
-				fCombo->AddEntry("pol2+step",6);
+				fCombo->AddEntry("pol1+step",3);
+				fCombo->AddEntry("pol2",4);
+				fCombo->AddEntry("pol2+step",5);
 				fCombo->Resize(110, 20);
 				fCombo->Select(0);
 				ticks->AddFrame(fCombo,XX);	
@@ -169,6 +168,10 @@ void UltraFitEnv::DialogBox() {
 				fCheck1 = new TGCheckButton(ticks,"Limit Tail  ");// A tick box with hover text belonging to a parent frame
 				fCheck1->SetState(kButtonUp);
 				fCheck1->SetToolTipText("Force strict maximum values on the\nexponential tail parameters.\n Recommended for fitting gamma rays.");
+                
+                fCheck3 = new TGCheckButton(ticks,"No Tail    ");// A tick box with hover text belonging to a parent frame
+				fCheck3->SetState(kButtonUp);
+				fCheck3->SetToolTipText("Turn off decay tail complelty");
 				
 				fCheck2 = new TGCheckButton(ticks,"Twin Gaus");// A tick box with hover text belonging to a parent frame
 				fCheck2->SetState(kButtonUp);
@@ -177,6 +180,7 @@ void UltraFitEnv::DialogBox() {
 				
 
 			ticks->AddFrame(fCheck1,XX);
+			ticks->AddFrame(fCheck3,XX);
 			ticks->AddFrame(fCheck2,XX);
 		fHframe0->AddFrame(ticks,ExpandXz);
 			
@@ -944,12 +948,29 @@ void  UltraFitEnv::FitGUIPeak(){
 	string fixsig=cShapeTsig->GetBuffer()->GetString();
 	string fixdec=cShapeTdecay->GetBuffer()->GetString();
 	string fixsha=cShapeTshare->GetBuffer()->GetString();
-	
+    
+    //Text input overides check boxes
+    if(fixdec.size()+fixsha.size()){
+        fCheck1->SetState(kButtonUp);
+        fCheck3->SetState(kButtonUp);
+    }
+    
+    //fCheck3 overides check3
+    if(fCheck3->GetState()){
+        fCheck1->SetState(kButtonUp);
+        fixsha="1";
+        fixdec="1";
+    } 
+        
 	int fittype=fCheck1->GetState();
-	if(fCheck2->GetState())fittype=2;//trumps fCheck1
+    
+	if(fCheck2->GetState()){
+        fittype=2;//trumps fCheck1
+        fCheck1->SetState(kButtonUp);
+    }
 	
 	FullFitHolder* fHold=Ultrapeak::PeakFit(gHist,bound_l,bound_u,fPass,fCombo->GetSelected(),fittype,fixsig,fixdec,fixsha,fExclusionHist);
-	if(fExclusionHist)delete fExclusionHist;
+// 	if(fExclusionHist)delete fExclusionHist;
 	
 	fFitFinished=true;
 	this->UltraFitAfter(fHold);
