@@ -10,23 +10,25 @@
     
     MyFile= new TFile("Test/data/1Dgammas.root","READ");
 	gROOT->cd();
-	C=(TH2F*)MyFile->Get("gHist2")->Clone();
+	C=(TH1*)MyFile->Get("gHist2")->Clone();
 	MyFile->Close();
     
     MyFile= new TFile("Test/data/1Dice.root","READ");
 	gROOT->cd();
-	D=(TH2F*)MyFile->Get("gHist1")->Clone();
+	D=(TH1*)MyFile->Get("gHist1")->Clone();
 	MyFile->Close();
-
+    
+    TGraph *G1, *G2;
+    
     MyFile= new TFile("Test/data/RelGammaEfficiency.root","READ");
 	gROOT->cd();
-	G1=(TH2F*)MyFile->Get("RelGammaEff")->Clone();
+	G1=(TGraph*)MyFile->Get("RelGammaEff")->Clone();
 	MyFile->Close();  
     
     
     MyFile= new TFile("Test/data/RelGammaEfficiencyError.root","READ");
 	gROOT->cd();
-	G2=(TH2F*)MyFile->Get("RelGammaError")->Clone();
+	G2=(TGraph*)MyFile->Get("RelGammaError")->Clone();
 	MyFile->Close();  
     
     TCanvas* C1=new TCanvas();
@@ -50,5 +52,8 @@
     
     new jEnv();
     new jScale();
+    
+    gSystem->cd("./Test/data/");
+    new jDirList(gClient->GetRoot(), gClient->GetRoot(), 400, 150);
 
 }

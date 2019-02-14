@@ -17,6 +17,8 @@
 #include <TF1.h>
 #include <TH1.h>
 #include <TH2.h>
+#include <TH3.h>
+#include <TClass.h>
 #include <TGraph.h>
 #include <TArray.h>
 #include <iostream>
@@ -34,6 +36,18 @@ inline int HType(TObject* H){
 		if(H->InheritsFrom("TH1"))return 1;
 	}
 	return 0;
+}
+
+
+inline int HistoClassDetect(TClass* tclass){
+    if(tclass->InheritsFrom(TH3::Class()))return 3;
+    if(tclass->InheritsFrom(TH2::Class()))return 2;
+    if(tclass->InheritsFrom(TH1::Class()))return 1;
+    return 0;
+}
+
+inline int HistoClassDetect(TString classname){
+    return HistoClassDetect(gROOT->GetClass(classname));
 }
 
 //////////////////////////////////////////////////

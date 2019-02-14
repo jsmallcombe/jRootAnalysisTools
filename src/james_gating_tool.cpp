@@ -46,7 +46,7 @@ TVirtualPad* hold=gPad;
 		TH1* pass=(TH1*)input;
 		
 		if(Btwo&&!Bthree){
-			// Until recently didn't store and in local class copy, rarely and issue, but it COULD be
+			// Until recently didn't store and in local class copy, rarely an issue, but it COULD be
 			// Still too intensive to do it for TH3 though.
 			stringstream ss;
 			ss<<"GateStoreCopy"<<make_iterator();

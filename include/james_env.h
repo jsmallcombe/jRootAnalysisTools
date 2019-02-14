@@ -62,6 +62,8 @@ class CCframe : public TRootEmbeddedCanvas {
 		int Type();
 
 		void TrackCaptureHistogram(TPad*,TObject*,Int_t);
+        
+        void NonGuiNew(TObject* fH);
 	
 		std::vector< TCanvas* > CFriends;
         
@@ -109,6 +111,8 @@ public:
 		if(SumHist){delete SumHist;}
 		if(SameSave){delete SameSave;}
 	};
+    
+    void NonGuiNew(TObject* obj){fCanvas1->NonGuiNew(obj);}
 	
 	void Swap();
 	void FitPanel();

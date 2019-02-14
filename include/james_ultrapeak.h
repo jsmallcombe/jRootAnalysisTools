@@ -11,7 +11,7 @@
 #define ultrapeak_func_h
 
 #include "james_utility.h"
-#include "james_fitting.h"
+#include "james_fitting.h"    
 
 #include <TAxis.h>
 #include <TCanvas.h>
@@ -28,6 +28,7 @@
 #include <TMath.h>
 
 #include <iostream>
+#include <iomanip>
 using namespace std;
 
 // The following peak functions are written in many parts to make the maths transparent

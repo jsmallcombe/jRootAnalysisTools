@@ -87,6 +87,14 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can){
 	}
 }
 
+void CCframe::NonGuiNew(TObject* obj){
+			if(obj->InheritsFrom(fClass)){
+                SetNewObject(obj,0,0);
+            }
+			return;
+}
+
+
 TH1* CCframe::Hist(){
         if(fClass->InheritsFrom("TH1")){
             return (TH1*)Object();
