@@ -27,6 +27,7 @@
 #include <TTree.h>
 #include <TBranch.h>
 #include <TStopwatch.h>
+#include <TGTab.h>
 
 #include "james_utility.h"
 #include "james_ultrafit_env.h"
@@ -35,70 +36,27 @@
 #include "james_gate_subtract.h"
 #include "james_hist_formatting.h"
 #include "james_spectool.h"
-
+#include "james_elements.h"
 
 using namespace std;
 
-//current_capture_frame
-class CCframe : public TRootEmbeddedCanvas {
-	private:
-		TObject* current;//Never owns
-		TPad* currentpad;//Never owns
-		TCanvas* currentcan;//Never owns
-		string fName;
-		void SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can);
-		bool pause;
-        TClass *fClass;
-        bool fNamed;
-        
-	public:
-		CCframe(const char * name = 0,const TGWindow * p = 0,UInt_t w = 10,UInt_t h = 10,UInt_t options = kSunkenFrame | kDoubleBorder,Pixel_t 	back = GetDefaultFrameBackground());
-		~CCframe();
-        void SetClass(TClass*);
-        
-		TH1* Hist();
-		TObject* Object();
-		
-		int Type();
-
-		void TrackCaptureHistogram(TPad*,TObject*,Int_t);
-        
-        void NonGuiNew(TObject* fH);
-	
-		std::vector< TCanvas* > CFriends;
-        
-        void NewObject(){
-            Emit("NewObject()");
-        }
-		
-	ClassDef(CCframe, 2)
-};
+// RQ_OBJECT("MyClass") inside the MyClass body (IF MyClass not inherited from TQObject) allow class to use signal/slot communication
 
 
 class jEnv : public TGMainFrame {
 
 private:
-	TStopwatch Stop;
 	CCframe *fCanvas1;
 	UltraFitEnv* fFitPanel;
 	jSpecTool* fSpecTool;
-	TGVerticalFrame* addsub;
-	TRootEmbeddedCanvas *A,*B,*result;
-	TH1* AHist,*BHist,*SumHist,*SameSave;//Always owned and private
-	TGHSlider* fHslider1;
-	TGTextEntry* fTeh1;
-	TGCheckButton* fCheck1;
-	TGTextBuffer  *fTbh1;
-	int gSubtract;
-	TGTextButton* addsubclick;
-	static int SumNameItt;
+	TGCompositeFrame* addsub;
+    TH1* SameSave;
 	bool gDrawSame;
+    
+    vector<TGTab*> fTabs;
 	
 	void Show();
 	void Hide();
-	void Grab(int);
-	void DrawAB(int);
-	void UpdateText();
     double Abinwidth;
 	
 public:
@@ -106,15 +64,12 @@ public:
 	virtual ~jEnv(){
 		if(fFitPanel){delete fFitPanel;}
 		if(fSpecTool){delete fSpecTool;}
-		if(AHist){delete AHist;}
-		if(BHist){delete BHist;}
-		if(SumHist){delete SumHist;}
 		if(SameSave){delete SameSave;}
 	};
     
+    //Expand/Replace
     void NonGuiNew(TObject* obj){fCanvas1->NonGuiNew(obj);}
 	
-	void Swap();
 	void FitPanel();
 	void FitPanelClose(){fFitPanel=0;}
 	void Spectrum();
@@ -125,13 +80,7 @@ public:
 	void jSaveAs();
 	void DrawCpy();
 	void DrawSm();
-	void DrawSmHere(TPad*,TObject*,Int_t);
-	void GrabA(Int_t,Int_t,Int_t,TObject*);
-	void GrabB(Int_t,Int_t,Int_t,TObject*);
-	void DoSlider();
-	void DoText();
-	void AddSubButton();
-	
+	void DrawSmHere(TPad*,TObject*,Int_t);	
 
 	ClassDef(jEnv, 2)
 };
