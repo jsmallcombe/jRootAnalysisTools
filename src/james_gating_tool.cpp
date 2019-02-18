@@ -22,8 +22,16 @@ TVirtualPad* hold=gPad;
 
 	if(!input)return;
 	
+	if(input->IsA()->InheritsFrom("TH1")){
+		cout<<endl<<"IS ON HEAD "<<input->IsOnHeap()<<endl;
+		TDirectory* hdir=((TH1*)input)->GetDirectory();
+	}
+	
+	TGTransientFrame* PopUp=0;
 	bool Bthree=input->IsA()->InheritsFrom("TH3");
 	if(Bthree){
+        PopUp=MakeTH3Popup();
+        
 		cout<<endl<<endl<<" ============== Beginning Loading of TH3 ============ "<<endl<<" ====== Please be patient until window appears ====== "<<endl<<endl;
 	}
 	
@@ -46,6 +54,7 @@ TVirtualPad* hold=gPad;
 		TH1* pass=(TH1*)input;
 		
 		if(Btwo&&!Bthree){
+		cout<<endl<<"TH2 COPYING INPUT"<<endl;
 			// Until recently didn't store and in local class copy, rarely an issue, but it COULD be
 			// Still too intensive to do it for TH3 though.
 			stringstream ss;
@@ -195,6 +204,7 @@ TVirtualPad* hold=gPad;
 		if(Bthree)gJframe1->HideFrame(gJframe1->fHframe4);
 		
 		DoUpdate();
+        if(PopUp){PopUp->CloseWindow();}
 	}//Main IF histogram loop
 	
 gPad=hold;
@@ -208,7 +218,7 @@ jgating_tool::~jgating_tool()
 // 	if(fTip){fTip->Hide();delete fTip;} // Seems have created many crashes recently 
 	if(fInputStore){delete fInputStore;}
 	
-	
+	Closed(this);
 	
    // Clean up
    Cleanup();
@@ -465,7 +475,53 @@ void jgating_tool::NewAxisDrawn() //adjust sliders and control values for new ax
 	}
 }
 
+#include <TGIcon.h>
+TGTransientFrame* jgating_tool::MakeTH3Popup(){
+    TGTransientFrame* popup=new TGTransientFrame(gClient->GetRoot(), gClient->GetRoot(), 400, 200, kHorizontalFrame);
 
+//    fClient->GetPicture("mb_exclamation_s.xpm");
+//    fClient->GetPicture("mb_asterisk_s.xpm");
+    TGLayoutHints *fL1 = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 5, 20, 0, 0);
+
+    TGIcon *fIcon = new TGIcon(popup, fClient->GetPicture("mb_stop_s.xpm"),100, 100);
+    popup->AddFrame(fIcon,new TGLayoutHints(kLHintsCenterY, 20, 15, 20, 20));
+
+    TGVerticalFrame* fLabelFrame = new TGVerticalFrame(popup, 60, 20);
+    popup->AddFrame(fLabelFrame,fL1);
+   
+    TGLabel *label1 = new TGLabel(fLabelFrame,"====================================================");
+    TGLabel *label2 = new TGLabel(fLabelFrame,"============= Beginning Loading of TH3 =============");
+    TGLabel *label3 = new TGLabel(fLabelFrame,"====== Please be patient until window appears ======");
+    TGLabel *label4 = new TGLabel(fLabelFrame,"====================================================");
+//        label->SetTextJustify(text_align);
+    fLabelFrame->AddFrame(label1, fL1);    
+    fLabelFrame->AddFrame(label2, fL1);    
+    fLabelFrame->AddFrame(label3, fL1);    
+    fLabelFrame->AddFrame(label4, fL1);    
+        
+    popup->SetWindowName("LOADING");
+
+    popup->MapSubwindows();
+    popup->Resize(popup->GetDefaultSize());
+    popup->MapWindow();
+    gClient->NeedRedraw(popup,kTRUE);
+
+    int waitc=0;
+    while(waitc<20){
+        gSystem->ProcessEvents();//gSystem->InnerLoop();
+        gSystem->Sleep(5);
+        waitc++;
+    // Little loop to buy Xsystem time to draw the box before code moves on
+    }
+//     gClient->WaitFor(popup);
+        
+// 	popup->Connect("CloseWindow()","TGTransientFrame",popup,"DontCallClose()");
+    popup->DontCallClose();
+    
+//     CenterOnParent();// position relative to the parent's window
+    
+    return popup;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

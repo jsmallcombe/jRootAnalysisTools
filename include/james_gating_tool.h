@@ -57,6 +57,8 @@ private:
 	string make_iterator();
 	TGToolTip *fTip;
 	UltraFitEnv* fFitPanel;
+    
+    TGTransientFrame* MakeTH3Popup();
 	
 	TH1* saveadd;
 	vector< TH1* > savehists;
@@ -83,6 +85,10 @@ public:
 	void StoreHistograms(Int_t);
 	void DrawSaved();
 	void NewAxisDrawn();
+    
+    void Closed(TObject* obj){
+        Emit("Closed(TObject*)", (Long_t)obj);
+    }
 
 	ClassDef(jgating_tool, 2)
 };

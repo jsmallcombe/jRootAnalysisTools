@@ -5,17 +5,34 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),fFitPanel(0),fSpecTool(0),addsub(0),SameSave(0),gDrawSame(false){
+jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
+    fFitPanel(0),fSpecTool(0),addsub(0),DirList(0),SameSave(0),gDrawSame(false),fTab(0),
+    fPixOffX(1),fPixOffY(33),
+    fDefaultDirWidth(180),fDefaultDirHeight(400),
+    fDefaultTabsWidth(800),fDefaultTabsHeight(600),
+    fDefaultGrabSize(140)
+{
+    
+    
 TVirtualPad* hold=gPad;
 	SetWindowName("jEnv");
     
 	SetCleanup(kDeepCleanup);
 
 	TGLayoutHints* ExpandX= new TGLayoutHints(kLHintsExpandX,5,5,3,2);
-	
+
+    DirList=new jDirList(this);
+    this->AddFrame(DirList,new TGLayoutHints(kLHintsExpandY,4,4,4,4));
+    
 	TGVerticalFrame* controlframe1 = new TGVerticalFrame(this);
-		fCanvas1 = new CCframe("Embedded1", controlframe1, 100, 100);
+		fCanvas1 = new CCframe("Embedded1", controlframe1, fDefaultGrabSize, fDefaultGrabSize);
+		
 		controlframe1->AddFrame(fCanvas1);
+        
+// 		DirList->Connect("NewObject(TObject*)","CCframe",fCanvas1,"NonGuiNew(TObject*)");
+		DirList->Connect("NewObject(TKey*)","CCframe",fCanvas1,"NonGuiNew(TKey*)");
+		DirList->Connect("NewObject(TObject*)","jEnv",this,"NewDirObject(TObject*)");
+		
 		TGTextButton* fitter = new TGTextButton(controlframe1,"Fit Panel");
 		fitter->Connect("Clicked()","jEnv",this,"FitPanel()");	
 		controlframe1->AddFrame(fitter,ExpandX);
@@ -25,9 +42,12 @@ TVirtualPad* hold=gPad;
 		TGTextButton* gatter = new TGTextButton(controlframe1,"Gate");
 		gatter->Connect("Clicked()","jEnv",this,"Gatter()");	
 		controlframe1->AddFrame(gatter,ExpandX);
-		TGTextButton* browser = new TGTextButton(controlframe1,"Browser");
-		browser->Connect("Clicked()","jEnv",this,"Browser()");
-		controlframe1->AddFrame(browser,ExpandX);
+		TGTextButton* jbrowser = new TGTextButton(controlframe1,"< jBrowser");
+		jbrowser->Connect("Clicked()","jEnv",this,"ShowHideDir()");
+		controlframe1->AddFrame(jbrowser,ExpandX);
+		TGTextButton* tbrowser = new TGTextButton(controlframe1,"TBrowser");
+		tbrowser->Connect("Clicked()","jEnv",this,"Browser()");
+		controlframe1->AddFrame(tbrowser,ExpandX);
 		TGTextButton* Drawer = new TGTextButton(controlframe1,"DrawCopy");
 		Drawer->Connect("Clicked()","jEnv",this,"DrawCpy()");
 		controlframe1->AddFrame(Drawer,ExpandX);
@@ -42,23 +62,48 @@ TVirtualPad* hold=gPad;
 		controlframe1->AddFrame(close,ExpandX);
 		TGTextButton* exit = new TGTextButton(controlframe1,"Exit","gApplication->Terminate(0)");
 		controlframe1->AddFrame(exit,ExpandX);
-		
-
-	this->AddFrame(controlframe1);
+    this->AddFrame(controlframe1);
 	
+    
 	TGTextButton* expandB = new TGTextButton(this,">");
-	expandB->Connect("Clicked()","jEnv",this,"ShowHide()");	
+        expandB->Connect("Clicked()","jEnv",this,"ShowHideTabs()");	
 	this->AddFrame(expandB,new TGLayoutHints(kLHintsExpandY, 1, 1, 1, 1));
-	
-	addsub = new jAddSubTool(fCanvas1,this);
-	this->AddFrame(addsub,new TGLayoutHints(kLHintsExpandY|kLHintsExpandX, 1, 1, 1, 1));
-	
+
+    fTab = new TGTab(this, fDefaultTabsWidth, fDefaultTabsHeight);  
+    fTab->Connect("CloseTab(Int_t)", "jEnv", this, "CloseTab(Int_t)");
+	this->AddFrame(fTab, new TGLayoutHints(kLHintsExpandY|kLHintsExpandX, 1, 1, 1, 1));
+    
+    TGCompositeFrame *TabOne= fTab->AddTab("Add/Sub");
+    fTabs.push_back(TabOne);
+    addsub = new jAddSubTool(fCanvas1,TabOne);
+    TabOne->AddFrame(addsub,new TGLayoutHints(kLHintsExpandY|kLHintsExpandX, 1, 1, 1, 1));
+    
+    AddTab();
+    AddTab();
+    AddTab();
+    AddTab();
+    AddTab();
+    AddTab();
+    AddTab();
+    
 	MapSubwindows();
 	Resize(GetDefaultSize());
 	MapWindow();
-	
-	Hide();
-	
+
+	HideTabs();
+	HideDir();
+    
+    Move(200,200);
+    SetWMPosition(200, 200);	
+    
+#if __linux__
+    // An extra small offset due to window bar
+    // There is probably a more sophisticated way of dealing with this 
+    Window_t wdummy;
+    gVirtualX->TranslateCoordinates(GetId(),GetParent()->GetId(),0,0,fPixOffX,fPixOffY,wdummy);
+#endif
+
+    
 // 	Connect("CloseWindow()","jEnv",this,"~jEnv()");
 	Connect("CloseWindow()","jEnv",this,"DontCallClose()");
 
@@ -91,7 +136,10 @@ void jEnv::Spectrum(){
 
 
 void jEnv::Gatter(){
-	if(fCanvas1->Type()>1)new jgating_tool(fCanvas1->Hist());
+	if(fCanvas1->Type()>1){
+        jgating_tool* gate=new jgating_tool(fCanvas1->Hist());
+		gate->Connect("Closed(TObject*)", "jEnv", this,"ClosedObject(TObject*)");
+    }
 };
 
 
@@ -135,26 +183,96 @@ void jEnv::jSaveAs(){
 };
 
 
-void jEnv::ShowHide(){if(!addsub)return;
-	if(IsVisible(addsub)){
-		Hide();
+void jEnv::ShowHideTabs(){if(!fTab)return;
+	if(IsVisible(fTab)){
+		HideTabs();
 	}else{
-		Show();
+		ShowTabs();
 	}
 }
 
-void jEnv::Show(){
-	ShowFrame(addsub);
+void jEnv::ShowTabs(){
+	ShowFrame(fTab);
+	fTab->Resize(fDefaultTabsWidth, fDefaultTabsHeight);
 	Resize(this->GetDefaultSize());
 	gClient->NeedRedraw(this);
 }
 
-void jEnv::Hide(){
-	HideFrame(addsub);
+void jEnv::HideTabs(){
+	HideFrame(fTab);
+	DirList->Resize(fDefaultDirWidth,fDefaultDirHeight);
 	Resize(this->GetDefaultSize());
 	gClient->NeedRedraw(this);
 }
 
+void jEnv::AddTab(){
+    TGCompositeFrame *NewTab= fTab->AddTab(" ");
+    fTabs.push_back(NewTab);
+    fTab->GetTabTab(fTabs.size()-1)->ShowClose();
+}
+
+void jEnv::CloseTab(Int_t ID){
+//     cout<<endl<<ID<<endl;
+    fTab->RemoveTab(ID);
+    if(ID<(signed)fTabs.size()){
+        fTabs.erase(fTabs.begin()+ID);
+    }
+}
+
+
+void jEnv::ShowHideDir(){if(!DirList)return;
+	if(IsVisible(DirList)){
+		HideDir();
+	}else{
+		ShowDir();
+	}
+}
+
+void jEnv::ShowDir(){
+    int tW=fTab->GetWidth(),tH=fTab->GetHeight();
+	DirList->Resize(fDefaultDirWidth,fDefaultDirHeight);
+	ShowFrame(DirList);
+	fTab->Resize(tW, tH);
+	Resize(this->GetDefaultSize());
+	gClient->NeedRedraw(this);
+
+#if __linux__
+    int x,y;
+    Window_t wdummy;
+    gVirtualX->TranslateCoordinates(GetId(),GetParent()->GetId(),0,0,x,y,wdummy);
+    Move(x-fDefaultDirWidth-8-fPixOffX,y-fPixOffY);
+    SetWMPosition(x-fDefaultDirWidth-8-fPixOffX,y-fPixOffY);
+#endif
+}
+
+void jEnv::HideDir(){
+    int tW=fTab->GetWidth(),tH=fTab->GetHeight();
+	HideFrame(DirList);
+	fTab->Resize(tW, tH);
+	Resize(this->GetDefaultSize());
+	gClient->NeedRedraw(this);
+    
+#if __linux__
+    int x,y;
+    Window_t wdummy;
+    gVirtualX->TranslateCoordinates(GetId(),GetParent()->GetId(),0,0,x,y,wdummy);
+    Move(x+fDefaultDirWidth+8-fPixOffX,y-fPixOffY);
+    SetWMPosition(x+fDefaultDirWidth+8-fPixOffX,y-fPixOffY);
+#endif
+}
+
+void jEnv::NewDirObject(TObject* obj){
+	if(obj->InheritsFrom(TGraph::Class())){
+		new TCanvas();
+		gPad->Update();
+		((TGraph*)obj)->DrawClone("al");
+	}	
+}
+
+
+void jEnv::ClosedObject(TObject* obj){
+    cout<<endl<<"A free object has closed. Here is a pointer to where it HAD been located in memory "<<obj<<endl;    
+}
 
 ////////////////////////////////////////////////////////////////
 

@@ -48,8 +48,9 @@ class CCframe : public TRootEmbeddedCanvas {
 		TObject* current;//Never owns
 		TPad* currentpad;//Never owns
 		TCanvas* currentcan;//Never owns
+		TKey*  currentkey;//Never owns
 		string fName;
-		void SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can);
+		void SetNewObject(TObject* fH,TPad* Pad=0,TCanvas* Can=0,TKey* Key=0);
 		bool pause;
         TClass *fClass;
         bool fNamed;
@@ -66,7 +67,8 @@ class CCframe : public TRootEmbeddedCanvas {
 
 		void TrackCaptureHistogram(TPad*,TObject*,Int_t);
         
-        void NonGuiNew(TObject* fH);
+        void NonGuiNew(TObject* obj);
+        void NonGuiNew(TKey* key);
 	
 		std::vector< TCanvas* > CFriends;
         
@@ -98,7 +100,7 @@ class jAddSubTool : public TGCompositeFrame {
     double Abinwidth;
     
 public:
-		jAddSubTool(CCframe* Frame,const TGWindow * p = 0);
+		jAddSubTool(CCframe* Frame,const TGWindow * p = 0, UInt_t w=600, UInt_t h=400, UInt_t options=kVerticalFrame);
 		~jAddSubTool(){
             if(AHist){delete AHist;}
             if(BHist){delete BHist;}
@@ -118,28 +120,35 @@ public:
 
 
 
-class jDirList {
+class jDirList: public TGCompositeFrame {
     
     // Modified from example guitest.C
     
+   //RQ_OBJECT("jDirList")
+   // if jDirList not inherited from TQObject, allows class to use signal/slot communication
+    
 protected:
-   TGTransientFrame *fMain;
    TGListTree       *fContents;
    const TGPicture  *fIcon;
    const TGPicture  *fIconH1;
    const TGPicture  *fIconH2;
    const TGPicture  *fIconH3;
+   const TGPicture  *fIconGr;
    TList RootFileList;
    
    TString DirName(TGListTreeItem* item);
 
 public:
-   jDirList(const TGWindow *p, const TGWindow *main, UInt_t w, UInt_t h);
+   jDirList(const TGWindow* p, UInt_t w=200, UInt_t h=400, UInt_t options=kVerticalFrame);
    virtual ~jDirList();
+   
+   static TFile* LastFile;
 
    // slots
    void OnDoubleClick(TGListTreeItem* item, Int_t btn);
    void CloseWindow();
+   void NewObject(TObject*);
+   void NewObject(TKey*);
    
 private:
     void UseItem(TGListTreeItem* item);

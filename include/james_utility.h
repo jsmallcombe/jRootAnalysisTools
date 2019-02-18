@@ -50,6 +50,15 @@ inline int HistoClassDetect(TString classname){
     return HistoClassDetect(gROOT->GetClass(classname));
 }
 
+
+inline bool GraphClassDetect(TClass* tclass){
+    return tclass->InheritsFrom(TGraph::Class());
+}
+
+inline bool GraphClassDetect(TString classname){
+    return GraphClassDetect(gROOT->GetClass(classname));
+}
+
 //////////////////////////////////////////////////
 //	FUNCTIONS FOR EQUATION EVALUATION	//
 //////////////////////////////////////////////////

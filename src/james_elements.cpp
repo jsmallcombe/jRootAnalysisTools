@@ -1,5 +1,5 @@
 #include "james_elements.h"
-CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t options,Pixel_t back):TRootEmbeddedCanvas(name,p,w,h,options,back),current(0),currentpad(0),currentcan(0){TVirtualPad* hold=gPad;
+CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t options,Pixel_t back):TRootEmbeddedCanvas(name,p,w,h,options,back),current(0),currentpad(0),currentcan(0),currentkey(0){TVirtualPad* hold=gPad;
 	this->GetCanvas()->SetMargin(0,0,0,0);
 	TQObject::Connect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", "CCframe", this,"TrackCaptureHistogram(TPad*,TObject*,Int_t)");
 	gPad=hold;
@@ -23,6 +23,7 @@ void CCframe::SetClass(TClass* iClass){
     current=0;
     currentpad=0;
     currentcan=0;
+    currentkey=0;
 }
 
 
@@ -52,45 +53,56 @@ void CCframe::TrackCaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 	}
 }
 
-void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can){
+void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,TKey* Key){
 	if(fH!=current){
 		current=fH;
 		currentpad=Pad;
 		currentcan=Can;
-        if(fNamed)fName=current->GetName();
-		TVirtualPad* hold=gPad;
-		this->GetCanvas()->cd();
-        
-        //Drawing Options
-		if(HType(fH)){
-            if(HType(fH)==3){
-                this->GetCanvas()->Clear();
-                TText t;
-                t.SetTextAlign(22);
-                t.SetTextSize(.6);
-                t.DrawTextNDC(.5,.5,"TH3");
-            }else{
-                TH1* H=((TH1*)fH)->DrawCopy("COL");
-                H->GetXaxis()->SetLabelSize(0);
-                H->GetYaxis()->SetLabelSize(0);
-                H->SetStats(kFALSE);
-            }
-		}else if(fH->InheritsFrom("TGraph")){
-            gPad->Update();
-            ((TGraph*)fH)->DrawClone("al");
-        }
-		this->GetCanvas()->Modified();
-		this->GetCanvas()->Update();
-		gPad=hold;
-        NewObject();
+		currentkey=Key;
+		if(fNamed)fName=current->GetName();
+			TVirtualPad* hold=gPad;
+			this->GetCanvas()->cd();
+		
+		//Drawing Options
+			if(HType(fH)){
+		if(HType(fH)==3){
+			this->GetCanvas()->Clear();
+			TText t;
+			t.SetTextAlign(22);
+			t.SetTextSize(.6);
+			t.DrawTextNDC(.5,.5,"TH3");
+		}else{
+			TH1* H=((TH1*)fH)->DrawCopy("COL");
+			H->GetXaxis()->SetLabelSize(0);
+			H->GetYaxis()->SetLabelSize(0);
+			H->SetStats(kFALSE);
+		}
+			}else if(fH->InheritsFrom("TGraph")){
+		gPad->Update();
+		((TGraph*)fH)->DrawClone("al");
+		}
+			this->GetCanvas()->Modified();
+			this->GetCanvas()->Update();
+			gPad=hold;
+		NewObject();
 	}
 }
 
 void CCframe::NonGuiNew(TObject* obj){
-			if(obj->InheritsFrom(fClass)){
-                SetNewObject(obj,0,0);
-            }
-			return;
+	if(obj->InheritsFrom(fClass)){
+		SetNewObject(obj);
+	}
+	return;
+}
+
+void CCframe::NonGuiNew(TKey* key){
+	TObject* obj=key->ReadObj();
+	if(obj){
+		if(obj->InheritsFrom(fClass)){
+			SetNewObject(obj,0,0,key);
+		}
+	}
+	return;
 }
 
 
@@ -104,14 +116,14 @@ TH1* CCframe::Hist(){
     
 TObject* CCframe::Object(){
 	if(current){
-        TObject* Ob;
-        if(fNamed&&fName.size()){
-            Ob = gROOT->FindObject(fName.c_str());
-    // 		cout<<endl<<"Checking if histogram pointer "<<current<<" is valid: "<<Ob<<endl;
-            if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
-            //Often fails because FindObject has limitations in terms of directories and drawn histograms we might have grabbed.
-            //If the canvas is still drawn we might still be able to grab the histogram
-        }
+		TObject* Ob;
+		if(fNamed&&fName.size()){
+			Ob = gROOT->FindObject(fName.c_str());
+	// 		cout<<endl<<"Checking if histogram pointer "<<current<<" is valid: "<<Ob<<endl;
+			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
+			//Often fails because FindObject has limitations in terms of directories and drawn histograms we might have grabbed.
+			//If the canvas is still drawn we might still be able to grab the histogram
+		}
 		
 		TPad* Pad=(TPad*)gROOT->GetListOfCanvases()->FindObject(currentpad);
 // 		cout<<endl<<"Checking if pad pointer "<<currentpad<<" is in gROOT->GetListOfCanvases() :"<<Pad<<endl;
@@ -129,10 +141,22 @@ TObject* CCframe::Object(){
 			Pad=(TPad*)Can->GetListOfPrimitives()->FindObject(currentpad);
 			if(Pad){
 				Ob=Pad->GetListOfPrimitives()->FindObject(current);
-				if(Ob)if(Ob->InheritsFrom(fClass))return (TH1*)Ob;
+				if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
 			}
 		}
+		
+		if(currentkey){
+			Ob=currentkey->ReadObj();
+			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
+			//Not really any safer than just returning current without checking
+			//As we do nothing to check currentkey is still valid
+			//But current key being set is a flag to indicate current was set from a file
+			//So might not be findable on a canvas anywhere.
+		}
 	}
+	
+// 	cout<<endl<<"CHECKING gObjectTable "<<gObjectTable->PtrIsValid(current)<<endl;
+	
 	return 0;
 }
 
@@ -146,7 +170,7 @@ int CCframe::Type(){
 
 int jAddSubTool::SumNameItt = 0;
 
-jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p):TGCompositeFrame(p,600,400,kVerticalFrame),A(0),B(0),result(0),AHist(0),BHist(0),SumHist(0),fGrabFrame(Frame){
+jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p, UInt_t w, UInt_t h, UInt_t options):TGCompositeFrame(p,w,h,options),A(0),B(0),result(0),AHist(0),BHist(0),SumHist(0),fGrabFrame(Frame){
 	char buf[32];	//A buffer for processing text through to text boxes
 	SetCleanup(kDeepCleanup);
 	gSubtract=0;
@@ -222,7 +246,8 @@ void jAddSubTool::GrabB(Int_t c,Int_t a,Int_t b,TObject* d){if(c==1)Grab(1);}
 void jAddSubTool::Grab(int i){
 	TH1** H=&AHist;string S="AddSubHoldHistA";
 	if(i){H=&BHist;S="AddSubHoldHistB";}
-	if(fGrabFrame->Type()<3){
+	int type=fGrabFrame->Type();
+	if(type && type<3){
 		if(*H)delete *H;
 		*H=(TH1*)fGrabFrame->Hist()->Clone(S.c_str());
 		DrawAB(i);
@@ -237,14 +262,16 @@ void jAddSubTool::DrawAB(int i){
 	if(i){
         H=BHist;Can=B->GetCanvas();
     }else{
-        Abinwidth=H->GetXaxis()->GetBinWidth(1);
+        Abinwidth=1;
     }
+    
 	if(H){
 		Can->cd();
 		H->GetXaxis()->SetLabelSize(0);
 		H->GetYaxis()->SetLabelSize(0);
 		H->SetStats(kFALSE);
 		H->DrawCopy("histcol");
+        if(!i)Abinwidth=H->GetXaxis()->GetBinWidth(1);
 	}else{
 		Can->Clear();
 	}
@@ -453,33 +480,32 @@ void jAddSubTool::AddSubButton(){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-jDirList::jDirList(const TGWindow *p, const TGWindow *main,
-                         UInt_t w, UInt_t h)
+ 
+jDirList::jDirList(const TGWindow* p, UInt_t w, UInt_t h, UInt_t options):TGCompositeFrame(p,w,h,options)
 {
-   // Create transient frame containing a dirlist widget.
 
-   fMain = new TGTransientFrame(p, main, w, h);
-   fMain->Connect("CloseWindow()", "jDirList", this, "CloseWindow()");
-   fMain->DontCallClose(); // to avoid double deletions.
+//    p->Connect("CloseWindow()", "jDirList", this, "CloseWindow()");
+//    p->DontCallClose(); // to avoid double deletions.
 
    fIcon = gClient->GetPicture("rootdb_t.xpm");
    fIconH1 = gClient->GetPicture("h1_t.xpm");
    fIconH2 = gClient->GetPicture("h2_t.xpm");
    fIconH3 = gClient->GetPicture("h3_t.xpm");
-   TGLayoutHints *lo;
+   fIconGr = gClient->GetPicture("bld_embedcanvas.xpm");
 
    // use hierarchical cleaning
-   fMain->SetCleanup(kDeepCleanup);
-
-   TGCanvas* canvas = new TGCanvas(fMain, 500, 300);
+   SetCleanup(kDeepCleanup);
+   
+   TGCanvas* canvas = new TGCanvas(this, w, h);
    fContents = new TGListTree(canvas, kHorizontalFrame);
-   lo = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY | kLHintsBottom);
-   fMain->AddFrame(canvas,lo);
+
+//    fContents = new TGListTree(this, kHorizontalFrame);
    fContents->Connect("DoubleClicked(TGListTreeItem*,Int_t)","jDirList",this,
                       "OnDoubleClick(TGListTreeItem*,Int_t)");
    fContents->Connect("Clicked(TGListTreeItem*,Int_t)","jDirList",this,
                       "OnDoubleClick(TGListTreeItem*,Int_t)");
+   AddFrame(canvas,new TGLayoutHints(kLHintsExpandX | kLHintsExpandY | kLHintsBottom));
+   
 #ifdef G__WIN32
    fContents->AddItem(0,"c:\\");  // browse the upper directory
 #else
@@ -488,25 +514,33 @@ jDirList::jDirList(const TGWindow *p, const TGWindow *main,
    UseItem(CurDir);//Load the current directory
    fContents->OpenItem(CurDir);//Open the current directory
 #endif
+   
+   
+   // If this is set RootFileList will delete all files no matter what individual kCanDelete is set to
+// 	RootFileList.SetOwner();
 
-   // position relative to the parent's window
-   fMain->CenterOnParent();
-
-   fMain->SetWindowName("List Dir Test");
-
-   fMain->MapSubwindows();
-   fMain->Resize();
-   fMain->MapWindow();
+    MapSubwindows();
+    Resize();
+    MapWindow();
 }
 
 jDirList::~jDirList()
 {
    // Cleanup.
-
+//RootFileList.IsOwner()<<endl; 
+// 	RootFileList.SetOwner(kFALSE);
+// RootFileList.RemoveLast();
    gClient->FreePicture(fIcon);
+   gClient->FreePicture(fIconH1);
+   gClient->FreePicture(fIconH2);
+   gClient->FreePicture(fIconH3);
+   gClient->FreePicture(fIconGr);
+ 
    delete fContents;
-   fMain->DeleteWindow();  // delete fMain
 }
+
+
+TFile* jDirList::LastFile = 0;
 
 void jDirList::CloseWindow()
 {
@@ -530,8 +564,14 @@ TString jDirList::DirName(TGListTreeItem* item)
 
 void jDirList::OnDoubleClick(TGListTreeItem* item, Int_t btn){
     
+    if ((btn!=kButton1) || !item) return;
+        
     //GetUserData Set if directory already processed
-    if ((btn!=kButton1) || !item || (Bool_t)item->GetUserData()) return;
+    if((Bool_t)item->GetUserData()){
+        if(item->IsOpen())fContents->CloseItem(item);
+        else fContents->OpenItem(item);
+        return;
+    }
                  
     UseItem(item);
 }
@@ -573,6 +613,7 @@ void jDirList::ProcessSystemDir(TList *files,TGListTreeItem* item){
       delete files;
 
         // use UserData to indicate that item was already browsed
+        fContents->OpenItem(item);
         item->SetUserData((void*)1);
    }
    return;
@@ -584,26 +625,34 @@ void jDirList::AddTDir(TGListTreeItem* item, TDirectory* dir){
         TIter next(dir->GetListOfKeys());
         TKey *key;
         while ((key = (TKey*)next())) {
-            if (key->IsFolder()) {
-               fContents->AddItem(item,key->GetName());
-               continue;
-            }
+		if (key->IsFolder()) {
+            fContents->AddItem(item,key->GetName());
+			continue;
+		}
+		
+		// This section determines which objects will be allowed to be viewed and hence accessed 
+		
+		switch(HistoClassDetect(key->GetClassName())) {
+			case 1 :
+				fContents->AddItem(item,key->GetName(),fIconH1,fIconH1);
+				continue;
+			case 2 :
+				fContents->AddItem(item,key->GetName(),fIconH2,fIconH2);
+				continue;
+			case 3 :
+				fContents->AddItem(item,key->GetName(),fIconH3,fIconH3);
+				continue;
+			default :
+				break;
+		}
             
-        switch(HistoClassDetect(key->GetClassName())) {
-                case 1 :
-                    fContents->AddItem(item,key->GetName(),fIconH1,fIconH1);
-                    break;
-                case 2 :
-                    fContents->AddItem(item,key->GetName(),fIconH2,fIconH2);
-                    break;
-                case 3 :
-                    fContents->AddItem(item,key->GetName(),fIconH3,fIconH3);
-                    break;
-                default :
-                    continue;
-            }
+		if(GraphClassDetect(key->GetClassName())){
+			fContents->AddItem(item,key->GetName(),fIconGr,fIconGr);
+		}
+
         }
         
+    fContents->OpenItem(item);
     item->SetUserData((void*)1);
     return;
 }
@@ -615,8 +664,13 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
 
     //If its an unopend root file  (only reached here if unopend)
     if(TSitem.EndsWith(".root")){
-            TFile* Rfile=new TFile(DirName(item),"READ");
+            gROOT->cd();
+	    TFile* Rfile=new TFile(DirName(item),"READ");
+            gROOT->cd();
             if(!Rfile->IsOpen())return;
+	    LastFile=Rfile;
+	    
+	    Rfile->SetBit(kCanDelete,kFALSE);
             
             RootFileList.Add(Rfile);
             AddTDir(item,Rfile);
@@ -633,23 +687,23 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
             AddTDir(item,(TDirectory*)key->ReadObj());
             return;
         }else{
-            switch(HistoClassDetect(key->GetClassName())) {
-                    case 1 :
-//                         if(env){
-//                             env->NonGuiNew(key->ReadObj());
-//                         }
-                        new TCanvas();
-                        ((TH1*)key->ReadObj())->Draw();
-                        break;
-                    case 2 :
-//                         new jgating_tool(key->ReadObj());
-                        break;
-                    case 3 :
-//                         new jgating_tool(key->ReadObj());
-                        break;
-                    default :
-                        break;
-                }
+		NewObject(key->ReadObj());
+		NewObject(key);
+		
+//             switch(HistoClassDetect(key->GetClassName())) {
+//                     case 1 :
+//                         new TCanvas();
+//                         ((TH1*)key->ReadObj())->Draw();
+//                         break;
+//                     case 2 :
+// //                         new jgating_tool(key->ReadObj());
+//                         break;
+//                     case 3 :
+// //                         new jgating_tool(key->ReadObj());
+//                         break;
+//                     default :
+//                         break;
+//                 }
         }
     }   
 }
@@ -728,4 +782,13 @@ TObject* jDirList::GetObject(TGListTreeItem* item){
     return 0;
 }
 
+void jDirList::NewObject(TObject *obj)
+ {
+    Emit("NewObject(TObject*)", (Long_t)obj);
+ }
+
+void jDirList::NewObject(TKey *key)
+ {
+    Emit("NewObject(TKey*)", (Long_t)key);
+ }
 

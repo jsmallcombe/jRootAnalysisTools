@@ -50,14 +50,26 @@ private:
 	UltraFitEnv* fFitPanel;
 	jSpecTool* fSpecTool;
 	TGCompositeFrame* addsub;
-    TH1* SameSave;
+	TGCompositeFrame* DirList;
+	TH1* SameSave;
 	bool gDrawSame;
     
-    vector<TGTab*> fTabs;
+	TGTab* fTab;
+	vector<TGCompositeFrame*> fTabs;
 	
-	void Show();
-	void Hide();
+	void ShowTabs();
+	void HideTabs();
+	void ShowDir();
+	void HideDir();
     double Abinwidth;
+    
+    int fPixOffX;
+    int fPixOffY;
+    int fDefaultDirWidth;
+    int fDefaultDirHeight;
+    int fDefaultTabsWidth;
+    int fDefaultTabsHeight;
+    int fDefaultGrabSize;
 	
 public:
 	jEnv();
@@ -66,9 +78,6 @@ public:
 		if(fSpecTool){delete fSpecTool;}
 		if(SameSave){delete SameSave;}
 	};
-    
-    //Expand/Replace
-    void NonGuiNew(TObject* obj){fCanvas1->NonGuiNew(obj);}
 	
 	void FitPanel();
 	void FitPanelClose(){fFitPanel=0;}
@@ -76,11 +85,18 @@ public:
 	void SpecToolClose(){fSpecTool=0;}
 	void Browser();
 	void Gatter();
-	void ShowHide();
+	void ShowHideTabs();
+	void ShowHideDir();
 	void jSaveAs();
 	void DrawCpy();
 	void DrawSm();
 	void DrawSmHere(TPad*,TObject*,Int_t);	
+	void NewDirObject(TObject*);
+    
+	void AddTab();
+	void CloseTab(Int_t ID);
+    
+	void ClosedObject(TObject* obj);
 
 	ClassDef(jEnv, 2)
 };
