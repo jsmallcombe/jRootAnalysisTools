@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <iomanip> 
+#include <RQ_OBJECT.h>
 
 #include <fstream>
 #include <string>
@@ -66,6 +67,9 @@ private:
 	vector< TGTextButton* > savebutton;
 	
 	TH1* fInputStore;
+    
+    TFile* fOriginFile;
+    bool fFileOwner;
    
 public:
 	jgating_tool(const char *);
@@ -86,6 +90,9 @@ public:
 	void DrawSaved();
 	void NewAxisDrawn();
     
+    TFile* GetOriginFile(){return fOriginFile;}
+    void SetFileOwner(bool Set=true){fFileOwner=Set;}
+    
     void Closed(TObject* obj){
         Emit("Closed(TObject*)", (Long_t)obj);
     }
@@ -95,6 +102,40 @@ public:
 
 
 
+
+class TFileJointCustody : public TObject {
+    // Should always be created on heap and left to self delete
+    
+    
+   RQ_OBJECT("TFileJointCustody")
+   // not inherited from TQObject, allows class to use signal/slot communication
+    
+private:
+    TList Custodians;
+    TFile* File;
+public:
+	TFileJointCustody(TFile* f=0):TObject(),File(f){}
+	virtual ~TFileJointCustody(){
+        Custodians.Clear("nodelete");
+        if(File){
+            cout<<endl<<"Last Custodian Deleted. Closing File "<<File->GetName()<<endl;
+            delete File;
+        }
+    }
+
+    void AddObject(TObject* obj){
+        Custodians.Add(obj);
+    }
+    
+    void RemoveObject(TObject* obj){
+        Custodians.Remove(obj);
+        if(!Custodians.First()&&IsOnHeap()){
+            delete this;
+        }
+    }
+    
+	ClassDef(TFileJointCustody, 1)
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////

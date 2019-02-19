@@ -141,8 +141,6 @@ protected:
 public:
    jDirList(const TGWindow* p, UInt_t w=200, UInt_t h=400, UInt_t options=kVerticalFrame);
    virtual ~jDirList();
-   
-   static TFile* LastFile;
 
    // slots
    void OnDoubleClick(TGListTreeItem* item, Int_t btn);

@@ -93,14 +93,15 @@ TVirtualPad* hold=gPad;
 	HideTabs();
 	HideDir();
     
-    Move(200,200);
-    SetWMPosition(200, 200);	
+    Move(70+fDefaultDirWidth,70);
+    SetWMPosition(70+fDefaultDirWidth, 70);	
     
 #if __linux__
     // An extra small offset due to window bar
     // There is probably a more sophisticated way of dealing with this 
     Window_t wdummy;
     gVirtualX->TranslateCoordinates(GetId(),GetParent()->GetId(),0,0,fPixOffX,fPixOffY,wdummy);
+    if(!fPixOffY)fPixOffY=33;
 #endif
 
     
@@ -108,6 +109,54 @@ TVirtualPad* hold=gPad;
 	Connect("CloseWindow()","jEnv",this,"DontCallClose()");
 
 gPad=hold;
+}
+
+void jEnv::ClearFreeObjects(){
+    TObject *obj;
+    TIter next(&FreeObjects);
+    vector<TFile*> files;
+    vector<jgating_tool*> gates;
+    vector<TFileJointCustody*> custodians;
+    
+    while((obj= next())){
+        if(obj->InheritsFrom(jgating_tool::Class())){
+            jgating_tool* gate=(jgating_tool*)obj;
+            gate->Disconnect(0,this,0);
+            TFile *file=gate->GetOriginFile();
+            if(file){
+                file->SetBit(kCanDelete,kFALSE);//Now DirList wont/cant delete/close
+                files.push_back(file);
+                gates.push_back(gate);
+                custodians.push_back(0);
+            }
+        }
+    }
+    
+    
+    for(unsigned int i=0;i<files.size();i++){
+        bool SoleOwner=true;
+        for(unsigned int j=0;j<files.size();j++){
+            if(i==j)continue;
+            if(files[i]==files[j]){
+                SoleOwner=false;
+                if(i<j){
+                    cout<<endl<<"TFile "<<files[i]->GetName()<<" is being shared and will be left open."<<endl;
+                    custodians[i]=new TFileJointCustody(files[i]);
+                    custodians[i]->AddObject(gates[i]);
+                    gates[i]->Connect("Closed(TObject*)", "TFileJointCustody", custodians[i],"RemoveObject(TObject*)");
+                }else{
+                    custodians[j]->AddObject(gates[i]);
+                    gates[i]->Connect("Closed(TObject*)", "TFileJointCustody", custodians[j],"RemoveObject(TObject*)");
+                }
+                
+                break;
+            }
+        }
+        
+        if(SoleOwner){
+            gates[i]->SetFileOwner();
+        }
+    }
 }
 
 void jEnv::Browser(){
@@ -139,6 +188,10 @@ void jEnv::Gatter(){
 	if(fCanvas1->Type()>1){
         jgating_tool* gate=new jgating_tool(fCanvas1->Hist());
 		gate->Connect("Closed(TObject*)", "jEnv", this,"ClosedObject(TObject*)");
+
+        //Sets if a it is allowed to be deleted by lists it is added to
+        gate->SetBit(kCanDelete,kFALSE);
+        FreeObjects.Add(gate);
     }
 };
 
@@ -269,9 +322,9 @@ void jEnv::NewDirObject(TObject* obj){
 	}	
 }
 
-
 void jEnv::ClosedObject(TObject* obj){
-    cout<<endl<<"A free object has closed. Here is a pointer to where it HAD been located in memory "<<obj<<endl;    
+//     cout<<endl<<"A free object has closed. Here is a pointer to where it HAD been located in memory "<<obj<<endl;    
+    FreeObjects.Remove(obj);
 }
 
 ////////////////////////////////////////////////////////////////

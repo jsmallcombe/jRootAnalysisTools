@@ -70,6 +70,10 @@ private:
     int fDefaultTabsWidth;
     int fDefaultTabsHeight;
     int fDefaultGrabSize;
+    
+    TList FreeObjects;
+    
+    void ClearFreeObjects();
 	
 public:
 	jEnv();
@@ -77,6 +81,7 @@ public:
 		if(fFitPanel){delete fFitPanel;}
 		if(fSpecTool){delete fSpecTool;}
 		if(SameSave){delete SameSave;}
+		ClearFreeObjects();
 	};
 	
 	void FitPanel();

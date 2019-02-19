@@ -540,8 +540,6 @@ jDirList::~jDirList()
 }
 
 
-TFile* jDirList::LastFile = 0;
-
 void jDirList::CloseWindow()
 {
    delete this;
@@ -549,7 +547,7 @@ void jDirList::CloseWindow()
 
 TString jDirList::DirName(TGListTreeItem* item)
 {
-   // Returns an absolute path.
+   // Returns an absolute system path up to and including *item*
 
    TGListTreeItem* parent;
    TString dirname = item->GetText();
@@ -566,13 +564,16 @@ void jDirList::OnDoubleClick(TGListTreeItem* item, Int_t btn){
     
     if ((btn!=kButton1) || !item) return;
         
-    //GetUserData Set if directory already processed
+    //*GetUserData* is set if *item* is system directory, root file or root directory
+    //And that item has already been processed i.e. opened and had its contents added to *fContents* list
     if((Bool_t)item->GetUserData()){
+        //So if it a directory and has already been loaded, clicking just toggles it open
         if(item->IsOpen())fContents->CloseItem(item);
         else fContents->OpenItem(item);
         return;
     }
-                 
+    
+    // Either not opend yet or TObject not directory                 
     UseItem(item);
 }
 
@@ -581,16 +582,15 @@ void jDirList::UseItem(TGListTreeItem* item){
    TSystemDirectory dir(item->GetText(),DirName(item));
    TList *files = dir.GetListOfFiles();
    
-   // If system dir files will exist
+   // If *item* is a system directory files will be non 0
    if (files) {
         ProcessSystemDir(files,item);
         return;
    }
 
-   // Should have dealt with any real system directory
+   // Should have dealt with any real system directory above
    // So anything beyond here should be TDirectory structure
     ProcessRootFileObject(item);
-   
 }
 
 void jDirList::ProcessSystemDir(TList *files,TGListTreeItem* item){
@@ -612,65 +612,24 @@ void jDirList::ProcessSystemDir(TList *files,TGListTreeItem* item){
       }
       delete files;
 
-        // use UserData to indicate that item was already browsed
+        // Use *UserData* to indicate that item was already browsed
         fContents->OpenItem(item);
         item->SetUserData((void*)1);
    }
    return;
 }
-
-    
-void jDirList::AddTDir(TGListTreeItem* item, TDirectory* dir){
-//     TDirectory *dirsav = gDirectory;
-        TIter next(dir->GetListOfKeys());
-        TKey *key;
-        while ((key = (TKey*)next())) {
-		if (key->IsFolder()) {
-            fContents->AddItem(item,key->GetName());
-			continue;
-		}
-		
-		// This section determines which objects will be allowed to be viewed and hence accessed 
-		
-		switch(HistoClassDetect(key->GetClassName())) {
-			case 1 :
-				fContents->AddItem(item,key->GetName(),fIconH1,fIconH1);
-				continue;
-			case 2 :
-				fContents->AddItem(item,key->GetName(),fIconH2,fIconH2);
-				continue;
-			case 3 :
-				fContents->AddItem(item,key->GetName(),fIconH3,fIconH3);
-				continue;
-			default :
-				break;
-		}
-            
-		if(GraphClassDetect(key->GetClassName())){
-			fContents->AddItem(item,key->GetName(),fIconGr,fIconGr);
-		}
-
-        }
-        
-    fContents->OpenItem(item);
-    item->SetUserData((void*)1);
-    return;
-}
-    
+   
 void jDirList::ProcessRootFileObject(TGListTreeItem* item){
-        //Either TDir or TObject
+    //Either TFile, TDirectory or TObject
    
     TString TSitem(item->GetText());
 
     //If its an unopend root file  (only reached here if unopend)
     if(TSitem.EndsWith(".root")){
             gROOT->cd();
-	    TFile* Rfile=new TFile(DirName(item),"READ");
+            TFile* Rfile=new TFile(DirName(item),"READ");
             gROOT->cd();
             if(!Rfile->IsOpen())return;
-	    LastFile=Rfile;
-	    
-	    Rfile->SetBit(kCanDelete,kFALSE);
             
             RootFileList.Add(Rfile);
             AddTDir(item,Rfile);
@@ -678,9 +637,8 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
             return;
     }
     
-//     cout<<endl<<"Object "<<GetObject(item);
+//  cout<<endl<<"Object "<<GetObject(item);
     TKey *key=GetKey(item);
-//     cout<<endl<<"key "<<key;
     
     if(key){
             if (key->IsFolder()) {
@@ -707,6 +665,49 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
         }
     }   
 }
+    
+void jDirList::AddTDir(TGListTreeItem* item, TDirectory* dir){
+    //Add all the content of a rootfile TDirectory to the *fContents* list as *items*
+//     TDirectory *dirsav = gDirectory;
+    TIter next(dir->GetListOfKeys());
+    TKey *key;
+    while ((key = (TKey*)next())) {
+        
+		if (key->IsFolder()) {
+            fContents->AddItem(item,key->GetName());
+			continue;
+		}
+		
+		////////////////////////////////////////////////////////////////////////////////////////////
+		// This section determines which TObjects will be allowed to be viewed and hence accessed //
+		////////////////////////////////////////////////////////////////////////////////////////////
+		
+		switch(HistoClassDetect(key->GetClassName())) {
+			case 1 :
+				fContents->AddItem(item,key->GetName(),fIconH1,fIconH1);
+				continue;
+			case 2 :
+				fContents->AddItem(item,key->GetName(),fIconH2,fIconH2);
+				continue;
+			case 3 :
+				fContents->AddItem(item,key->GetName(),fIconH3,fIconH3);
+				continue;
+			default :
+				break;
+		}
+            
+		if(GraphClassDetect(key->GetClassName())){
+			fContents->AddItem(item,key->GetName(),fIconGr,fIconGr);
+		}
+
+    }
+        
+    // Use *UserData* to indicate that item was already browsed
+    fContents->OpenItem(item);
+    item->SetUserData((void*)1);
+    return;
+}
+ 
 
 TFile* jDirList::GetRootFile(TGListTreeItem* item){
     TGListTreeItem* searchitem=item;
