@@ -1,7 +1,8 @@
-// James library master  18 Feb 2019
+// James library master  19 Feb 2019
 #include <james_effpeaks.h>
 #include <james_elements.h>
 #include <james_env.h>
+#include <james_filecustodian.h>
 #include <james_fitholder.h>
 #include <james_fitting.h>
 #include <james_gate_subtract.h>

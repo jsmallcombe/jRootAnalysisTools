@@ -148,6 +148,10 @@ public:
    void NewObject(TObject*);
    void NewObject(TKey*);
    
+    void Closed(TObject* obj){
+        Emit("Closed(TObject*)", (Long_t)obj);
+    }
+   
 private:
     void UseItem(TGListTreeItem* item);
     void ProcessSystemDir(TList *files,TGListTreeItem* item);

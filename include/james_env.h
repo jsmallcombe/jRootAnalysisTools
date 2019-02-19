@@ -38,6 +38,7 @@
 #include "james_spectool.h"
 #include "james_elements.h"
 
+
 using namespace std;
 
 // RQ_OBJECT("MyClass") inside the MyClass body (IF MyClass not inherited from TQObject) allow class to use signal/slot communication

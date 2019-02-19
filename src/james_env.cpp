@@ -1,7 +1,7 @@
 #include "james_env.h"
+#include "james_filecustodian.h"
 
 
-		
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -114,49 +114,14 @@ gPad=hold;
 void jEnv::ClearFreeObjects(){
     TObject *obj;
     TIter next(&FreeObjects);
-    vector<TFile*> files;
-    vector<jgating_tool*> gates;
-    vector<TFileJointCustody*> custodians;
     
     while((obj= next())){
-        if(obj->InheritsFrom(jgating_tool::Class())){
-            jgating_tool* gate=(jgating_tool*)obj;
-            gate->Disconnect(0,this,0);
-            TFile *file=gate->GetOriginFile();
-            if(file){
-                file->SetBit(kCanDelete,kFALSE);//Now DirList wont/cant delete/close
-                files.push_back(file);
-                gates.push_back(gate);
-                custodians.push_back(0);
-            }
+        if(obj->InheritsFrom("TQObject")){
+            dynamic_cast<TQObject*>(obj)->Disconnect(0,this,0);
         }
     }
     
-    
-    for(unsigned int i=0;i<files.size();i++){
-        bool SoleOwner=true;
-        for(unsigned int j=0;j<files.size();j++){
-            if(i==j)continue;
-            if(files[i]==files[j]){
-                SoleOwner=false;
-                if(i<j){
-                    cout<<endl<<"TFile "<<files[i]->GetName()<<" is being shared and will be left open."<<endl;
-                    custodians[i]=new TFileJointCustody(files[i]);
-                    custodians[i]->AddObject(gates[i]);
-                    gates[i]->Connect("Closed(TObject*)", "TFileJointCustody", custodians[i],"RemoveObject(TObject*)");
-                }else{
-                    custodians[j]->AddObject(gates[i]);
-                    gates[i]->Connect("Closed(TObject*)", "TFileJointCustody", custodians[j],"RemoveObject(TObject*)");
-                }
-                
-                break;
-            }
-        }
-        
-        if(SoleOwner){
-            gates[i]->SetFileOwner();
-        }
-    }
+    FreeObjects.Clear("nodelete");
 }
 
 void jEnv::Browser(){
@@ -188,8 +153,12 @@ void jEnv::Gatter(){
 	if(fCanvas1->Type()>1){
         jgating_tool* gate=new jgating_tool(fCanvas1->Hist());
 		gate->Connect("Closed(TObject*)", "jEnv", this,"ClosedObject(TObject*)");
+        
+        if(gate->GetOriginFile()){
+            gChiefCustodian->Add(gate,gate->GetOriginFile());
+        }
 
-        //Sets if a it is allowed to be deleted by lists it is added to
+        //Sets if it is allowed to be deleted by TLists it is added to
         gate->SetBit(kCanDelete,kFALSE);
         FreeObjects.Add(gate);
     }

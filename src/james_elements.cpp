@@ -1,4 +1,7 @@
 #include "james_elements.h"
+#include "james_filecustodian.h"
+
+
 CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t options,Pixel_t back):TRootEmbeddedCanvas(name,p,w,h,options,back),current(0),currentpad(0),currentcan(0),currentkey(0){TVirtualPad* hold=gPad;
 	this->GetCanvas()->SetMargin(0,0,0,0);
 	TQObject::Connect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", "CCframe", this,"TrackCaptureHistogram(TPad*,TObject*,Int_t)");
@@ -71,6 +74,10 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,TKey* Key){
 			t.SetTextAlign(22);
 			t.SetTextSize(.6);
 			t.DrawTextNDC(.5,.5,"TH3");
+            string s=fH->GetName();
+            cout<<endl<<s.size()<<endl;
+			t.SetTextSize(1.8/(s.size()+1));
+			t.DrawTextNDC(.5,0.12,fH->GetName());
 		}else{
 			TH1* H=((TH1*)fH)->DrawCopy("COL");
 			H->GetXaxis()->SetLabelSize(0);
@@ -535,6 +542,9 @@ jDirList::~jDirList()
    gClient->FreePicture(fIconH2);
    gClient->FreePicture(fIconH3);
    gClient->FreePicture(fIconGr);
+   
+    RootFileList.Clear("nodelete");
+    Closed(this);
  
    delete fContents;
 }
@@ -630,6 +640,9 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
             TFile* Rfile=new TFile(DirName(item),"READ");
             gROOT->cd();
             if(!Rfile->IsOpen())return;
+            
+            Rfile->SetBit(kCanDelete,kFALSE);
+            gChiefCustodian->Add(this,Rfile);
             
             RootFileList.Add(Rfile);
             AddTDir(item,Rfile);
