@@ -294,8 +294,9 @@ void jgating_tool::DoUpdate(){TVirtualPad* hold=gPad;
 	
 	TH1* H;
 	fCanvas1->GetCanvas()->cd();
-	if(fCheck1->GetState())H=DrawCopyHistOpt(gJframe2->output_hist_point);//Needed if any functions have been drawn
-	else H=gJframe2->output_hist_point->DrawCopy();
+    
+   
+	H=DrawCopyHistOpt(gJframe2->output_hist_point,fCheck1->GetState());
 	if(rebin>1)H->Rebin(rebin);		
 	
 	if(fRButton2->GetState()){
@@ -460,7 +461,7 @@ void jgating_tool::DrawSaved(){
 	if(saveadd){
 		unsigned short rebin=fHslider1->GetPosition()+1;
 		if(rebin>1)saveadd->Rebin(rebin);
-		HistDrawCopyPeaker(saveadd,fCheck1->GetState());
+		DrawCopyPeakClickerCanvas(saveadd,fCheck1->GetState());
 	}
 }
 

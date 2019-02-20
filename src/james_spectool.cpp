@@ -230,8 +230,8 @@ void jSpecTool::DoUpdate(bool saveaxis){TVirtualPad* hold=gPad;
 
 	
 	//If Hide Bin Errors
-	if(fCheck1->GetState())H=DrawCopyHistOpt(H);//Needed if any functions have been drawn
-	else H=H->DrawCopy();
+	H=DrawCopyHistOpt(H,fCheck1->GetState());//Needed if any functions have been drawn
+
 	
 	//H is now the draw copy, not modifying original
 	

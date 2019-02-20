@@ -69,11 +69,11 @@ TH1* hist_proj(TH1* in,int xyz=0,string name="proj",bool flowless=false);
 
 //addition/subtraction functions 
 //Work for th2 and 3 inherited classes
-TH1* scaled_back_subtract(TH1*,TH1*,double,double=0);
-TH1* scaled_back_subtract(TH1*,TH1*,double,TH1*,double=0);
+TH1* scaled_back_subtract(TH1*,TH1*,double,double=0,bool scale=true);
+TH1* scaled_back_subtract(TH1*,TH1*,double,TH1*,double=0,bool scale=true);
 
-inline TH1* scaled_addition(TH1*h1,TH1*h2,double f,double ff=0){return scaled_back_subtract(h1,h2,-f,ff);}
-inline TH1* scaled_addition(TH1*h1,TH1*h2,double f,TH1*h3,double ff=0){return scaled_back_subtract(h1,h2,-f,h3,ff);}
+inline TH1* scaled_addition(TH1*h1,TH1*h2,double f,double ff=0,bool scale=true){return scaled_back_subtract(h1,h2,-f,ff,scale);}
+inline TH1* scaled_addition(TH1*h1,TH1*h2,double f,TH1*h3,double ff=0,bool scale=true){return scaled_back_subtract(h1,h2,-f,h3,ff,scale);}
 
 
 void TH3axisreseter(TH3*);

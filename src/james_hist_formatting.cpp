@@ -154,7 +154,11 @@ TH1* ExtreemRebin(TH1* target,TH1* data){
 			target->SetBinContent(bin,binC);
 		}
 	}
-
+	
+	// Fix the stats going to zero but lose any non-standard errors stored in original
+	target->ResetStats();
+    if(target->GetSumw2N())target->Sumw2(kFALSE);
+    
 	return target;
 }
 
@@ -467,8 +471,12 @@ void PadNDCtoUser(double& x,double& y,double* xy,bool reverse){
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-TCanvas* HistDrawCopy(TH1* hist,bool opt){
+
+TCanvas* DrawCopyCanvas(TH1* hist,bool HideErrors){
 	if(hist){
 		TVirtualPad* hold=gPad;
 		string name=hist->GetName();
@@ -476,10 +484,7 @@ TCanvas* HistDrawCopy(TH1* hist,bool opt){
 		TCanvas* Can=new TCanvas(name.c_str());
 		ReMargin(Can);
 		Can->cd();
-		TH1* H;
-		if(opt)H=DrawCopyHistOpt(hist);
-		else H=hist->DrawCopy("colz");
-		if(H)hformat(H,0);
+		DrawCopyHistOpt(hist,HideErrors);
 		Can->Modified();
 		Can->Update();
 		gPad=hold;
@@ -488,35 +493,38 @@ TCanvas* HistDrawCopy(TH1* hist,bool opt){
 	return 0;
 }
 
-
-TCanvas* HistDrawCopyPeaker(TH1* hist,bool opt){
-	TCanvas* Can=HistDrawCopy(hist,opt);
-	if(Can){
-			TQObject::Connect(Can, "ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ClickPeakDrawConnect(Int_t,Int_t,Int_t,TObject*)");
-	}
+TCanvas* DrawCopyPeakClickerCanvas(TH1* hist,bool HideErrors){
+	TCanvas* Can=DrawCopyCanvas(hist,HideErrors);
+    ConnectPeakClickerCanvas(Can);
 	return Can;
 }
 
-TH1* DrawHistOpt(TH1* hist,bool copy,bool same){
+TH1* DrawHistOpt(TH1* hist,bool HideErrors,bool Copy,bool Same){
 	if(!hist)return 0;
-		TH1* h;
-		if(same){
-			if(copy){h=hist->DrawCopy("histcolzsame");}
-			else {h=hist;hist->Draw("histcolzsame");}
-		}else{
-			if(copy){h=hist->DrawCopy("histcolz");}
-			else {h=hist;hist->Draw("histcolz");}
-		}
-// // 		h->Draw("SAMEFUNC");
-		TObject *obj;TIter next(hist->GetListOfFunctions());
-		while ((obj = next()))((TF1*)obj)->DrawCopy("same");//Needed because of "Hist option turns off the functions"
+    string opt="his";
+    if(HideErrors)opt+="t";
+    opt+="colz";
+    if(Same)opt+="same";
+    
+    TH1* h=hist;
+    if(Copy){//h->Draw("SAMEFUNC");
+        h=hist->DrawCopy(opt.c_str());
+        TObject *obj;TIter next(hist->GetListOfFunctions());
+        while ((obj = next()))((TF1*)obj)->DrawCopy("same");//Needed because of "Hist option turns off the functions"
+    }else{
+        hist->Draw(opt.c_str());
+    }
+    hformat(h,0);
 	return h;	
 }
 	
-TH1* DrawCopyHistOpt(TH1* hist){
-	return DrawHistOpt(hist,true);
+TH1* DrawCopyHistOpt(TH1* hist,bool HideErrors){
+	return DrawHistOpt(hist,HideErrors,true);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Mostly stolen from TRootCanvas.cxx
 static const char *HistSaveAsTypes[] = { "PDF",   "*.pdf",

@@ -55,8 +55,7 @@ private:
 	TH1* SameSave;
 	bool gDrawSame;
     
-	TGTab* fTab;
-	vector<TGCompositeFrame*> fTabs;
+	TGTab* fTabs;
 	
 	void ShowTabs();
 	void HideTabs();
@@ -95,11 +94,14 @@ public:
 	void ShowHideDir();
 	void jSaveAs();
 	void DrawCpy();
+	void DrawCpyTab();
+	
 	void DrawSm();
 	void DrawSmHere(TPad*,TObject*,Int_t);	
 	void NewDirObject(TObject*);
     
-	void AddTab();
+	TGCompositeFrame* AddTab(string TabName="",bool ShowClose=true);
+    TCanvas* AddCanvasTab(string TabName="");
 	void CloseTab(Int_t ID);
     
 	void ClosedObject(TObject* obj);

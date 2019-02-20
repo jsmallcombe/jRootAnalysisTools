@@ -51,6 +51,12 @@ void obj_remove(TClass*,TVirtualPad* =gPad,bool=0);
 TH1* hist_capture(TVirtualPad* =gPad);
 
 void ClickPeakDrawConnect(Int_t,Int_t,Int_t,TObject*);
+inline void ConnectPeakClickerCanvas(TCanvas* Can){
+    if(Can){
+        TQObject::Connect(Can, "ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ClickPeakDrawConnect(Int_t,Int_t,Int_t,TObject*)");
+	}
+}
+
 void ToolTipHide();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////

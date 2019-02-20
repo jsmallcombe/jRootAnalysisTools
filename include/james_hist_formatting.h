@@ -96,17 +96,19 @@ void PadNDCtoUser(vector<double>& x,vector<double>& y,TVirtualPad* pad,bool reve
 void PadNDCtoUser(double& x,double& y,TVirtualPad* pad,bool reverse=false);
 void PadNDCtoUser(double& x,double& y,double* xy,bool reverse=false);
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Draw a formatted copy in a new window
-TCanvas* HistDrawCopy(TH1* hist,bool opt=true);//opt="hist" hide errors
-TCanvas* HistDrawCopyPeaker(TH1* hist,bool opt=true);//opt="hist" hide errors
+TCanvas* DrawCopyCanvas(TH1* hist,bool HideErrors=true);//opt="hist" hide errors
+TCanvas* DrawCopyPeakClickerCanvas(TH1* hist,bool HideErrors=true);//opt="hist" hide errors
 
 //Draw without errors (but with functions) in current pad
-TH1* DrawHistOpt(TH1* hist,bool copy=false,bool same=false);
-TH1* DrawCopyHistOpt(TH1* hist);
+TH1* DrawHistOpt(TH1* hist,bool HideErrors=false,bool Copy=false,bool Same=false);
+TH1* DrawCopyHistOpt(TH1* hist,bool HideErrors=true);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TString HistSaveAs(TH1* hist, TGWindow *window=0,TPad* pad=0);
-
 TFile* RootFileLoad(TGWindow *window=0);
 
 

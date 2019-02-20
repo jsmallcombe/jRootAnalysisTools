@@ -84,7 +84,8 @@ class jAddSubTool : public TGCompositeFrame {
 	private:
 	TStopwatch Stop;
 	TRootEmbeddedCanvas *A,*B,*result;
-	TH1* AHist,*BHist,*SumHist;//Always owned and private
+	TH1* AHist,*BHist,*BSet,*SumHist;//Always owned and private
+	bool TempB;
 	TGHSlider* fHslider1;
 	TGTextEntry* fTeh1;
 	TGCheckButton* fCheck1;
@@ -96,6 +97,7 @@ class jAddSubTool : public TGCompositeFrame {
 	
 	void Grab(int);
 	void DrawAB(int);
+	void PrepareB();
 	void UpdateText();
     double Abinwidth;
     
@@ -104,6 +106,7 @@ public:
 		~jAddSubTool(){
             if(AHist){delete AHist;}
             if(BHist){delete BHist;}
+            if(BSet&&TempB){delete BSet;}
             if(SumHist){delete SumHist;}
         };
         

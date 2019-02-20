@@ -75,7 +75,6 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,TKey* Key){
 			t.SetTextSize(.6);
 			t.DrawTextNDC(.5,.5,"TH3");
             string s=fH->GetName();
-            cout<<endl<<s.size()<<endl;
 			t.SetTextSize(1.8/(s.size()+1));
 			t.DrawTextNDC(.5,0.12,fH->GetName());
 		}else{
@@ -177,7 +176,7 @@ int CCframe::Type(){
 
 int jAddSubTool::SumNameItt = 0;
 
-jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p, UInt_t w, UInt_t h, UInt_t options):TGCompositeFrame(p,w,h,options),A(0),B(0),result(0),AHist(0),BHist(0),SumHist(0),fGrabFrame(Frame){
+jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p, UInt_t w, UInt_t h, UInt_t options):TGCompositeFrame(p,w,h,options),A(0),B(0),result(0),AHist(0),BHist(0),BSet(0),SumHist(0),TempB(0),fGrabFrame(Frame){
 	char buf[32];	//A buffer for processing text through to text boxes
 	SetCleanup(kDeepCleanup);
 	gSubtract=0;
@@ -259,9 +258,11 @@ void jAddSubTool::Grab(int i){
 		*H=(TH1*)fGrabFrame->Hist()->Clone(S.c_str());
 		DrawAB(i);
 		if(SumHist){delete SumHist;SumHist=0;SumNameItt++;}
+		PrepareB();
 		DoSlider();
 	}
 }
+
 
 void jAddSubTool::DrawAB(int i){
 	TVirtualPad* hold=gPad;
@@ -294,7 +295,65 @@ void jAddSubTool::Swap(){
 	DrawAB(0);
 	DrawAB(1);
 	if(SumHist){delete SumHist;SumHist=0;SumNameItt++;}
+	PrepareB();
 	DoSlider();
+}
+
+void jAddSubTool::PrepareB(){
+    if(BSet&&TempB){delete BSet;}
+    BSet=0;
+    TempB=false;
+    
+	if(!(AHist&&BHist))return;
+    int Type=HType(AHist);
+    if(Type!=HType(BHist))return;			
+			
+    //Check the 2 ranges
+    double AXt=AHist->GetXaxis()->GetXmax();
+    double AXb=AHist->GetXaxis()->GetXmin();
+    double BXt=BHist->GetXaxis()->GetXmax();
+    double BXb=BHist->GetXaxis()->GetXmin();
+    double ranges=(AXt-AXb)/(BXt-BXb);
+    if(AXt<BXb||BXt<AXb)return;
+        
+    bool xrange=((ranges<0.9990)||(ranges>1.0001));
+    bool xbins=(AHist->GetNbinsX()!=BHist->GetNbinsX());
+    if((xbins||xrange)&&Type==2)return;
+
+    if(Type==2){
+        AXt=AHist->GetYaxis()->GetXmax();
+        AXb=AHist->GetYaxis()->GetXmin();
+        BXt=BHist->GetYaxis()->GetXmax();
+        BXb=BHist->GetYaxis()->GetXmin();
+        ranges=(AXt-AXb)/(BXt-BXb);
+        if((AXt<BXb||BXt<AXb)||(AHist->GetNbinsY()!=BHist->GetNbinsY())||
+        (ranges<0.9999)||(ranges>1.0001)){
+            return;
+        }
+    }
+
+    // Histogram types match sufficiently that BSet will be set
+
+    BSet=BHist;
+
+    //Get the B hist in the right form
+    if(xbins&&!xrange){
+        for(int i=2;i<10;i++){
+            if(AHist->GetNbinsX()==BHist->GetNbinsX()*i){
+                BSet=(TH1*)BHist->Clone();
+                BSet->Rebin(i);
+                xbins=false;
+                TempB=true;
+                break;
+            }
+        }
+    }
+
+    if(xbins||xrange){
+        BSet=(TH1*)AHist->Clone();
+        ExtreemRebin(BSet,BHist);
+        TempB=true;
+    }
 }
 
 
@@ -305,110 +364,68 @@ void jAddSubTool::DoSlider(){
 	
 	UpdateText();
 	
-	if(AHist&&BHist){
-		int Type=HType(AHist);
-		if(Type==HType(BHist)){
-            
-			if(Type==2){
-                if(gSubtract>1){
-                    gSubtract=-1;
-                    AddSubButton();
-                    return;
-                }
-                
-				if(Stop.RealTime()<4){
-// 					cout<<endl<<"NO TIME "<<Stop.CpuTime()<<endl;
-					Stop.Start(kFALSE);	
-					return;
-				}
-// 				cout<<endl<<"GOOD TIME"<<endl;
-				Stop.Start();
-			}
-			
-			int rmin=1;
-			int rmax=-1;
-			
-			//Check the 2 ranges
-			double AXt=AHist->GetXaxis()->GetXmax();
-			double AXb=AHist->GetXaxis()->GetXmin();
-			double BXt=BHist->GetXaxis()->GetXmax();
-			double BXb=BHist->GetXaxis()->GetXmin();
-			double ranges=(AXt-AXb)/(BXt-BXb);
-			if(AXt<BXb||BXt<AXb)return;
-				
-			TH1* back=BHist;
-			bool backtmp=false;
-			
-			//Get the B hist in the right form
-			if((AHist->GetNbinsX()!=BHist->GetNbinsX())||
-			(ranges<0.999)||(ranges>1.001)){
-				if(Type==2)return;
-				back=(TH1*)AHist->Clone();
-				back->Reset();
-				ExtreemRebin(back,BHist);
-				backtmp=true;
-			}
-			
-			if(Type==2){
-				AXt=AHist->GetYaxis()->GetXmax();
-				AXb=AHist->GetYaxis()->GetXmin();
-				BXt=BHist->GetYaxis()->GetXmax();
-				BXb=BHist->GetYaxis()->GetXmin();
-				ranges=(AXt-AXb)/(BXt-BXb);
-				if((AXt<BXb||BXt<AXb)||(AHist->GetNbinsY()!=BHist->GetNbinsY())||
-				(ranges<0.999)||(ranges>1.001)){
-					return;
-				}
-			}
-			
-			
-			//Delete the previous result and get axis info
-			if(SumHist){
-				rmin=SumHist->GetXaxis()->GetFirst();
-				rmax=SumHist->GetXaxis()->GetLast();
-				delete SumHist;SumHist=0;
-			}
-			
-			//Do add/subtraction
-			
-            switch(gSubtract) {
-                case 1 :    SumHist=scaled_addition(AHist,back,frac,fracfrac);
-                            //SumHist=scaled_back_subtract(AHist,back,frac,-fracfrac);
-                            break;
-                case 2 :    SumHist=(TH1*)back->Clone();
-                            SumHist->Scale((frac+1)*AHist->Integral()/back->Integral());
-                            break;
-                case 3 :    SumHist=(TH1*)back->Clone();
-                            transpose_bins(SumHist,slidepos);
-                            break;
-                default :   SumHist=(TH1*)AHist->Clone();
-                            SumHist->Add(back,frac);   
-                            break;
+	if(AHist&&BSet){  
+        if(HType(AHist)==2){
+            if(gSubtract>1){
+                gSubtract=-1;
+                AddSubButton();
+                return;
             }
-			stringstream ss;ss<<"AddSubResultHist"<<SumNameItt;
-			SumHist->SetName(ss.str().c_str());
-
-			if(backtmp)delete back;
+            
+            if(Stop.RealTime()<4){
+// 				cout<<endl<<"NO TIME "<<Stop.CpuTime()<<endl;
+                Stop.Start(kFALSE);	
+                return;
+            }
+            Stop.Start();
+        }
 			
-			//Draw new results with and adjust axis
-			TVirtualPad* hold=gPad;
-			result->GetCanvas()->cd();
-                
-                if(gSubtract>1){
-                    TH1* H;
-                    if(fCheck1->GetState())H=AHist->DrawCopy("hist");else   H=AHist->DrawCopy(""); 
-                    hformat(H,0); 
-                    if(rmax>rmin)H->GetXaxis()->SetRange(rmin,rmax);
-                    if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
-                    
-                    SumHist->SetLineColor(2);
-                    if(fCheck1->GetState())SumHist->Draw("histsame");else SumHist->Draw("same");
-                }else{
-                    hformat(SumHist,0);
-                    if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
-                    if(fCheck1->GetState())SumHist->Draw("hiscol");else SumHist->Draw("col"); 
-                }
-                
+        int rmin=1;
+        int rmax=-1;
+
+        //Delete the previous result and get axis info
+        if(SumHist){
+            rmin=SumHist->GetXaxis()->GetFirst();
+            rmax=SumHist->GetXaxis()->GetLast();
+            delete SumHist;SumHist=0;
+        }
+			
+        //Do add/subtraction
+        
+        switch(gSubtract) {
+            case 1 :    SumHist=scaled_addition(AHist,BSet,frac,fracfrac);
+                        break;
+            case 2 :    SumHist=(TH1*)BSet->Clone();
+                        SumHist->Scale((frac+1)*AHist->Integral()/BSet->Integral());
+                        break;
+            case 3 :    SumHist=(TH1*)BSet->Clone();
+                        transpose_bins(SumHist,slidepos);
+                        break;
+            default :   SumHist=scaled_addition(AHist,BSet,frac,fracfrac,false);
+                        break;
+        }
+        stringstream ss;ss<<"AddSubResultHist"<<SumNameItt;
+        SumHist->SetName(ss.str().c_str());
+
+			
+        //Draw new results with and adjust axis
+        TVirtualPad* hold=gPad;
+        result->GetCanvas()->cd();
+        
+        if(gSubtract>1){
+            TH1* H;
+            if(fCheck1->GetState())H=AHist->DrawCopy("hist");else   H=AHist->DrawCopy("his"); 
+            hformat(H,0); 
+            if(rmax>rmin)H->GetXaxis()->SetRange(rmin,rmax);
+            if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
+            
+            SumHist->SetLineColor(2);
+            if(fCheck1->GetState())SumHist->Draw("histsame");else SumHist->Draw("hissame");
+        }else{
+            hformat(SumHist,0);
+            if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
+            if(fCheck1->GetState())SumHist->Draw("histcol");else SumHist->Draw("hiscol"); 
+        }
                 
 // 			if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
 //             hformat(SumHist,0);
@@ -421,12 +438,11 @@ void jAddSubTool::DoSlider(){
 			result->GetCanvas()->Modified();
 			result->GetCanvas()->Update();
 			gPad=hold;
-		}else{
-			result->GetCanvas()->Clear();
-		}
-	}else{
-		result->GetCanvas()->Clear();
-	}
+    }else{
+        result->GetCanvas()->Clear();
+        result->GetCanvas()->Modified();
+        result->GetCanvas()->Update();
+    }
 }
 
 void jAddSubTool::DoText(){
@@ -499,6 +515,7 @@ jDirList::jDirList(const TGWindow* p, UInt_t w, UInt_t h, UInt_t options):TGComp
    fIconH2 = gClient->GetPicture("h2_t.xpm");
    fIconH3 = gClient->GetPicture("h3_t.xpm");
    fIconGr = gClient->GetPicture("bld_embedcanvas.xpm");
+// fIconGr = gClient->GetPicture("profile_t.xpm");
 
    // use hierarchical cleaning
    SetCleanup(kDeepCleanup);

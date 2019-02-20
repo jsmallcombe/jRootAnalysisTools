@@ -195,22 +195,25 @@ TH1* hist_proj(TH1* input,int xyz,string name,bool flowless){
 	//
 	//subtraction functions
 	//
-TH1* scaled_back_subtract(TH1* gate,TH1* back ,double backfrack,double uncertainfrac){
+TH1* scaled_back_subtract(TH1* gate,TH1* back ,double backfrack,double uncertainfrac,bool scale){
 	TH1* pass=(TH1*)gate->Clone();
-	return scaled_back_subtract(gate,back ,backfrack,pass,uncertainfrac);
+	return scaled_back_subtract(gate,back ,backfrack,pass,uncertainfrac,scale);
 }
 
-TH1* scaled_back_subtract(TH1* gate,TH1* back ,double backfrack,TH1* pass,double uncertainfrac){
-	double backcount=back->Integral();
-	double forecount=gate->Integral();
+TH1* scaled_back_subtract(TH1* gate,TH1* back ,double backfrack,TH1* pass,double uncertainfrac,bool scale){
+    
+    if(scale){
+        double backcount=back->Integral();
+        double forecount=gate->Integral();
+        backfrack*=forecount/backcount;
+    }
 	
 	if(!back->GetSumw2N())back->Sumw2();
 	if(!gate->GetSumw2N())gate->Sumw2();
 	
-	double subtraction=-(backfrack*forecount)/backcount;
-	pass->Add(gate,back,1.0,subtraction);
+	pass->Add(gate,back,1.0,-backfrack);
 	
-	if(uncertainfrac>0){static_cast< TH1ErrorAdj* > (pass)->AdjustError(back,subtraction*uncertainfrac);}
+	if(uncertainfrac){static_cast< TH1ErrorAdj* > (pass)->AdjustError(back,backfrack*uncertainfrac);}
 	return pass;
 }
 

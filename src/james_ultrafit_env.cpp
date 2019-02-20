@@ -412,7 +412,7 @@ void UltraFitEnv::DrawgHist(){
 		fCan->cd();
 		
 		//This is another protection of gHist
-		gHistDrawn=DrawCopyHistOpt(gHist);
+		gHistDrawn=DrawHistOpt(gHist,true,true);
 		gHistDrawnName=gHistDrawn->GetName();
 		
 		//Add the labels on the top
