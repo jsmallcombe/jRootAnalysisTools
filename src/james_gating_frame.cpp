@@ -547,6 +547,9 @@ TVirtualPad* hold=gPad;
 
 	proj=hist_proj(raw_input,xyz,"proj"+suffix,true);
 	proj_flow=hist_proj(raw_input,xyz,"proj_flow"+suffix);
+    
+    axis_down=1;
+	axis_up=proj->GetNbinsX();
 	
 	proj->SetStats(0);
 	proj->SetTitle("");
