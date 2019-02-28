@@ -17,8 +17,9 @@ int jgating_tool::jgating_tool_iterator = 0;
 
 jgating_tool::jgating_tool(const char * input) : jgating_tool(gROOT->FindObject(input)){}
 
-jgating_tool::jgating_tool(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame) ,gJframe1(0),fCheck0(0),fCheck1(0),fFitFcn(0),peaknumremove(0),fTip(0),fFitPanel(0),fInputStore(0),fOriginFile(0),fFileOwner(0){
+jgating_tool::jgating_tool(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame) ,gJframe1(0),fCheck0(0),fCheck1(0),fFitFcn(0),peaknumremove(0),fTip(0),fFitPanel(0),fInputStore(0),fOriginFile(0),fFileOwner(0),x1(1),x2(-1),y1(1),y2(-1),RangeUpdateHold(1){
 TVirtualPad* hold=gPad;
+    ResetRange();
 
 	if(!input){
 //      delete this;
@@ -75,6 +76,7 @@ TVirtualPad* hold=gPad;
 
     if(Bthree){
         gJframe1 = new j_gating_frame(this,pass,make_iterator());
+        gJframe1->Connect("InputChange()", "jgating_tool", this,"ResetRange()");
         gJframe1->Connect("OutputReady()", "jgating_tool", this,"DoUpdate2D()");
         AddFrame(gJframe1,ffExpand);	
         pass=(TH1*)gJframe1->output_hist_point;
@@ -84,7 +86,9 @@ TVirtualPad* hold=gPad;
     
     gJframe2 = new j_gating_frame(this,pass,make_iterator());
 
+    gJframe2->Connect("InputChange()", "jgating_tool", this,"ResetRange()");
     gJframe2->Connect("OutputReady()", "jgating_tool", this,"DoUpdate()");
+    
     
     //Results panel
     
@@ -100,7 +104,7 @@ TVirtualPad* hold=gPad;
         fRButton3->SetToolTipText("Show Background\n Show the background spectrum currently\n being subtracted (actual size).");
     fRButton1->SetState(kButtonDown);
     fBgroup1->Show();
-    fBgroup1->Connect(" Clicked(Int_t)", "jgating_tool", this,"DoUpdate()");
+    fBgroup1->Connect(" Clicked(Int_t)", "jgating_tool", this,"ButtonGroupDoUpdate(Int_t)");
     
     if(Bthree){
         fCheck0 = new TGCheckButton(buttonframe,"2D ");
@@ -217,7 +221,6 @@ TVirtualPad* hold=gPad;
 gPad=hold;
 }
 
-
 //______________________________________________________________________________
 jgating_tool::~jgating_tool()
 {
@@ -246,25 +249,53 @@ jgating_tool::~jgating_tool()
 // }
 
 
+//Just reset the viewing range of thefinal canvas
+void jgating_tool::ResetRange(){
+//     cout<<endl<<"RESETTING RANGE"<<endl;
+    x1=1;
+    x2=-1;
+    y1=1;
+    y2=-1;
+}
+
+
 void jgating_tool::DoCheckbox2D(){
+    ResetRange();
 	CSaveButton();
 	DoUpdate2D();
 }
 
 
+void jgating_tool::ButtonGroupDoUpdate(Int_t i){
+    if(i==1){
+        ResetRange();
+    }
+    DoUpdate();
+}
+
+
+
 void jgating_tool::DoUpdate2D(){TVirtualPad* hold=gPad;
+    RangeUpdateHold=true;
 	if(!gJframe1)return;
 	gJframe1->hidebinerrors=fCheck1->GetState();
 	if(fCheck0->GetState()){
 		HideFrame(gJframe2);
 		fCanvas1->GetCanvas()->cd();
 		if(fRButton2->GetState()){
-			gJframe1->full->Draw("colz");
+			TH1* H=gJframe1->full->DrawCopy("colz");
+            H->GetXaxis()->SetRangeUser(x1,x2);
+            H->GetYaxis()->SetRangeUser(y1,y2);
 		}else if(fRButton3->GetState()){
 			gJframe1->free_hist->Add(gJframe1->gate_hist,gJframe1->output_hist_point,1,-1);
-			gJframe1->free_hist->DrawCopy("colz");
+			TH1* H=gJframe1->free_hist->DrawCopy("colz");
+            H->GetXaxis()->SetRangeUser(x1,x2);
+            H->GetYaxis()->SetRangeUser(y1,y2);
 		}else{
-			gJframe1->output_hist_point->Draw("colz");
+			TH1* H=gJframe1->output_hist_point;
+            H->Draw("colz");
+            H->GetXaxis()->SetRangeUser(x1,x2);
+            H->GetYaxis()->SetRangeUser(y1,y2);
 		}
 
 		fCanvas1->GetCanvas()->Modified();
@@ -274,11 +305,17 @@ void jgating_tool::DoUpdate2D(){TVirtualPad* hold=gPad;
 		ShowFrame(gJframe2);
 		gJframe2->UpdateInput(gJframe1->output_hist_point);
 	}
+RangeUpdateHold=false;
 gPad=hold;
 }
 
 
-void jgating_tool::DoUpdate(){TVirtualPad* hold=gPad;
+void jgating_tool::DoUpdate(){
+    TVirtualPad* hold=gPad;
+    RangeUpdateHold=true;
+    
+    
+    
 	gJframe2->hidebinerrors=fCheck1->GetState();
 
 	if(fCheck0){
@@ -298,6 +335,7 @@ void jgating_tool::DoUpdate(){TVirtualPad* hold=gPad;
    
 	H=DrawCopyHistOpt(gJframe2->output_hist_point,fCheck1->GetState());
 	if(rebin>1)H->Rebin(rebin);		
+    H->GetXaxis()->SetRangeUser(x1,x2);
 	
 	if(fRButton2->GetState()){
 		gJframe2->free_hist->Reset();
@@ -315,6 +353,7 @@ void jgating_tool::DoUpdate(){TVirtualPad* hold=gPad;
 	fCanvas1->GetCanvas()->Modified();
 	fCanvas1->GetCanvas()->Update();
 	
+RangeUpdateHold=false;
 gPad=hold;
 }
 
@@ -486,6 +525,23 @@ void jgating_tool::NewAxisDrawn() //adjust sliders and control values for new ax
 		fCanvas1->GetCanvas()->Modified();
 		fCanvas1->GetCanvas()->Update();
 	}
+	
+	if(!RangeUpdateHold){
+		TH1* h=hist_capture(fCanvas1->GetCanvas());
+        if(h){
+//             cout<<endl<<"GRABBING NEW RANGE"<<endl;
+            TAxis* x=h->GetXaxis();
+            x1=x->GetBinLowEdge(x->GetFirst());
+            x2=x->GetBinUpEdge(x->GetLast());
+            
+            if(fCheck0){if(fCheck0->GetState()){
+                TAxis* y=h->GetXaxis();
+                y1=y->GetBinLowEdge(y->GetFirst());
+                y2=y->GetBinUpEdge(y->GetLast());
+            }}
+        }
+    }
+	
 }
 
 #include <TGIcon.h>

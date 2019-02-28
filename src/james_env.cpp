@@ -20,7 +20,7 @@ jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
     FontStruct_t ft = TGTextButton::GetDefaultFontStruct();
 //     GContext_t gc=TGButton::GetDefaultGC()();
     if(font){
-//         ft = font->GetFontStruct();
+        ft = font->GetFontStruct();
     }
     
     

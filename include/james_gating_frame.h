@@ -153,6 +153,7 @@ public:
 
    //signals has to be public
    void OutputReady(){};  
+   void InputChange(){};  
    
    ClassDef(j_gating_frame, 2)
 };

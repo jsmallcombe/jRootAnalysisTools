@@ -70,6 +70,10 @@ private:
     
     TFile* fOriginFile;
     bool fFileOwner;
+    
+    double x1,x2,y1,y2;
+    
+    bool RangeUpdateHold;
    
 public:
 	jgating_tool(const char *);
@@ -89,6 +93,9 @@ public:
 	void StoreHistograms(Int_t);
 	void DrawSaved();
 	void NewAxisDrawn();
+    
+	void ResetRange();
+    void ButtonGroupDoUpdate(Int_t i);
     
     TFile* GetOriginFile(){return fOriginFile;}
     void SetFileOwner(bool Set=true){fFileOwner=Set;}

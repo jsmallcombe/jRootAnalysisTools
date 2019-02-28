@@ -339,7 +339,7 @@ void jAddSubTool::PrepareB(){
     //Get the B hist in the right form
     if(xbins&&!xrange){
         for(int i=2;i<10;i++){
-            if(AHist->GetNbinsX()==BHist->GetNbinsX()*i){
+            if(AHist->GetNbinsX()*i==BHist->GetNbinsX()){
                 BSet=(TH1*)BHist->Clone();
                 BSet->Rebin(i);
                 xbins=false;

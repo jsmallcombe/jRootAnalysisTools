@@ -534,6 +534,8 @@ void j_gating_frame::UpdateInput(TH1* input){
 // Calles for new input histogram or change axis
 void j_gating_frame::UpdateInput()
 {       
+    Emit("InputChange()");
+    
 TVirtualPad* hold=gPad;
 
 //cout<<"UpdateInput "<<flush;
