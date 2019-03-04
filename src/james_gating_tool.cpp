@@ -252,10 +252,11 @@ jgating_tool::~jgating_tool()
 //Just reset the viewing range of thefinal canvas
 void jgating_tool::ResetRange(){
 //     cout<<endl<<"RESETTING RANGE"<<endl;
-    x1=1;
-    x2=-1;
-    y1=1;
-    y2=-1;
+    // usual -1 +1 actually doesnt work if they are in the same bin
+    x1=1E20;
+    x2=-1E20;
+    y1=1E20;
+    y2=-1E20;
 }
 
 
