@@ -53,29 +53,6 @@ TH2* hist_gater_bin(int lower,TH3* in,int xyz,string name){
 }
 
 
-TH2* hist_gater_anti(double lower,double upper,TH3* in,int xyz,string name){
-	string is;TAxis *ax=hist_gater(in,is,xyz); TH3axisreseter(in);
-
-	ax->SetRange(ax->FindFixBin(upper)+1,ax->GetNbins()+1);
-	TH2* temp=(TH2*)in->Project3D(is.c_str());
-	temp->SetName("thistemphist");
-	ax->SetRange(1,ax->FindFixBin(lower)+1);
-	TH2* ret=(TH2*)in->Project3D(is.c_str());
-	if(name!="")ret->SetName(name.c_str());
-	ret->Add(temp);delete temp;return ret;
-}
-
-TH2* hist_gater_anti_bin(int lower,int upper,TH3* in,int xyz,string name){
-	string is;TAxis *ax=hist_gater(in,is,xyz); TH3axisreseter(in);
-	
-	ax->SetRange(upper+1,ax->GetNbins()+1);
-	TH2* temp=(TH2*)in->Project3D(is.c_str());
-	temp->SetName("thistemphist");
-	ax->SetRange(1,lower-1);
-	TH2* ret=(TH2*)in->Project3D(is.c_str());
-	if(name!="")ret->SetName(name.c_str());
-	ret->Add(temp);delete temp;return ret;
-}
  //NOTE 1: The generated histogram is named th3name + option
 
 
@@ -99,29 +76,7 @@ TH1* hist_gater_bin(int lower,TH2* in,int xyz,string name){
 	if(xyz==1) return (TH1*)in->ProjectionX(name.c_str(),lower,in->GetYaxis()->GetNbins()+1);
 	else  return (TH1*)in->ProjectionY(name.c_str(),lower,in->GetXaxis()->GetNbins()+1);
 }
-TH1* hist_gater_anti(double lower,double upper,TH2* in,int xyz,string name){
-	if(xyz==1){
-		TH1* temp=(TH1*)in->ProjectionX("temporaryadditionhistogram",in->GetYaxis()->FindFixBin(upper)+1,in->GetYaxis()->GetNbins()+1);		
-		TH1* ret=(TH1*)in->ProjectionX(name.c_str(),1,in->GetYaxis()->FindFixBin(lower)-1);
-		ret->Add(temp);delete temp;return ret;		
-	} else {
-		TH1* temp=(TH1*)in->ProjectionY("temporaryadditionhistogram",in->GetXaxis()->FindFixBin(upper)+1,in->GetXaxis()->GetNbins()+1);		
-		TH1* ret=(TH1*)in->ProjectionY(name.c_str(),1,in->GetXaxis()->FindFixBin(lower)-1);
-		ret->Add(temp);delete temp;return ret;		
-	}
-}
 
-TH1* hist_gater_anti_bin(int lower,int upper,TH2* in,int xyz,string name){
-	if(xyz==1){
-		TH1* temp=(TH1*)in->ProjectionX("temporaryadditionhistogram",upper+1,in->GetYaxis()->GetNbins()+1);		
-		TH1* ret=(TH1*)in->ProjectionX(name.c_str(),1,lower-1);
-		ret->Add(temp);delete temp;return ret;		
-	} else {
-		TH1* temp=(TH1*)in->ProjectionY("temporaryadditionhistogram",upper+1,in->GetXaxis()->GetNbins()+1);		
-		TH1* ret=(TH1*)in->ProjectionY(name.c_str(),1,lower-1);
-		ret->Add(temp);delete temp;return ret;		
-	}
-}
 
 ///////
 
@@ -145,17 +100,6 @@ TH1* hist_gater_bin(int a,TH1* c,int d,string e){
 	if(c->IsA()->InheritsFrom(TH2::Class()))return hist_gater_bin(a,(TH2*)c,d,e);
 	return 0;
 }
-TH1* hist_gater_anti(double a,double b,TH1* c,int d,string e){
-	if(c->IsA()->InheritsFrom(TH3::Class()))return hist_gater_anti(a,b,(TH3*)c,d,e);
-	if(c->IsA()->InheritsFrom(TH2::Class()))return hist_gater_anti(a,b,(TH2*)c,d,e);
-	return 0;
-}
-TH1* hist_gater_anti_bin(int a,int b,TH1* c,int d,string e){
-	if(c->IsA()->InheritsFrom(TH3::Class()))return hist_gater_anti_bin(a,b,(TH3*)c,d,e);
-	if(c->IsA()->InheritsFrom(TH2::Class()))return hist_gater_anti_bin(a,b,(TH2*)c,d,e);
-	return 0;
-}
-
 
 	//
 	// Projection functions

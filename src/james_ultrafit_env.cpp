@@ -992,13 +992,13 @@ void UltraFitEnv::UltraFitAfter(FullFitHolder* fHold){
 		cPeakLabels.clear();
 		for(unsigned int i=0;i<cNfit;i++){
 			double cc=fHold->CVal(Ultrapeak::VPC(i));
-			double oo=fHold->CVal(Ultrapeak::VOff);
+// 			double oo=fHold->CVal(Ultrapeak::VOff);
 			
-			cPTbox[i]->SetText(TString::Format("%.1f",cc+oo));
+			cPTbox[i]->SetText(TString::Format("%.1f",cc));
 			gClient->NeedRedraw(cPTbox[i]);
 			
 			double hh = gHist->GetBinContent(gHist->GetXaxis()->FindBin(cc));
-			cPeakLabels.push_back(TText(cc,hh*1.05,TString::Format("%.1f",cc+oo)));
+			cPeakLabels.push_back(TText(cc,hh*1.05,TString::Format("%.1f",cc)));
 		}
 		
 		// Actually update what is drawn

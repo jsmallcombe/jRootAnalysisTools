@@ -290,7 +290,8 @@ void j_gating_frame::NewAxisDrawn() //adjust sliders and control values for new 
 	fHslider1->SetRange(axis_down,axis_up);	
 	fHslider2->SetRange(1,(axis_up-axis_down));
 // 	fHslider2->SetRange(1,(axis_up-axis_down)*0.3);
-	fHslider4->SetRange(axis_down,axis_up);	
+	fHslider4->SetRange(axis_down-1,axis_up+1);	
+    // Changed to allow selection of under/overflow
 	
 	ValidateValues();
 	ValuesToSliders();
@@ -322,16 +323,18 @@ void j_gating_frame::ValidateValues() //checks stored control parameters are val
 	if(!(gate_range%2))gate_down++;
 	
 	if(gate_down>gate_up)gate_up=gate_down;
-	if(gate_down<axis_down)gate_down=axis_down;
-	if(gate_up>axis_up)gate_up=axis_up;	 	
+	if(gate_down<axis_down)gate_down=axis_down-1;
+	if(gate_up>axis_up)gate_up=axis_up+1;
+    // Changed to allow selection of under/overflow
 	 	
 	if(fit_down<axis_down)fit_down=axis_down;
 	if(fit_down>gate_down)fit_down=gate_down;
 	if(fit_up>axis_up)fit_up=axis_up;
 	if(fit_up<gate_up)fit_up=gate_up;
 	
-	if(m_back_down<axis_down||m_back_down>axis_up)m_back_down=axis_down;
-	if(m_back_up<axis_down||m_back_up>axis_up)m_back_up=axis_up;	
+	if(m_back_down<axis_down||m_back_down>axis_up)m_back_down=axis_down-1;
+	if(m_back_up<axis_down||m_back_up>axis_up)m_back_up=axis_up+1;	
+    // Changed to allow selection of under/overflow
 	
 	if(backfit_mode>2){//Not a peak fit
 		fit_down=target_bin;
@@ -871,6 +874,9 @@ void j_gating_frame::DoHistogram(){
 	gate_hist->SetLineColor(1);
 	gate_hist->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
 	
+    // Note thw "Full" projection used to make full and anti includes the overflow but excludes the underflow bin
+    // This is an intentional choice as often intentionally zeroed data may be sorted into the underflow bin
+    // The underflow bin can be selected with manual sliders
 	switch (background_mode) {
 		case 1://full
 			scaled_back_subtract(gate_hist,full,backfrack,output_hist_point,backfrackfrac);
@@ -880,8 +886,8 @@ void j_gating_frame::DoHistogram(){
 			{
 				int compton_offset=gate_up+2;
 				if(backfit_mode<3){
-					compton_offset=proj->GetXaxis()->FindFixBin(fFitFcn->GetParameter(1)+2*fFitFcn->GetParameter(2));
-					if(compton_offset<gate_up)compton_offset=gate_up+2;
+					compton_offset=proj->GetXaxis()->FindFixBin(fFitFcn->GetParameter(1)+3*fFitFcn->GetParameter(2));
+					if(compton_offset<gate_up)compton_offset=gate_up+1;
 				}
 				if(compton_offset>proj->GetNbinsX())compton_offset=proj->GetNbinsX();
 				

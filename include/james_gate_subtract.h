@@ -41,8 +41,6 @@ TH2* hist_gater(double,double,TH3*,int=0,string="");
 TH2* hist_gater_bin(int,int,TH3*,int=0,string="");
 TH2* hist_gater(double,TH3*,int=0,string="");// gates from input to axis max
 TH2* hist_gater_bin(int,TH3*,int=0,string="");
-TH2* hist_gater_anti(double,double,TH3*,int=0,string="");//return an anti gated hist
-TH2* hist_gater_anti_bin(int,int,TH3*,int=0,string="");
 
 //2D gating functions
 //these will nicely overwrite/fill any previously done 2D projection add a name in string
@@ -50,16 +48,12 @@ TH1* hist_gater(double,double,TH2*,int=0,string="proj");
 TH1* hist_gater_bin(int,int,TH2*,int=0,string="proj");
 TH1* hist_gater(double,TH2*,int=0,string="proj");// gates from input to axis max
 TH1* hist_gater_bin(int,TH2*,int=0,string="proj");
-TH1* hist_gater_anti(double,double,TH2*,int=0,string="proj");//return an anti gated hist
-TH1* hist_gater_anti_bin(int,int,TH2*,int=0,string="proj");
 
 //These just forward to the correct above type after checking TH2/3 inheritance 
 TH1* hist_gater(double,double,TH1*,int,string);
 TH1* hist_gater_bin(int,int,TH1*,int,string);
 TH1* hist_gater(double,TH1*,int,string);
 TH1* hist_gater_bin(int,TH1*,int,string);
-TH1* hist_gater_anti(double,double,TH1*,int,string);
-TH1* hist_gater_anti_bin(int,int,TH1*,int,string);
 
 
 // Project an axis Functions
