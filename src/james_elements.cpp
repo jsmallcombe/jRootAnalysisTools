@@ -611,6 +611,7 @@ void jDirList::UseItem(TGListTreeItem* item){
    
    // If *item* is a system directory files will be non 0
    if (files) {
+        files->Sort();
         ProcessSystemDir(files,item);
         return;
    }

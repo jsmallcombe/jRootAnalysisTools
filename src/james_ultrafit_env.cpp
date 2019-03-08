@@ -155,15 +155,17 @@ void UltraFitEnv::DialogBox() {
 				ticks->AddFrame(label,XX);
 				
 				fCombo = new TGComboBox(ticks,100);
-				fCombo->AddEntry("pol0+step",0);
-				fCombo->AddEntry("pol1 fixed",1);
-				fCombo->AddEntry("pol1",2);
-				fCombo->AddEntry("pol1+step",3);
-				fCombo->AddEntry("pol2",4);
-				fCombo->AddEntry("pol2+step",5);
+				fCombo->AddEntry("pol0",Ultrapeak::cBackType0);
+				fCombo->AddEntry("pol0+step",Ultrapeak::cBackType0s);
+				fCombo->AddEntry("pol1 fixed",Ultrapeak::cBackType1f);
+				fCombo->AddEntry("pol1",Ultrapeak::cBackType1);
+				fCombo->AddEntry("pol1+step",Ultrapeak::cBackType1s);
+				fCombo->AddEntry("pol2",Ultrapeak::cBackType2);
+				fCombo->AddEntry("pol2+step",Ultrapeak::cBackType2s);
 				fCombo->Resize(110, 20);
-				fCombo->Select(0);
+				fCombo->Select(Ultrapeak::cBackType1s);
 				ticks->AddFrame(fCombo,XX);	
+
 				
 				fCheck1 = new TGCheckButton(ticks,"Limit Tail  ");// A tick box with hover text belonging to a parent frame
 				fCheck1->SetState(kButtonUp);

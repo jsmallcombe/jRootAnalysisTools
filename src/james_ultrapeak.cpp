@@ -329,7 +329,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	
     
     int smbin=3;//REDUCED FROM 5 TO 3
-    if(backmode==1){smbin=1;}
+    if(backmode==cBackType1f){smbin=1;}
 	//Takes averages of histogram for the right and left, so not so sensitive.
 	double fLeftHeight = bins_smooth(fHist,fLeftBin,smbin);
 	double fRightHeight = bins_smooth(fHist,fRightBin,smbin);
@@ -506,21 +506,14 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	// "pol2",4
 	// "pol2+step",5
 	
-	bool step=false;
-	if(backmode==0||backmode==3||backmode==5){
-		step=true;
-	}
+	bool step=Step(backmode);
+    
 	// If the background clearly has no under-peak scattering step, then we use a simple formula
 	if(fLeftHeight<=fRightHeight)step=false;
 	
-	bool pol2=false;
-	if(backmode==4||backmode==5){
-		pol2=true;
-	}
-	
 	fPeakFunc.N=fNp;
 	fPeakFunc.SetBit(kStep,step);
-	fPeakFunc.SetBit(kPol2,pol2);
+	fPeakFunc.SetBit(kPol2,Pol2(backmode));
 	if(peaktype==2)fPeakFunc.SetBit(k2Gaus,1);
 	for(unsigned int i=1;i<fNp;i++)
 		if(fInput[i].Ratio>0)
@@ -532,40 +525,42 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	//////////////////////////////////// SET PARAMETERS ////////////////////////////////
 	
 	///////// Background parameters	////////
-	// "pol0+step",0  // pol0 fixed based on RHS and step RHS-LHS diff
-	// "pol1 fixed",1 // Grad fixed from LHS RHS and offset slightly free
-	// "pol1",2       // Offset fixed at centre point, offset and grad slightly free (pol1 see-saw)
-	// "pol1+step",3  // Offset pinned at RHS, grad set to half and step RHS-LHS diff (pol1 hinge) 
-	// "pol2",4	  // Pretty free initial inputs as pol1
-	// "pol2+step",5  // Pretty free initial inputs as pol1
-	
-	if(pol2){
-		fFit->SetParName(gUltraOffsetOrPol2,"Pol2");
-		fParam[gUltraOffsetOrPol2]=0;
-	}else{
-		fFit->SetParName(gUltraOffsetOrPol2,"Pol1Offset");
-		if(backmode==3)fParam[gUltraOffsetOrPol2]=fRightUser;
-		else fParam[gUltraOffsetOrPol2]=fLeftUser+(fRightUser-fLeftUser)*0.5;
-	}
+	// "pol0+step",  // pol0 fixed based on RHS and step RHS-LHS diff
+	// "pol1 fixed", // Grad fixed from LHS RHS and offset slightly free
+	// "pol1",       // Offset fixed at centre point, offset and grad slightly free (pol1 see-saw)
+	// "pol1+step",  // Offset pinned at RHS, grad set to half and step RHS-LHS diff (pol1 hinge) 
+	// "pol2",	  // Pretty free, initial inputs as pol1
+	// "pol2+step",  // Pretty free, initial inputs as pol1
 	
 	fFit->SetParName(gUltraPol0,"Pol0");
 	fFit->SetParName(gUltraPol1,"Pol1");
-	if(backmode==0){
+    fFit->SetParName(gUltraOffsetOrPol2,"Pol2");
+    
+    int polorder=PolOrder(backmode);
+	if(polorder==0){
+        fFit->SetParName(gUltraPol1,"na");
+        fFit->SetParName(gUltraOffsetOrPol2,"na");
 		fParam[gUltraPol0]=fRightHeight;
 		fParam[gUltraPol1]=0;
-	}else if(backmode<4){
+		fParam[gUltraOffsetOrPol2]=0;
+	}else if(polorder==1){
+		fFit->SetParName(gUltraOffsetOrPol2,"Pol1Offset");
+        if(step)fParam[gUltraOffsetOrPol2]=fRightUser;
+		else fParam[gUltraOffsetOrPol2]=fLeftUser+(fRightUser-fLeftUser)*0.5;        
 		fParam[gUltraPol0]=fLin.Eval(fParam[gUltraOffsetOrPol2]);
 		fParam[gUltraPol1]=fLin.GetParameter(1);
-		if(backmode==3&&step)fParam[gUltraPol1]=fParam[gUltraPol1]*0.5;
+		if(step)fParam[gUltraPol1]=fParam[gUltraPol1]*0.5;        
 	}else{
 		fParam[gUltraPol0]=fLin.GetParameter(0);
 		fParam[gUltraPol1]=fLin.GetParameter(1);
+		fParam[gUltraOffsetOrPol2]=0;
 	}
 	
-	fFit->SetParName(gUltraStep,"Bkgd Step");
 	if(step){
+        fFit->SetParName(gUltraStep,"Bkgd Step");
 		fParam[gUltraStep]=fLeftHeight-fRightHeight;
 	}else{
+        fFit->SetParName(gUltraStep,"na");
 		fParam[gUltraStep]=0.0;
 	}
 
@@ -621,52 +616,49 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	//////////////////////////////////// SET LIMTS & FIXED ////////////////////////////////
 	
 	///////// Background parameters	////////
-	// "pol0+step",0  // pol0 fixed based on RHS and step RHS-LHS diff
-	// "pol1 fixed",1 // Grad fixed from LHS RHS and offset slightly free
-	// "pol1",2       // Offset fixed at centre point, offset and grad slightly free (pol1 see-saw)
-	// "pol1 down",3  // Offset free downwards (pol1 see-saw)
-	// "pol1+step",4  // Offset pinned at RHS, grad set to half and step RHS-LHS diff (pol1 hinge) 
-	// "pol2",5	  // Pretty free initial inputs as pol1
-	// "pol2+step",6  // Pretty free initial inputs as pol1
+	// "pol0+step",  // pol0 fixed based on RHS and step RHS-LHS diff
+	// "pol1 fixed", // Grad fixed from LHS RHS and offset slightly free
+	// "pol1",       // Offset fixed at centre point, offset and grad slightly free (pol1 see-saw)
+	// "pol1 down",  // Offset free downwards (pol1 see-saw)
+	// "pol1+step",  // Offset pinned at RHS, grad set to half and step RHS-LHS diff (pol1 hinge) 
+	// "pol2",	  // Pretty free initial inputs as pol1
+	// "pol2+step",  // Pretty free initial inputs as pol1
 
 	//////////
 	double fBackError=sqrt(fLeftError*fLeftError+fRightError*fRightError);
+	if(step){
+		fFit->SetParLimits(gUltraStep,0,fParam[gUltraStep]+fBackError*1.5);
+    }else{
+        fFit->FixParameter(gUltraStep,0);
+    }
 	
-	//pol2 / offset
-	if(pol2){
+    if(polorder==0){
+        fFit->FixParameter(gUltraPol1,0);
+		fFit->FixParameter(gUltraOffsetOrPol2,0);
+        fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fRightError*1.5,fParam[gUltraPol0]+fRightError*0.5);        
+    }else if(polorder==1){
+		fFit->FixParameter(gUltraOffsetOrPol2,fParam[gUltraOffsetOrPol2]);
+
+        if(backmode==cBackType1f){
+            fFit->FixParameter(gUltraPol1,fParam[gUltraPol1]);
+        }else if(step){
+            fFit->SetParLimits(gUltraPol1,0,fLin.GetParameter(1)*1.0001);
+        }else{
+            double dgrad=abs(fBackError/((fRightUser-fLeftUser)*0.5));
+            fFit->SetParLimits(gUltraPol1,fParam[gUltraPol1]-dgrad,fParam[gUltraPol1]+dgrad);
+        }
+        
+        if(step){
+            fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fRightError*1.5,fParam[gUltraPol0]+fRightError*0.5);
+        }else{
+            fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fBackError*1.5,fParam[gUltraPol0]+fBackError*0.5);
+        }
+        
+    }else{
 // 		double a=abs(fRightHeight/(fRightUser*fRightUser));
 // 		fFit->SetParLimits(gUltraOffsetOrPol2,-2*a,2*a);
-	}else{
-		fFit->FixParameter(gUltraOffsetOrPol2,fParam[gUltraOffsetOrPol2]);
-	}
-
-	//pol 0
-	if(backmode==3||backmode==0){
-		fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fRightError*1.5,fParam[gUltraPol0]+fRightError*0.5);
-	}else if(backmode==1||backmode==2){
-		fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fBackError*1.5,fParam[gUltraPol0]+fBackError*0.5);
-	}else{	}	
-
-	//pol 1
-	if(backmode==0)fFit->FixParameter(gUltraPol1,0);
-	if(backmode==1)fFit->FixParameter(gUltraPol1,fParam[gUltraPol1]);
-	if(backmode==2||backmode==3){
-		double dgrad=abs(((fRightError+fLeftError)/2)/((fRightUser-fLeftUser)*0.5));
-		fFit->SetParLimits(gUltraPol1,fParam[gUltraPol1]-dgrad,fParam[gUltraPol1]+dgrad);
-		if(step)fFit->SetParLimits(gUltraPol1,0,fLin.GetParameter(1)*1.0001);
-	}
-	if(backmode>3){}
-	
-	//Step(
-	if(step){
-		if(backmode==0){
-			fFit->SetParLimits(gUltraStep,fParam[gUltraStep]-fBackError*1.5,fParam[gUltraStep]+fBackError*0.5);
-		}else{
-			fFit->SetParLimits(gUltraStep,0,fParam[gUltraStep]+fBackError*0.5);
-		}
-	}else{
-		fFit->FixParameter(gUltraStep,0);
-	}
+    }
+    
 
 	///////// Shape parameters ////////
 	

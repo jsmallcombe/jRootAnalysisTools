@@ -162,7 +162,8 @@ void jEnv::FitPanel(){
 void jEnv::Spectrum(){
 	if(fCanvas1->Type()==1){
 		if(fSpecTool){
-			if(fCanvas1->Type()==1)fSpecTool->NewInput(fCanvas1->Hist());
+			fSpecTool->NewInput(fCanvas1->Hist());
+            fSpecTool->RaiseWindow();
 		}else {
 			fSpecTool=new jSpecTool(fCanvas1->Hist());
 			fSpecTool->Connect("Destroyed()", "jEnv", this,"SpecToolClose()");

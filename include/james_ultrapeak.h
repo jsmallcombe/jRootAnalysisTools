@@ -272,6 +272,23 @@ class  Ultrapeak{
 	static short VPIe(int i=0){return i*6+VOff+6;}
 	
 	
+	static const short cBackType0=0;//pol0
+	static const short cBackType0s=1;//pol0+step
+	static const short cBackType1=10;//pol1
+	static const short cBackType1s=11;//pol1 +step
+	static const short cBackType1f=12;//pol1 fixed
+	static const short cBackType2=20;//pol2
+	static const short cBackType2s=21;//pol2 +step
+	
+	static bool Step(int BackType){
+        return BackType%2;
+    }
+	static int PolOrder(int BackType){
+        	return BackType/10;
+    }
+	static bool Pol2(int BackType){
+            return PolOrder(BackType)/2;
+    }
 	
 	void SetBit(int i,bool b=true){cBits.SetBit(i,b);}
 	bool TestBit(int i){return cBits.TestBit(i);}
