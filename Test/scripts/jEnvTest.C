@@ -52,7 +52,7 @@
     gSystem->cd("./Test/data/");
     
     new jEnv();
-//    new jScale();
-//    new jDirList(gClient->GetRoot(), gClient->GetRoot(), 400, 150);
+   new jScale();
+   new jEval();
 
 }

@@ -4,15 +4,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
-    fFitPanel(0),fSpecTool(0),addsub(0),DirList(0),SameSave(0),gDrawSame(false),fTabs(0),
-    fPixOffX(1),fPixOffY(33),
-    fDefaultDirWidth(180),fDefaultDirHeight(400),
-    fDefaultTabsWidth(800),fDefaultTabsHeight(600),
-    fDefaultGrabSize(140)
-{
-    
+FontStruct_t jEnv::GetFont(){
     TGFontPool *pool = gClient->GetFontPool();
     // family , size (minus value - in pixels, positive value - in points), weight, slant
     //  kFontWeightNormal,  kFontSlantRoman are defined in TGFont.h
@@ -22,7 +14,19 @@ jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
     if(font){
         ft = font->GetFontStruct();
     }
-    
+    return ft;
+}
+
+
+jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
+    fFitPanel(0),fSpecTool(0),addsub(0),DirList(0),SameSave(0),gDrawSame(false),fTabs(0),
+    fPixOffX(1),fPixOffY(33),
+    fDefaultDirWidth(180),fDefaultDirHeight(400),
+    fDefaultTabsWidth(800),fDefaultTabsHeight(600),
+    fDefaultGrabSize(140)
+{
+
+    FontStruct_t ft =GetFont();
     
 TVirtualPad* hold=gPad;
 	SetWindowName("jEnv");
@@ -354,11 +358,12 @@ void jEnv::ClosedObject(TObject* obj){
 
 ////////////////////////////////////////////////////////////////
 
-jScale::jScale() : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),gg(0){
+jScale::jScale() : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),gg(0),IsLocked(0){
 TVirtualPad* hold=gPad;
 	SetWindowName("jScale");
 	SetCleanup(kDeepCleanup);
 	
+    FontStruct_t ft =jEnv::GetFont();
 
 	TGLayoutHints* ExpandX= new TGLayoutHints(kLHintsExpandX,5,5,3,2);
 	
@@ -370,6 +375,12 @@ TVirtualPad* hold=gPad;
         fCanvas2->SetClass(TGraph::Class());
         fCanvas2->Connect("NewObject()","jScale",this,"NewInput()");
 		inputframe->AddFrame(fCanvas2);
+            
+        lockbutton = new TGTextButton(inputframe,"  Lock  ");
+        lockbutton->SetFont(ft);
+        lockbutton->Connect("Clicked()","jScale",this,"Lock()");	
+		inputframe->AddFrame(lockbutton,new TGLayoutHints(kLHintsCenterY, 1, 1, 1, 1));
+        
 	this->AddFrame(inputframe,ExpandX);
 	
     
@@ -403,9 +414,13 @@ void jScale::NewInput(){
         gg=(TGraph*)G->Clone();
     }
     
+    if(IsLocked) return;
+    
 //     cout<<endl<<H<<endl<<gg<<endl;
     if(HType(H)&&gg&&HType(H)<3){
-        TH1* scaled=(TH1*)H->Clone();
+        stringstream nn;
+        nn<<H->GetName()<<"x"<<gg->GetName();
+        TH1* scaled=(TH1*)H->Clone(nn.str().c_str());
         scaled->Reset();
         bool Y=(HType(H)==2);
         int NX=H->GetNbinsX();
@@ -444,8 +459,117 @@ void jScale::NewInput(){
         result->GetCanvas()->Modified();
         result->GetCanvas()->Update();
         gPad=hold;
+        stringstream ss;
+        ss<<"jScale : "<<H->GetName()<<" x "<<gg->GetName();
+        SetWindowName(ss.str().c_str());
     }
 }
 
 
+void jScale::Lock(){
+    IsLocked=!IsLocked;
+    if(IsLocked){
+        lockbutton->SetText("Unlock");
+        lockbutton->SetTextColor(2);
+        lockbutton->SetState(kButtonDown);
+    }else{
+        lockbutton->SetText("  Lock  ");
+        lockbutton->SetTextColor(1);
+        lockbutton->SetState(kButtonUp);
+        NewInput();
+    }
+}
 
+
+////////////////////////////////////////////////////////////////
+
+jEval::jEval() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),gg(0),GG(0),IsLocked(0){
+TVirtualPad* hold=gPad;
+    SetWindowName("jEval");
+    SetCleanup(kDeepCleanup);
+
+    FontStruct_t ft =jEnv::GetFont();
+
+
+    fCanvas1 = new CCframe("Embedded1", this, 100, 100);
+    fCanvas1->SetClass(TGraph::Class());
+    fCanvas1->Connect("NewObject()","jEval",this,"NewInput()");
+    this->AddFrame(fCanvas1);
+        
+    lockbutton = new TGTextButton(this,"  Lock  ");
+    lockbutton->SetFont(ft);
+    lockbutton->Connect("Clicked()","jEval",this,"Lock()");	
+    this->AddFrame(lockbutton,new TGLayoutHints(kLHintsCenterY, 1, 1, 1, 1));
+
+    fTeh1 = new TGTextEntry(this, new TGTextBuffer(4));
+    fTeh1->SetDefaultSize(50,25);
+    fTeh1->SetAlignment (kTextRight);
+//     fTeh1->Connect("ReturnPressed()", "jEval", this,"Eval()");
+//     fTeh1->Connect("TabPressed()", "jEval", this,"Eval()");
+    fTeh1->Connect("TextChanged(char*)", "jEval", this,"Eval(char*)");
+    this->AddFrame(fTeh1,new TGLayoutHints(kLHintsCenterY, 1, 1, 1, 1));
+    
+    fTeh2 = new TGTextEntry(this,new TGTextBuffer(6));
+    fTeh2->SetDefaultSize(100,25);
+    fTeh2->SetAlignment (kTextRight);
+    this->AddFrame(fTeh2,new TGLayoutHints(kLHintsCenterY, 1, 1, 1, 1));
+    
+	MapSubwindows();
+	Resize(GetDefaultSize());
+	MapWindow();
+    
+gPad=hold;
+}
+
+
+void jEval::NewInput(){
+    TGraph* G=(TGraph*)fCanvas1->Object();
+    
+    if(G){
+        if(gg)delete gg;
+        gg=(TGraph*)G->Clone();
+    }
+    
+    if(IsLocked) return;
+    
+    if(gg){
+        if(GG)delete GG;
+        GG=(TGraph*)gg->Clone();
+        stringstream ss;
+        ss<<"jEval : "<<gg->GetName();
+        SetWindowName(ss.str().c_str());
+    }
+}
+
+
+void jEval::Lock(){
+    IsLocked=!IsLocked;
+    if(IsLocked){
+        lockbutton->SetText("Unlock");
+        lockbutton->SetTextColor(2);
+        lockbutton->SetState(kButtonDown);
+    }else{
+        lockbutton->SetText("  Lock  ");
+        lockbutton->SetTextColor(1);
+        lockbutton->SetState(kButtonUp);
+        NewInput();
+    }
+}
+
+void jEval:: Eval(char* cha){
+    stringstream in;
+    in<<cha;
+    double input;
+    in>>input;
+    if(GG){
+        double Y=GG->Eval(input);
+        char buf[32];
+        sprintf(buf, "%.5f", Y);
+        TGTextBuffer* fTbh2=fTeh2->GetBuffer();
+        fTbh2->Clear();	fTbh2->AddText(0, buf);
+        fTeh2->SetCursorPosition(fTeh2->GetCursorPosition());
+        fTeh2->Deselect();
+        gClient->NeedRedraw(fTeh2);
+        cout<<endl<<GG->GetName()<<" Eval at "<<input<<" = "<<Y<<flush;
+    }
+}

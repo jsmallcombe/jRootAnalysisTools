@@ -105,6 +105,8 @@ public:
 	void CloseTab(Int_t ID);
     
 	void ClosedObject(TObject* obj);
+    
+    static FontStruct_t GetFont();
 
 	ClassDef(jEnv, 2)
 };
@@ -117,7 +119,9 @@ private:
 	CCframe *fCanvas1,*fCanvas2;
 	TRootEmbeddedCanvas *result;
     TGraph *gg;
-
+    TGTextButton* lockbutton;
+    bool IsLocked;
+    
 public:
 	jScale();
 	virtual ~jScale(){
@@ -125,8 +129,33 @@ public:
     };
     
 	void NewInput();
+    void Lock();
 
-	ClassDef(jScale, 1)
+	ClassDef(jScale, 2)
+};
+
+
+class jEval : public TGMainFrame {
+
+private:
+	CCframe *fCanvas1;
+    TGraph *gg,*GG;
+    TGTextButton* lockbutton;
+    bool IsLocked;
+    TGTextEntry *fTeh1,*fTeh2;
+    
+public:
+	jEval();
+	virtual ~jEval(){
+        if(gg)delete gg;
+        if(GG)delete GG;
+    };
+    
+	void NewInput();
+    void Lock();
+    void Eval(char*);
+
+	ClassDef(jEval, 1)
 };
 
 #endif
