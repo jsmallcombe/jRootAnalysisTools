@@ -32,6 +32,7 @@
 #include <TSystemDirectory.h>
 #include <TGSlider.h>
 #include <TGTextEntry.h>
+#include <TKey.h>
 
 
 #include "james_utility.h"

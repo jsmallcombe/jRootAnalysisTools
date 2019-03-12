@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <TGraphErrors.h>
 #include <TFitResult.h>
+#include <TROOT.h>
 
 using namespace std;
 
