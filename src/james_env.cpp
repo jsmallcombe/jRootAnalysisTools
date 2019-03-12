@@ -107,11 +107,9 @@ TVirtualPad* hold=gPad;
     fTabs->Connect("CloseTab(Int_t)", "jEnv", this, "CloseTab(Int_t)");
 	this->AddFrame(fTabs, new TGLayoutHints(kLHintsExpandY|kLHintsExpandX, 1, 1, 1, 1));
     
-    TGCompositeFrame *TabOne= fTabs->AddTab("Add/Sub");
-    addsub = new jAddSubTool(fCanvas1,TabOne);
-    TabOne->AddFrame(addsub,new TGLayoutHints(kLHintsExpandY|kLHintsExpandX, 1, 1, 1, 1));
+    addsub = new jAddSubTool(fCanvas1,fTabs);
+    fTabs->AddTab("Add/Sub",addsub);
 
-    
 	MapSubwindows();
 	Resize(GetDefaultSize());
 	MapWindow();
@@ -167,10 +165,19 @@ void jEnv::Spectrum(){
 	if(fCanvas1->Type()==1){
 		if(fSpecTool){
 			fSpecTool->NewInput(fCanvas1->Hist());
-            fSpecTool->RaiseWindow();
+//          fSpecTool->RaiseWindow();
+            
+            for(int i=0;i<fTabs->GetNumberOfTabs();i++)if(fSpecTool==fTabs->GetTabContainer(i)){fTabs->SetTab(i,kFALSE);break;}
+            if(!IsVisible(fTabs))ShowTabs();
 		}else {
-			fSpecTool=new jSpecTool(fCanvas1->Hist());
-			fSpecTool->Connect("Destroyed()", "jEnv", this,"SpecToolClose()");
+            ////// Old free jSpecTool
+//          fSpecTool=new jSpecTool(fCanvas1->Hist());
+// 			fSpecTool->Connect("Destroyed()", "jEnv", this,"SpecToolClose()");
+            
+            fSpecTool=new jSpecTool(fTabs,fCanvas1->Hist());
+            fTabs->AddTab("SpecTool",fSpecTool);
+            fTabs->SetTab(fTabs->GetNumberOfTabs()-1,kFALSE);
+            ShowTabs();
 		}
 	}
 };

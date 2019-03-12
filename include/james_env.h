@@ -79,7 +79,7 @@ public:
 	jEnv();
 	virtual ~jEnv(){
 		if(fFitPanel){delete fFitPanel;}
-		if(fSpecTool){delete fSpecTool;}
+		//if(fSpecTool){delete fSpecTool;}
 		if(SameSave){delete SameSave;}
 		ClearFreeObjects();
 	};

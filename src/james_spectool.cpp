@@ -15,15 +15,26 @@ int jSpecTool::spectool_iterator = 0;
 
 vector<string> jSpecTool::BackOpt={"BackOrder2","BackOrder4","BackOrder6","BackOrder8","BackSmoothing3","BackSmoothing5","BackSmoothing7","BackSmoothing9","BackSmoothing11","BackSmoothing13","BackIncreasingWindow","Compton"};
 
-jSpecTool::jSpecTool(TH1* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),histin(0),histsub(0),histzero(0),specback(0){
+
+    
+jSpecTool::jSpecTool(TH1* input):jSpecTool(new TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),input){
+    const TGWindow *P=GetParent();
+    TGMainFrame* p=(TGMainFrame*)P;
+    p->SetCleanup(kDeepCleanup);
+    p->AddFrame(this, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 1, 1, 1, 1));
+	p->MapSubwindows();
+	p->Resize(GetDefaultSize());
+	p->MapWindow();
+	p->SetWindowName("SpectrumTool");
+}
+
+jSpecTool::jSpecTool(const TGWindow * p,TH1* input) : TGCompositeFrame(p,100,100,kVerticalFrame),histin(0),histsub(0),histzero(0),specback(0){
 TVirtualPad* hold=gPad;
-	
-	input->GetXaxis()->SetRange(1,-1);
+
+    if(input)input->GetXaxis()->SetRange(1,-1);
 
 	TGLayoutHints* ffExpandXpad = new TGLayoutHints(kLHintsExpandX, 1, 1, 1, 1);
-		
-	SetCleanup(kDeepCleanup);
-	SetWindowName("SpectrumTool");
+
 	
 	TGHorizontalFrame* fHframe0 = new TGHorizontalFrame(this, 0, 0, 0);  //create a frame, filled with objects horizontally
 
@@ -50,14 +61,14 @@ TVirtualPad* hold=gPad;
 	fHframe0->AddFrame(fCheck2);
 	fHframe0->AddFrame(InvertButton);
 
-	fCanvas1 = new TRootEmbeddedCanvas(("Embedded"+make_iterator()).c_str(), this, 800, 600);
+	fCanvas1 = new TRootEmbeddedCanvas(("Embedded"+make_iterator()).c_str(), this, 800, 500);
 	fCanvas1->GetCanvas()->SetName(("ResultCan"+make_iterator()).c_str());
 		//Results panel
-	ReMargin(fCanvas1->GetCanvas());
+// 	ReMargin(fCanvas1->GetCanvas());
 // 	fCanvas1->GetCanvas()->SetFillColor(33);
 // 	fCanvas1->GetCanvas()->SetBorderMode(0);
 // 	fCanvas1->GetCanvas()->SetFrameFillColor(10);
-// 	fCanvas1->GetCanvas()->SetMargin(0.1,0.01,0.05,0.01);	
+	fCanvas1->GetCanvas()->SetMargin(0.1,0.01,0.05,0.01);	
 
 	TQObject::Connect(fCanvas1->GetCanvas(), "ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ClickPeakDrawConnect(Int_t,Int_t,Int_t,TObject*)");
 		// rebin bar
@@ -142,6 +153,7 @@ void jSpecTool::NewInput(TH1* input){
 	MapWindow();
 
 	UpdateSpecBack();	
+    DoUpdateF();
 }
 	
 
@@ -153,6 +165,8 @@ jSpecTool::~jSpecTool()
    if(histsub){delete histsub;}
    if(histzero){delete histzero;}
 
+   cout<<endl<<"SPECTOOL DELETED"<<endl;
+   
    // Clean up
    Cleanup();
 }
