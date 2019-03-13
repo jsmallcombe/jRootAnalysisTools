@@ -44,7 +44,7 @@ TVirtualPad* hold=gPad;
 		controlframe1->AddFrame(fCanvas1);
         
 // 		DirList->Connect("NewObject(TObject*)","CCframe",fCanvas1,"NonGuiNew(TObject*)");
-		DirList->Connect("NewObject(TKey*)","CCframe",fCanvas1,"NonGuiNew(TKey*)");
+		DirList->Connect("NewObject(TObject*)","CCframe",fCanvas1,"NonGuiNew(TObject*)");
 		DirList->Connect("NewObject(TObject*)","jEnv",this,"NewDirObject(TObject*)");
 		
 		TGTextButton* fitter = new TGTextButton(controlframe1,"Fit Panel");

@@ -49,9 +49,10 @@ class CCframe : public TRootEmbeddedCanvas {
 		TObject* current;//Never owns
 		TPad* currentpad;//Never owns
 		TCanvas* currentcan;//Never owns
-		TKey*  currentkey;//Never owns
+		
+		bool currenttrust;
 		string fName;
-		void SetNewObject(TObject* fH,TPad* Pad=0,TCanvas* Can=0,TKey* Key=0);
+		void SetNewObject(TObject* fH,TPad* Pad=0,TCanvas* Can=0,bool Trust=0);
 		bool pause;
         TClass *fClass;
         bool fNamed;
@@ -69,7 +70,6 @@ class CCframe : public TRootEmbeddedCanvas {
 		void TrackCaptureHistogram(TPad*,TObject*,Int_t);
         
         void NonGuiNew(TObject* obj);
-        void NonGuiNew(TKey* key);
 	
 		std::vector< TCanvas* > CFriends;
         
@@ -150,13 +150,13 @@ public:
    void OnDoubleClick(TGListTreeItem* item, Int_t btn);
    void CloseWindow();
    void NewObject(TObject*);
-   void NewObject(TKey*);
    
     void Closed(TObject* obj){
         Emit("Closed(TObject*)", (Long_t)obj);
     }
    
 private:
+    void OpenClose(TGListTreeItem* item);
     void UseItem(TGListTreeItem* item);
     void ProcessSystemDir(TList *files,TGListTreeItem* item);
     TFile* GetRootFile(TGListTreeItem*);

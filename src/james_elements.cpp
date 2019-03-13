@@ -2,7 +2,7 @@
 #include "james_filecustodian.h"
 
 
-CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t options,Pixel_t back):TRootEmbeddedCanvas(name,p,w,h,options,back),current(0),currentpad(0),currentcan(0),currentkey(0){TVirtualPad* hold=gPad;
+CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t options,Pixel_t back):TRootEmbeddedCanvas(name,p,w,h,options,back),current(0),currentpad(0),currentcan(0),currenttrust(0){TVirtualPad* hold=gPad;
 	this->GetCanvas()->SetMargin(0,0,0,0);
 	TQObject::Connect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", "CCframe", this,"TrackCaptureHistogram(TPad*,TObject*,Int_t)");
 	gPad=hold;
@@ -26,7 +26,7 @@ void CCframe::SetClass(TClass* iClass){
     current=0;
     currentpad=0;
     currentcan=0;
-    currentkey=0;
+    currenttrust=0;
 }
 
 
@@ -56,12 +56,13 @@ void CCframe::TrackCaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 	}
 }
 
-void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,TKey* Key){
+void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,bool Trust){
 	if(fH!=current){
 		current=fH;
 		currentpad=Pad;
 		currentcan=Can;
-		currentkey=Key;
+		currenttrust=Trust;
+        
 		if(fNamed)fName=current->GetName();
 			TVirtualPad* hold=gPad;
 			this->GetCanvas()->cd();
@@ -96,21 +97,10 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,TKey* Key){
 
 void CCframe::NonGuiNew(TObject* obj){
 	if(obj->InheritsFrom(fClass)){
-		SetNewObject(obj);
+		SetNewObject(obj,0,0,1);
 	}
 	return;
 }
-
-void CCframe::NonGuiNew(TKey* key){
-	TObject* obj=key->ReadObj();
-	if(obj){
-		if(obj->InheritsFrom(fClass)){
-			SetNewObject(obj,0,0,key);
-		}
-	}
-	return;
-}
-
 
 TH1* CCframe::Hist(){
         if(fClass->InheritsFrom("TH1")){
@@ -151,13 +141,10 @@ TObject* CCframe::Object(){
 			}
 		}
 		
-		if(currentkey){
-			Ob=currentkey->ReadObj();
-			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
-			//Not really any safer than just returning current without checking
-			//As we do nothing to check currentkey is still valid
-			//But current key being set is a flag to indicate current was set from a file
-			//So might not be findable on a canvas anywhere.
+		if(currenttrust){
+            return current;
+			// We trust the memory management system that although we havent located 
+            // current it's pointer is still valid
 		}
 	}
 	
@@ -590,31 +577,37 @@ TString jDirList::DirName(TGListTreeItem* item)
 void jDirList::OnDoubleClick(TGListTreeItem* item, Int_t btn){
     
     if ((btn!=kButton1) || !item) return;
-        
-    //*GetUserData* is set if *item* is system directory, root file or root directory
-    //And that item has already been processed i.e. opened and had its contents added to *fContents* list
-    if((Bool_t)item->GetUserData()){
-        //So if it a directory and has already been loaded, clicking just toggles it open
-        if(item->IsOpen())fContents->CloseItem(item);
-        else fContents->OpenItem(item);
-        return;
-    }
-    
-    // Either not opend yet or TObject not directory                 
+              
     UseItem(item);
 }
 
+void jDirList::OpenClose(TGListTreeItem* item){
+        //So if it a directory and has already been loaded, clicking just toggles it open
+        if(item->IsOpen())fContents->CloseItem(item);
+        else fContents->OpenItem(item);
+}
+
+
 
 void jDirList::UseItem(TGListTreeItem* item){
-   TSystemDirectory dir(item->GetText(),DirName(item));
-   TList *files = dir.GetListOfFiles();
-   
-   // If *item* is a system directory files will be non 0
-   if (files) {
-        files->Sort();
-        ProcessSystemDir(files,item);
+    
+    TSystemDirectory dir(item->GetText(),DirName(item));
+    TList *files = dir.GetListOfFiles();
+
+    // If *item* is a system directory files will be non 0
+    if (files) {
+        //It is a system directory
+        if((Bool_t)item->GetUserData()){
+            //*GetUserData* is set if *item* has already been processed i.e. opened and had its contents added to *fContents* list
+            OpenClose(item);
+            return;
+        }else{
+            files->Sort();
+            ProcessSystemDir(files,item);
+            return;
+        }
         return;
-   }
+    }
 
    // Should have dealt with any real system directory above
    // So anything beyond here should be TDirectory structure
@@ -652,47 +645,48 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
    
     TString TSitem(item->GetText());
 
-    //If its an unopend root file  (only reached here if unopend)
+    //If its a root file 
     if(TSitem.EndsWith(".root")){
-            gROOT->cd();
-            TFile* Rfile=new TFile(DirName(item),"READ");
-            gROOT->cd();
-            if(!Rfile->IsOpen())return;
-            
-            Rfile->SetBit(kCanDelete,kFALSE);
-            gChiefCustodian->Add(this,Rfile);
-            
-            RootFileList.Add(Rfile);
-            AddTDir(item,Rfile);
-            
+        if((Bool_t)item->GetUserData()){
+            OpenClose(item);
             return;
+        }
+                
+        ////Only reached here if unopend TFile
+        gROOT->cd();
+        TFile* Rfile=new TFile(DirName(item),"READ");
+        gROOT->cd();
+        if(!Rfile->IsOpen())return;
+        
+        Rfile->SetBit(kCanDelete,kFALSE);
+        gChiefCustodian->Add(this,Rfile);
+        
+        RootFileList.Add(Rfile);
+        AddTDir(item,Rfile);
+        
+        return;
     }
     
 //  cout<<endl<<"Object "<<GetObject(item);
     TKey *key=GetKey(item);
     
     if(key){
-            if (key->IsFolder()) {
+        if (key->IsFolder()) {
+            if((Bool_t)item->GetUserData()){
+                OpenClose(item);
+                return;
+            }
+            
             AddTDir(item,(TDirectory*)key->ReadObj());
             return;
         }else{
-		NewObject(key->ReadObj());
-		NewObject(key);
-		
-//             switch(HistoClassDetect(key->GetClassName())) {
-//                     case 1 :
-//                         new TCanvas();
-//                         ((TH1*)key->ReadObj())->Draw();
-//                         break;
-//                     case 2 :
-// //                         new jgating_tool(key->ReadObj());
-//                         break;
-//                     case 3 :
-// //                         new jgating_tool(key->ReadObj());
-//                         break;
-//                     default :
-//                         break;
-//                 }
+            
+            if(!((Bool_t)item->GetUserData())){
+                //If item has never been used, its never been read from disk, so do that
+                item->SetUserData((void*)key->ReadObj());
+            }
+                
+            NewObject((TObject*)item->GetUserData());
         }
     }   
 }
@@ -819,8 +813,4 @@ void jDirList::NewObject(TObject *obj)
     Emit("NewObject(TObject*)", (Long_t)obj);
  }
 
-void jDirList::NewObject(TKey *key)
- {
-    Emit("NewObject(TKey*)", (Long_t)key);
- }
 
