@@ -8,7 +8,7 @@
 
 #include "james_gating_tool.h"
 #include "james_gpad_tools.h"
-
+#include "james_filecustodian.h"
 
 ClassImp(jgating_tool);
 
@@ -17,7 +17,7 @@ int jgating_tool::jgating_tool_iterator = 0;
 
 jgating_tool::jgating_tool(const char * input) : jgating_tool(gROOT->FindObject(input)){}
 
-jgating_tool::jgating_tool(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame) ,gJframe1(0),fCheck0(0),fCheck1(0),fFitFcn(0),peaknumremove(0),fTip(0),fFitPanel(0),fInputStore(0),fOriginFile(0),fFileOwner(0),x1(1),x2(-1),y1(1),y2(-1),RangeUpdateHold(1){
+jgating_tool::jgating_tool(TObject* input,bool Owner) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame) ,gJframe1(0),fCheck0(0),fCheck1(0),fFitFcn(0),peaknumremove(0),fTip(0),fFitPanel(0),fInputStore(0),fOriginFile(0),fFileOwner(0),x1(1),x2(-1),y1(1),y2(-1),RangeUpdateHold(1){
 TVirtualPad* hold=gPad;
     ResetRange();
 
@@ -60,11 +60,14 @@ TVirtualPad* hold=gPad;
             //cout<<"GetMotherDir "<<hdir->GetMotherDir()<<endl;
 //         if(Bthree){
                 fOriginFile=hdir->GetFile();
+                if(fOriginFile&&Owner){
+                    SetFileOwner();
+                }
 //         }
     }
     
-    if(!Bthree&&!fOriginFile){
-        // Until recently didn't store and in local class copy, rarely an issue, but it could be
+    if(!Bthree&&!fFileOwner){
+        // If no (owned) TFile make a local copy of TH2
         // Still too intensive to do it for TH3 though.
         stringstream ss;
         ss<<"GateStoreCopy"<<make_iterator();
@@ -228,15 +231,18 @@ jgating_tool::~jgating_tool()
 // 	if(fTip){fTip->Hide();delete fTip;} // Seems have created many crashes recently 
 	if(fInputStore){delete fInputStore;}
 	
-	if(fOriginFile&&fFileOwner){
-        cout<<endl<<"TFile "<<fOriginFile->GetName()<<" being deleted by gatingtool: "<<GetName()<<endl;
-        delete fOriginFile;
-    }
-	
 	Closed(this);
     
    // Clean up
     Cleanup();
+}
+
+#include "james_filecustodian.h"
+void jgating_tool::SetFileOwner(){
+    fFileOwner=true;
+    if(fOriginFile){
+        gChiefCustodian->Add(this,fOriginFile);
+    }
 }
 
 //______________________________________________________________________________

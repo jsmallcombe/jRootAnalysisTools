@@ -210,10 +210,7 @@ void jEnv::Spectrum(){
 
 void jEnv::Gatter(){
 	if(fCanvas1->Type()>1){
-        jgating_tool* gate=new jgating_tool(fCanvas1->Hist());
-        if(gate->GetOriginFile()){
-            gChiefCustodian->Add(gate,gate->GetOriginFile());
-        }
+        jgating_tool* gate=new jgating_tool(fCanvas1->Hist(),1);
         AddFreeObject(gate,false);
     }
 };

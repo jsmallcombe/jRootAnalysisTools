@@ -113,14 +113,7 @@ TH1* CCframe::Hist(){
 TObject* CCframe::Object(){
 	if(current){
 		TObject* Ob;
-		if(fNamed&&fName.size()){
-			Ob = gROOT->FindObject(fName.c_str());
-	// 		cout<<endl<<"Checking if histogram pointer "<<current<<" is valid: "<<Ob<<endl;
-			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
-			//Often fails because FindObject has limitations in terms of directories and drawn histograms we might have grabbed.
-			//If the canvas is still drawn we might still be able to grab the histogram
-		}
-		
+        
 		TPad* Pad=(TPad*)gROOT->GetListOfCanvases()->FindObject(currentpad);
 // 		cout<<endl<<"Checking if pad pointer "<<currentpad<<" is in gROOT->GetListOfCanvases() :"<<Pad<<endl;
 		if(Pad){
@@ -145,6 +138,14 @@ TObject* CCframe::Object(){
             return current;
 			// We trust the memory management system that although we havent located 
             // current it's pointer is still valid
+		}
+		
+		if(fNamed&&fName.size()){
+            //Re-arranged to put this last as it is susceptible to duplicate name errors
+			Ob = gROOT->FindObject(fName.c_str());
+	// 		cout<<endl<<"Checking if histogram pointer "<<current<<" is valid: "<<Ob<<endl;
+			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
+			//Often fails because FindObject has limitations in terms of directories and drawn histograms we might have grabbed.
 		}
 	}
 	
@@ -685,7 +686,10 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
                 //If item has never been used, its never been read from disk, so do that
                 item->SetUserData((void*)key->ReadObj());
             }
-                
+            //GetRootFile(item)->ls();
+            //GetRootFile(item)->ls("-m");
+            //gROOT->ls("-m");
+            //GetRootFile(item)->ls("-d");
             NewObject((TObject*)item->GetUserData());
         }
     }   

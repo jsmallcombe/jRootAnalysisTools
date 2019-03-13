@@ -77,7 +77,7 @@ private:
    
 public:
 	jgating_tool(const char *);
-	jgating_tool(TObject* = hist_capture());
+	jgating_tool(TObject* = hist_capture(),bool=0);
 	virtual ~jgating_tool();
 
 	void DoCheckbox2D();
@@ -98,7 +98,7 @@ public:
     void ButtonGroupDoUpdate(Int_t i);
     
     TFile* GetOriginFile(){return fOriginFile;}
-    void SetFileOwner(bool Set=true){fFileOwner=Set;}
+    void SetFileOwner();
     
     void Closed(TObject* obj){
         Emit("Closed(TObject*)", (Long_t)obj);
