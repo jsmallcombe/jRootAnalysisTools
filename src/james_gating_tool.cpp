@@ -237,7 +237,7 @@ jgating_tool::~jgating_tool()
     Cleanup();
 }
 
-#include "james_filecustodian.h"
+
 void jgating_tool::SetFileOwner(){
     fFileOwner=true;
     if(fOriginFile){
