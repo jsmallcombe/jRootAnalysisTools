@@ -60,19 +60,19 @@ public:
 class jChiefCustodian : public TObject, public TQObject  {
 
 private:
-    TList Custodians;
+    TList CCustodians;
     void DisconnectSignals();
     
 public:
     jChiefCustodian():TObject(),TQObject(){
-        Custodians.IsOwner();
+        CCustodians.SetOwner();
     }
 	virtual ~jChiefCustodian(){
-        if(Custodians.First()){
+        if(CCustodians.First()){
             cout<<endl<<"ERROR ChiefCustodian Closed while files in use"<<endl;
         }
         DisconnectSignals();
-    }
+    }    
     
     void Add(TObject* obj,TFile* file);
     void ObjectDestroyed();

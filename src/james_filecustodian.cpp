@@ -6,7 +6,7 @@ jChiefCustodian* gChiefCustodian=new jChiefCustodian();
 
 void jTFileCustodian::CloseFile(){
     if(File){
-        cout<<"Last Custodian Deleted. Closing File "<<File->GetName()<<endl;
+        cout<<"Closing File "<<File->GetName()<<endl;
         delete File;
         File=0;
     }
@@ -20,6 +20,7 @@ bool jTFileCustodian::RemoveObject(TObject* obj){
     Custodians.Remove(obj);
     
     if(!Custodians.First()){
+        cout<<"Last Custodian Deleted. "<<flush;
         CloseFile();
         if(IsOnHeap()&&SelfOwned){
             cout<<"jTFileCustodian deleting self "<<endl;
@@ -53,7 +54,7 @@ void jTFileCustodian::DisconnectSignals(void *obj){
 void jChiefCustodian::Add(TObject* obj,TFile* file){    
         TObject *listobj;
         jTFileCustodian* found=0;
-        TIter next(&Custodians);
+        TIter next(&CCustodians);
         
         while((listobj= next())){
             jTFileCustodian* cust=(jTFileCustodian*)listobj;
@@ -65,7 +66,7 @@ void jChiefCustodian::Add(TObject* obj,TFile* file){
         
         if(!found){
             found=new jTFileCustodian(file,0);
-            Custodians.Add(found);
+            CCustodians.Add(found);
         }
         
         found->AddObject(obj);
@@ -87,14 +88,14 @@ void jChiefCustodian::ObjectDestroyed(){
 }
     
 void jChiefCustodian::ObjectDestroyed(TObject* destobj){   
-    TObjLink *lnk = Custodians.FirstLink();
+    TObjLink *lnk = CCustodians.FirstLink();
     while (lnk) {
         jTFileCustodian* cust=(jTFileCustodian*)lnk->GetObject();
         bool FileClosed = cust->RemoveObject(destobj);
         lnk = lnk->Next();
         if(FileClosed){
-            Custodians.Remove(cust);
-            delete cust; //not needed as set to self delete;
+            CCustodians.Remove(cust);
+            delete cust; //not needed as set to self delete when empty/file closed;
         }
     }
     
@@ -102,15 +103,11 @@ void jChiefCustodian::ObjectDestroyed(TObject* destobj){
 
 void jChiefCustodian::DisconnectSignals(){  
     
-    TObjLink *lnk = Custodians.FirstLink();
+    TObjLink *lnk = CCustodians.FirstLink();
     while (lnk) {
         jTFileCustodian* cust=(jTFileCustodian*)lnk->GetObject();
         cout<<" disconnecting jChiefCustodian "<<this<<" From jTFileCustodian "<<cust<<" objects"<<endl;
         cust->DisconnectSignals(this);
         lnk = lnk->Next();
     }
-}     
-        
-        
-        
-        
+}        

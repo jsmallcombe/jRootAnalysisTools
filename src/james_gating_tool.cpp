@@ -234,9 +234,9 @@ jgating_tool::~jgating_tool()
     }
 	
 	Closed(this);
-	
+    
    // Clean up
-   Cleanup();
+    Cleanup();
 }
 
 //______________________________________________________________________________

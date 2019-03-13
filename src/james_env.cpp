@@ -93,7 +93,9 @@ TVirtualPad* hold=gPad;
         close->SetFont(ft);
 		close->Connect("Clicked()","jEnv",this,"DeleteWindow()");
 		controlframe1->AddFrame(close,ExpandX);
-		TGTextButton* exit = new TGTextButton(controlframe1,"Exit","gApplication->Terminate(0)");
+// 		TGTextButton* exit = new TGTextButton(controlframe1,"Exit","gApplication->Terminate(0)");
+		TGTextButton* exit = new TGTextButton(controlframe1,"Exit");
+		exit->Connect("Clicked()","jEnv",this,"Terminate()");
         exit->SetFont(ft);
         controlframe1->AddFrame(exit,ExpandX);
     this->AddFrame(controlframe1);
@@ -135,18 +137,41 @@ TVirtualPad* hold=gPad;
 gPad=hold;
 }
 
+
+void jEnv::Terminate(){
+    FreeObjects.SetOwner();//Will delete list objects irrespective of kCanDelete
+    delete this;
+    delete gChiefCustodian;//Closes any open files
+    gApplication->Terminate(0);
+}
+
+
 void jEnv::ClearFreeObjects(){
+    // Disconnected signals from FreeObjects, objects in list will be deleted along with jEnv depenendent on individual kCanDelete values
+    
     TObject *obj;
     TIter next(&FreeObjects);
-    
     while((obj= next())){
         if(obj->InheritsFrom("TQObject")){
             dynamic_cast<TQObject*>(obj)->Disconnect(0,this,0);
         }
     }
     
-    FreeObjects.Clear("nodelete");
+//     FreeObjects.Clear("nodelete");
 }
+
+void jEnv::AddFreeObject(TObject* obj,bool CanDelete){
+    
+    // See james_filecustodian.cpp for more details of cast options
+    dynamic_cast<TQObject*>(obj)->Connect("Closed(TObject*)","jEnv", this,"ClosedObject(TObject*)");
+   
+    // Sets if it is allowed to be deleted by TLists it is added to
+    if(CanDelete)obj->SetBit(kCanDelete,kTRUE);
+    else obj->SetBit(kCanDelete,kFALSE);
+    
+    FreeObjects.Add(obj);
+}
+
 
 void jEnv::Browser(){
 	new TBrowser;
@@ -186,15 +211,10 @@ void jEnv::Spectrum(){
 void jEnv::Gatter(){
 	if(fCanvas1->Type()>1){
         jgating_tool* gate=new jgating_tool(fCanvas1->Hist());
-		gate->Connect("Closed(TObject*)", "jEnv", this,"ClosedObject(TObject*)");
-        
         if(gate->GetOriginFile()){
             gChiefCustodian->Add(gate,gate->GetOriginFile());
         }
-
-        //Sets if it is allowed to be deleted by TLists it is added to
-        gate->SetBit(kCanDelete,kFALSE);
-        FreeObjects.Add(gate);
+        AddFreeObject(gate,false);
     }
 };
 

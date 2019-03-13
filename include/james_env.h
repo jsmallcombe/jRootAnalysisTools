@@ -27,6 +27,7 @@
 #include <TTree.h>
 #include <TBranch.h>
 #include <TStopwatch.h>
+#include <TApplication.h>
 #include <TGTab.h>
 
 #include "james_utility.h"
@@ -74,6 +75,7 @@ private:
     TList FreeObjects;
     
     void ClearFreeObjects();
+    void AddFreeObject(TObject* obj,bool CanDelete=true);
 	
 public:
 	jEnv();
@@ -83,7 +85,9 @@ public:
 		if(SameSave){delete SameSave;}
 		ClearFreeObjects();
 	};
-	
+    
+    void Terminate();
+
 	void FitPanel();
 	void FitPanelClose(){fFitPanel=0;}
 	void Spectrum();
@@ -108,7 +112,7 @@ public:
     
     static FontStruct_t GetFont();
 
-	ClassDef(jEnv, 2)
+	ClassDef(jEnv, 3)
 };
 
 
