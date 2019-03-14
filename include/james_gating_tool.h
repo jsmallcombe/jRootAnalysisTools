@@ -25,6 +25,7 @@
 #include "TGButton.h"
 #include "THashList.h"
 #include "TStyle.h"
+#include "TGSplitter.h"
 
 #include <iostream>
 #include <iomanip> 
@@ -50,6 +51,13 @@ private:
 	TGRadioButton	*fRButton1,*fRButton2,*fRButton3;
 	TGCheckButton   *fCheck0,*fCheck1;
 	TGHSlider    	*fHslider1;
+    
+    TGTextEntry *RebinText;
+    
+    TGHorizontalFrame* MainPanels;
+    TGVSplitter* splitterB;
+    
+    TGTextButton* ftbutton;
 	
 	TF1 *fFitFcn; 
 	TText* peaknumremove;   
@@ -87,12 +95,14 @@ public:
 	void SavePanel();
 	void FitPanel();
 	void jSaveAs();
-	void FitPanelClose(){fFitPanel=0;}
 	void AddStoreHistogram();
 	void CSaveButton();
 	void StoreHistograms(Int_t);
 	void DrawSaved();
 	void NewAxisDrawn();
+    
+    void ProcessedConfigure(Event_t*);
+    void ShareMainPanels();
     
 	void ResetRange();
     void ButtonGroupDoUpdate(Int_t i);

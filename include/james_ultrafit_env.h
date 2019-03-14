@@ -142,6 +142,7 @@ class UltraFitEnv : public TGCompositeFrame
     void Closed(TObject* obj){
         Emit("Closed(TObject*)", (Long_t)obj);
     }
+	void KillCan();
     
     private:	    
 	    
@@ -188,7 +189,6 @@ class UltraFitEnv : public TGCompositeFrame
 	void BuildDialogBox(int opt=0);
 	TObject* FindCan();
 	TCanvas* GetCan();
-	void KillCan();
 	void ExternalHistUpdateCheck();
 	void DisconnectCanvasSignals();
 	void HideCanvas();

@@ -79,20 +79,22 @@ void UltraFitEnv::BuildDialogBox(int opt){
     mainhold = new TGHorizontalFrame(this, 0, 0, 0); 
     cFrame = new TGVerticalFrame(mainhold);
 
-    TGHorizontalFrame* capt = new TGHorizontalFrame(cFrame, 0, 0, 0);
-        button = new TGTextButton(capt," Capture Hist ");
-        button->Connect("Clicked()","UltraFitEnv",this,"SetCapture(int=1)");
-        button->SetToolTipText("Copy histogram from another frame\n(subsequent click).");
-        capt->AddFrame(button,ExpandXz);	
-    
-        if(opt!=1){
-            button = new TGTextButton(capt," Link Canvas ");
-            button->Connect("Clicked()","UltraFitEnv",this,"SetCapture(int=0)");
-            button->Resize(150);
-            button->SetToolTipText("Begin fitting in another canvas\n(subsequent click).");
-            capt->AddFrame(button,ExpandXz);
-        }
-    cFrame->AddFrame(capt,ExpandX);
+    if(opt!=2){
+        TGHorizontalFrame* capt = new TGHorizontalFrame(cFrame, 0, 0, 0);
+            button = new TGTextButton(capt," Capture Hist ");
+            button->Connect("Clicked()","UltraFitEnv",this,"SetCapture(int=1)");
+            button->SetToolTipText("Copy histogram from another frame\n(subsequent click).");
+            capt->AddFrame(button,ExpandXz);	
+        
+            if(opt!=1){
+                button = new TGTextButton(capt," Link Canvas ");
+                button->Connect("Clicked()","UltraFitEnv",this,"SetCapture(int=0)");
+                button->Resize(150);
+                button->SetToolTipText("Begin fitting in another canvas\n(subsequent click).");
+                capt->AddFrame(button,ExpandXz);
+            }
+        cFrame->AddFrame(capt,ExpandX);
+    }
     
     fCheck0 = new TGCheckButton(cFrame,"Peak Labels ");
     fCheck0->SetState(kButtonDown);
@@ -137,10 +139,12 @@ void UltraFitEnv::BuildDialogBox(int opt){
     button->SetToolTipText("Save the peak data for the list of\n saved fits in plain text to the file\n peakinfo.dat (overwrites)");
     cFrame->AddFrame(button,ExpandX);
     
-    button = new TGTextButton(cFrame,"Load Session");
-    button->Connect("Clicked()","UltraFitEnv",this,"LoadSession()");
-    button->SetToolTipText("Load a session saved with Export Peak Info");
-    cFrame->AddFrame(button,ExpandX);		
+    if(opt!=2){
+        button = new TGTextButton(cFrame,"Load Session");
+        button->Connect("Clicked()","UltraFitEnv",this,"LoadSession()");
+        button->SetToolTipText("Load a session saved with Export Peak Info");
+        cFrame->AddFrame(button,ExpandX);
+    }
     
     button = new TGTextButton(cFrame,"");//Just filler
     cFrame->AddFrame(button,ExpandX);	
@@ -1140,6 +1144,7 @@ void UltraFitEnv::LoadSession(){
 	TFile* file =RootFileLoad(this);
 	if(file){
 		LoadSession(file);
+		file->Close();
 	}
 	
 }
@@ -1158,6 +1163,7 @@ void UltraFitEnv::LoadSession(string file){
 }
 
 void UltraFitEnv::LoadSession(TFile* file){
+    gROOT->cd();
 
 	TIter next(file->GetListOfKeys());
 	TKey *key;
@@ -1171,7 +1177,8 @@ void UltraFitEnv::LoadSession(TFile* file){
 	}
 	
 	if(hist){
-		SetNewHist(hist);
+        CaptureHistogram(0,hist,1);//This takes care of disconnecting any canvas 
+// 		SetNewHist(hist);
 		ImportPeaks(file);
 	}
 

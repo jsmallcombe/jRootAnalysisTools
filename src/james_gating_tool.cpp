@@ -32,40 +32,22 @@ TVirtualPad* hold=gPad;
         return;
     }
     
-    
 	TGTransientFrame* PopUp=0;
 	if(Bthree){
         PopUp=MakeTH3Popup();
-        
 		cout<<endl<<endl<<" ============== Beginning Loading of TH3 ============ "<<endl<<" ====== Please be patient until window appears ====== "<<endl<<endl;
 	}
 	
-    SetCleanup(kDeepCleanup);	
-    
-    //    //--- layout for the frame:
-    
-    TGLayoutHints* ffExpand = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
-    TGLayoutHints* ffExpandY = new TGLayoutHints(kLHintsExpandY, 0, 0, 0, 0);
-    TGLayoutHints* ffExpandXpad = new TGLayoutHints(kLHintsExpandX, 3, 3, 3, 3);
-    TGLayoutHints* ffCenX = new TGLayoutHints(kLHintsCenterX, 3, 3, 3, 3);
-    TGLayoutHints* ffCenY = new TGLayoutHints(kLHintsCenterY, 3, 3, 3, 3);
-    TGLayoutHints* ffCenTop = new TGLayoutHints(kLHintsTop | kLHintsCenterX, 3, 3, 3, 3);
-    TGLayoutHints* ffSpeBuf = new TGLayoutHints(kLHintsTop | kLHintsCenterX, 0, 0,10,10);
 
     SetWindowName(input->GetName());		
     TH1* pass=(TH1*)input;
-    
     TDirectory* hdir=pass->GetDirectory();
     if(hdir){
-            //cout<<"GetMotherDir "<<hdir->GetMotherDir()<<endl;
-//         if(Bthree){
                 fOriginFile=hdir->GetFile();
                 if(fOriginFile&&Owner){
                     SetFileOwner();
                 }
-//         }
     }
-    
     if(!Bthree&&!fFileOwner){
         // If no (owned) TFile make a local copy of TH2
         // Still too intensive to do it for TH3 though.
@@ -75,28 +57,74 @@ TVirtualPad* hold=gPad;
         pass=fInputStore;
     }
 
-    //If TH3 extra gate panel
 
-    if(Bthree){
-        gJframe1 = new j_gating_frame(this,pass,make_iterator());
-        gJframe1->Connect("InputChange()", "jgating_tool", this,"ResetRange()");
-        gJframe1->Connect("OutputReady()", "jgating_tool", this,"DoUpdate2D()");
-        AddFrame(gJframe1,ffExpand);	
-        pass=(TH1*)gJframe1->output_hist_point;
-    }
+    //
+    //   FINISHED INPUT START BUILDING THE FRAMES
+    //
     
-    //TH3 or TH2 gate panel
+    SetCleanup(kDeepCleanup);	
     
-    gJframe2 = new j_gating_frame(this,pass,make_iterator());
+    //    //--- layout for the frame:
+    TGLayoutHints* ffExpandLeft = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
+    TGLayoutHints* ffExpand = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
+    TGLayoutHints* ffExpandRight = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY | kLHintsRight, 0, 0, 0, 0);
+//     TGLayoutHints* ffExpandY = new TGLayoutHints(kLHintsExpandY, 0, 0, 0, 0);
+    TGLayoutHints* ffExpandYRight = new TGLayoutHints(kLHintsExpandY | kLHintsRight, 0, 0, 0, 0);
+    TGLayoutHints* ffExpandYLeft = new TGLayoutHints(kLHintsExpandY | kLHintsLeft, 0, 0, 0, 0);
+    TGLayoutHints* ffExpandXpad = new TGLayoutHints(kLHintsExpandX, 3, 3, 3, 3);
+    TGLayoutHints* ffCenX = new TGLayoutHints(kLHintsCenterX, 3, 3, 3, 3);
+    TGLayoutHints* ffCenY = new TGLayoutHints(kLHintsCenterY, 3, 3, 3, 3);
+    TGLayoutHints* ffCenTop = new TGLayoutHints(kLHintsTop | kLHintsCenterX, 3, 3, 3, 3);
+    TGLayoutHints* ffSpeBuf = new TGLayoutHints(kLHintsTop | kLHintsCenterX, 0, 0,10,10);
+    
+    //
+    //   BUILD HISTOGRAM SAVING FRAME
+    //
+    
+    saveadd=0;
+    savehists.clear();
+    savechecks.clear();
+    savebutton.clear();
+    
+    TGTextButton* spbutton = new TGTextButton(this,">");
+    spbutton->Connect("Clicked()","jgating_tool",this,"SavePanel()");
+    spbutton->SetToolTipText("Show Save Panel\n Open side-panel for holding gating results\n  in memory to enable on-the-fly summing.");
+    
+    saveframe= new TGVerticalFrame(this, 0, 0, 0); 
+    TGButtonGroup* savecontrolbut = new TGButtonGroup(saveframe,"",kHorizontalFrame);
+// 		TGButtonGroup* savecontrolbut = new TGButtonGroup(saveframe,1,2);
+    TGTextButton* plushist = new TGTextButton(savecontrolbut,"+");
+    plushist->Connect("Clicked()","jgating_tool",this,"AddStoreHistogram()");
+    plushist->SetToolTipText("Add an additional saved\n histogram slot.");
+    plushist = new TGTextButton(savecontrolbut,"DrawSum");
+    plushist->Connect("Clicked()","jgating_tool",this,"DrawSaved()");
+    plushist->SetToolTipText("Draw a sum of currently\n selected saved Histograms.");
+    savecontrolbut->Show();
+    
+    plushist = new TGTextButton(saveframe,"DeleteAll");
+    plushist->Connect("Clicked()","jgating_tool",this,"CSaveButton()");
+    plushist->SetToolTipText("Clear all locally saved\n gated histograms.");
+    
+    TGLabel *label = new TGLabel(saveframe, "Saved Gated\n Histograms.\n Check box\n   to sum.");
+// 		TGHorizontalFrame* inbetw= new TGHorizontalFrame(saveframe, 0, 0, 0);
+// 		savebuttons = new TGButtonGroup(inbetw,"",kVerticalFrame);
+    savebuttons = new TGButtonGroup(saveframe,15,2);
+    savebuttons->Connect(" Clicked(Int_t)", "jgating_tool", this,"StoreHistograms(Int_t)");//Link test signal to its	
+    AddStoreHistogram();
+    AddStoreHistogram();
+    
+    saveframe->AddFrame(savecontrolbut,ffSpeBuf);
+    saveframe->AddFrame(plushist,ffSpeBuf);//
+    saveframe->AddFrame(label,ffSpeBuf);//
+    saveframe->AddFrame(savebuttons,ffCenTop);//
+    
+    //
+    //   BUILD RESULT FRAME
+    //
+    
+    MainPanels = new TGHorizontalFrame(this, 0, 0, 0); 
 
-    gJframe2->Connect("InputChange()", "jgating_tool", this,"ResetRange()");
-    gJframe2->Connect("OutputReady()", "jgating_tool", this,"DoUpdate()");
-    
-    
-    //Results panel
-    
-    resultframe = new TGVerticalFrame(this, 0, 0, 0);   
-
+    resultframe = new TGVerticalFrame(MainPanels, 0, 0, 0);
     TGHorizontalFrame* buttonframe = new TGHorizontalFrame(resultframe, 0, 0, 0); 
     fBgroup1 = new TGButtonGroup(buttonframe,"Show Extra",kChildFrame);// Another button group
         fRButton1 = new TGRadioButton(fBgroup1,"    ");
@@ -123,29 +151,28 @@ TVirtualPad* hold=gPad;
     fCanvas1->GetCanvas()->SetBorderMode(0);
     fCanvas1->GetCanvas()->SetFrameFillColor(10);
 
-    fCanvas1->GetCanvas()->SetMargin(0.1,0.01,0.05,0.01);	
+    fCanvas1->GetCanvas()->SetMargin(0.005,0.005,0.05,0.005);	
     fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jgating_tool", this,"ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*)");
     fCanvas1->GetCanvas()->Connect("RangeChanged()", "jgating_tool", this, "NewAxisDrawn()");
     
     // rebin bar
     
     TGHorizontalFrame* rebinframe = new TGHorizontalFrame(resultframe, 0, 0, 0);
-        TGLabel *reblabel = new TGLabel(rebinframe, "Rebin Result Histogram ");
-        rebinframe->AddFrame(reblabel);
+        TGLabel *reblabel = new TGLabel(rebinframe, "Binning ");
+        rebinframe->AddFrame(reblabel,ffCenY);
         
         fHslider1 = new TGHSlider(rebinframe, 9, kSlider2);
         fHslider1->SetPosition(0);
         fHslider1->Connect("PositionChanged(Int_t)", "jgating_tool", this, "DoUpdate()");
         rebinframe->AddFrame(fHslider1, ffExpandXpad);
+        
+        RebinText = new TGTextEntry(rebinframe, new TGTextBuffer(4));
+        RebinText->SetDefaultSize(40,25);
+        RebinText->SetAlignment(kTextCenterX);
+        RebinText->SetEnabled(kFALSE);
+        rebinframe->AddFrame(RebinText,ffCenY);
     
-    //New stuff for the saving of histograms
-    
-    saveadd=0;
-    savehists.clear();
-    savechecks.clear();
-    savebutton.clear();
-    
-    TGTextButton* ftbutton = new TGTextButton(buttonframe,"Fit Panel");
+    ftbutton = new TGTextButton(buttonframe,"Fit Panel");
     ftbutton->Connect("Clicked()","jgating_tool",this,"FitPanel()");
     ftbutton->SetToolTipText("Open Fit Tool\n Open an instance of J-fit panel,\n initially connected to result canvas.");
 
@@ -157,35 +184,7 @@ TVirtualPad* hold=gPad;
     fCheck1->SetState(kButtonDown);
     fCheck1->Connect(" Clicked()", "jgating_tool", this,"DoUpdate()");
     fCheck1->SetToolTipText("Hide Bin Errors on drawn histograms");
-    
-    
-    saveframe= new TGVerticalFrame(this, 0, 0, 0); 
-    
-    TGButtonGroup* savecontrolbut = new TGButtonGroup(saveframe,"",kHorizontalFrame);
-// 		TGButtonGroup* savecontrolbut = new TGButtonGroup(saveframe,1,2);
-    TGTextButton* plushist = new TGTextButton(savecontrolbut,"+");
-    plushist->Connect("Clicked()","jgating_tool",this,"AddStoreHistogram()");
-    plushist->SetToolTipText("Add an additional saved\n histogram slot.");
-    plushist = new TGTextButton(savecontrolbut,"DrawSum");
-    plushist->Connect("Clicked()","jgating_tool",this,"DrawSaved()");
-    plushist->SetToolTipText("Draw a sum of currently\n selected saved Histograms.");
-    savecontrolbut->Show();
-    
-    plushist = new TGTextButton(saveframe,"DeleteAll");
-    plushist->Connect("Clicked()","jgating_tool",this,"CSaveButton()");
-    plushist->SetToolTipText("Clear all locally saved\n gated histograms.");
-    
-    TGLabel *label = new TGLabel(saveframe, "Saved Gated\n Histograms.\n Check box\n   to sum.");
-    
-// 		TGHorizontalFrame* inbetw= new TGHorizontalFrame(saveframe, 0, 0, 0);
-// 		savebuttons = new TGButtonGroup(inbetw,"",kVerticalFrame);
-    savebuttons = new TGButtonGroup(saveframe,15,2);
-    savebuttons->Connect(" Clicked(Int_t)", "jgating_tool", this,"StoreHistograms(Int_t)");//Link test signal to its	
-    AddStoreHistogram();
-    AddStoreHistogram();
-    
 
-    AddFrame(gJframe2,ffExpand);
     buttonframe->AddFrame(fBgroup1, ffCenX);
     if(Bthree)buttonframe->AddFrame(fCheck0, ffCenY);
     buttonframe->AddFrame(ftbutton, ffCenY);
@@ -193,20 +192,52 @@ TVirtualPad* hold=gPad;
     buttonframe->AddFrame(fCheck1, ffCenY);
     resultframe->AddFrame(buttonframe, ffCenX);
     resultframe->AddFrame(fCanvas1, ffExpand);
-    resultframe->AddFrame(rebinframe, ffExpandXpad);
-    AddFrame(resultframe,ffExpand);
+    resultframe->AddFrame(rebinframe, ffExpandXpad);  
     
-    TGTextButton* spbutton = new TGTextButton(this,">");
-    spbutton->Connect("Clicked()","jgating_tool",this,"SavePanel()");
-    spbutton->SetToolTipText("Show Save Panel\n Open side-panel for holding gating results\n  in memory to enable on-the-fly summing.");
-    AddFrame(spbutton, ffExpandY);
+    //
+    //   BUILD j_gating_frame FRAMES
+    //
     
-    saveframe->AddFrame(savecontrolbut,ffSpeBuf);
-    saveframe->AddFrame(plushist,ffSpeBuf);//
-    saveframe->AddFrame(label,ffSpeBuf);//
-    saveframe->AddFrame(savebuttons,ffCenTop);//
-    AddFrame(saveframe,ffExpandY);	
-        
+    //If TH3 extra gate panel
+    if(Bthree){
+        gJframe1 = new j_gating_frame(MainPanels,pass,make_iterator());
+        gJframe1->Connect("InputChange()", "jgating_tool", this,"ResetRange()");
+        gJframe1->Connect("OutputReady()", "jgating_tool", this,"DoUpdate2D()");
+        pass=(TH1*)gJframe1->output_hist_point;
+    }
+    
+    //TH2 gate panel
+    gJframe2 = new j_gating_frame(MainPanels,pass,make_iterator());
+    gJframe2->Connect("InputChange()", "jgating_tool", this,"ResetRange()");
+    gJframe2->Connect("OutputReady()", "jgating_tool", this,"DoUpdate()");
+    
+    
+    //
+    //   Add Frames to the main layout
+    //
+    
+    AddFrame(MainPanels, ffExpandLeft);
+    AddFrame(saveframe,ffExpandYRight);
+    AddFrame(spbutton,ffExpandYRight);
+    
+    
+    if(Bthree){
+        gJframe1->ChangeOptions(kFixedWidth);
+        MainPanels->AddFrame(gJframe1,ffExpandYLeft);
+        TGVSplitter* splitter = new TGVSplitter(MainPanels);
+        splitter->SetFrame(gJframe1, kTRUE);
+        MainPanels->AddFrame(splitter,ffExpandYLeft);
+    }
+    
+    gJframe2->ChangeOptions(kFixedWidth);
+    MainPanels->AddFrame(gJframe2,ffExpandYLeft);
+    splitterB = new TGVSplitter(MainPanels);   
+    splitterB->SetFrame(gJframe2, kTRUE);
+    MainPanels->AddFrame(splitterB,ffExpandYLeft);
+    MainPanels->AddFrame(resultframe,ffExpandRight);
+    
+    Connect("ProcessedConfigure(Event_t*)","jgating_tool", this,"ProcessedConfigure(Event_t*)");
+    
     // create the tooltip with a timeout of 250 ms
     fTip = new TGToolTip(gClient->GetRoot(), fCanvas1, "", 250);
 
@@ -218,6 +249,8 @@ TVirtualPad* hold=gPad;
     gJframe2->HideFrame(gJframe2->fHframe4);
     if(Bthree)gJframe1->HideFrame(gJframe1->fHframe4);
     
+    ShareMainPanels();
+    
     DoUpdate();
     if(PopUp){PopUp->CloseWindow();}
 	
@@ -227,7 +260,6 @@ gPad=hold;
 //______________________________________________________________________________
 jgating_tool::~jgating_tool()
 {
-	if(fFitPanel){delete fFitPanel;}
 // 	if(fTip){fTip->Hide();delete fTip;} // Seems have created many crashes recently 
 	if(fInputStore){delete fInputStore;}
 	
@@ -255,6 +287,27 @@ void jgating_tool::SetFileOwner(){
 // }
 
 
+void jgating_tool::ProcessedConfigure(Event_t*){
+//     cout<<endl<<"Processed "<<in<<flush;
+    ShareMainPanels();
+}
+
+
+void jgating_tool::ShareMainPanels(){
+    double width = MainPanels->GetWidth();
+    if(gJframe1){
+        if(MainPanels->IsVisible(gJframe2)){
+            gJframe1->SetWidth(width*0.333);
+            gJframe2->SetWidth(width*0.333);
+        }else{
+            gJframe1->SetWidth(width*0.5);
+        }
+    }else{
+        gJframe2->SetWidth(width*0.5);
+    }
+    MainPanels->Layout();//This was the only way I could get for the above SetWidth to happen NOW
+}
+
 //Just reset the viewing range of thefinal canvas
 void jgating_tool::ResetRange(){
 //     cout<<endl<<"RESETTING RANGE"<<endl;
@@ -267,6 +320,11 @@ void jgating_tool::ResetRange(){
 
 
 void jgating_tool::DoCheckbox2D(){
+    if(fCheck0)if(fCheck0->GetState()&&fFitPanel){
+        ftbutton->SetState(kButtonUp);
+        HideFrame(fFitPanel);
+    }
+    
     ResetRange();
 	CSaveButton();
 	DoUpdate2D();
@@ -287,7 +345,8 @@ void jgating_tool::DoUpdate2D(){TVirtualPad* hold=gPad;
 	if(!gJframe1)return;
 	gJframe1->hidebinerrors=fCheck1->GetState();
 	if(fCheck0->GetState()){
-		HideFrame(gJframe2);
+		MainPanels->HideFrame(gJframe2);
+		MainPanels->HideFrame(splitterB);
 		fCanvas1->GetCanvas()->cd();
 		if(fRButton2->GetState()){
 			TH1* H=gJframe1->full->DrawCopy("colz");
@@ -309,9 +368,11 @@ void jgating_tool::DoUpdate2D(){TVirtualPad* hold=gPad;
 		fCanvas1->GetCanvas()->Update();
 	}else{
 		gJframe2->hidebinerrors=fCheck1->GetState();
-		ShowFrame(gJframe2);
+		MainPanels->ShowFrame(gJframe2);
+		MainPanels->ShowFrame(splitterB);
 		gJframe2->UpdateInput(gJframe1->output_hist_point);
 	}
+	ShareMainPanels();
 RangeUpdateHold=false;
 gPad=hold;
 }
@@ -320,8 +381,6 @@ gPad=hold;
 void jgating_tool::DoUpdate(){
     TVirtualPad* hold=gPad;
     RangeUpdateHold=true;
-    
-    
     
 	gJframe2->hidebinerrors=fCheck1->GetState();
 
@@ -339,11 +398,24 @@ void jgating_tool::DoUpdate(){
 	TH1* H;
 	fCanvas1->GetCanvas()->cd();
     
-   
 	H=DrawCopyHistOpt(gJframe2->output_hist_point,fCheck1->GetState());
 	if(rebin>1)H->Rebin(rebin);		
     H->GetXaxis()->SetRangeUser(x1,x2);
-	
+    
+    char buf[32];
+    sprintf(buf, "%.1f", H->GetXaxis()->GetBinWidth(1));
+    TGTextBuffer* fTbh2=RebinText->GetBuffer();
+    fTbh2->Clear();	fTbh2->AddText(0, buf);
+    RebinText->SetCursorPosition(RebinText->GetCursorPosition());
+    RebinText->Deselect();
+    gClient->NeedRedraw(RebinText);
+    
+    H->GetXaxis()->SetLabelSize(0.03);
+    H->GetXaxis()->SetTicks("+");
+    H->GetXaxis()->SetLabelFont(42);
+    H->GetYaxis()->SetNdivisions(8);
+    H->GetYaxis()->SetTickLength(0.03);
+    
 	if(fRButton2->GetState()){
 		gJframe2->free_hist->Reset();
 		gJframe2->free_hist->Add(gJframe2->full,gJframe2->output_hist_point->Integral()/gJframe2->full->Integral());
@@ -373,15 +445,12 @@ string jgating_tool::make_iterator(){
 }
 
 
-
-
-
 // Just a basic little no frills, minimal input peak fitter for standard size y/e peaks
 // Added it in to help with quick peak identification
 void jgating_tool::ClickedFinalCanvas(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
 {TVirtualPad* hold=gPad;
 	if (event == kMouseLeave){fTip->Hide(); return;}
-
+	
 	//Click is given in pixel coordinates
 	double x =fCanvas1->GetCanvas()->PixeltoX(px);
 	
@@ -392,6 +461,11 @@ void jgating_tool::ClickedFinalCanvas(Int_t event, Int_t px, Int_t py, TObject *
 	fTip->Reset();
 	
 	if ( event == kButton1Double) {
+        if(gJframe1){
+            if(fCheck0->GetState())return;
+            //Dont try to fit in 2D mode
+        }
+        
 		fCanvas1->GetCanvas()->cd();
 	
 		TH1* h=hist_capture(fCanvas1->GetCanvas());
@@ -432,15 +506,30 @@ void jgating_tool::SavePanel(){
 	}else{
 		ShowFrame(saveframe);
 	}
+	ShareMainPanels();
 }
 
 void jgating_tool::FitPanel(){
 	if(fCheck0)if(fCheck0->GetState())return;
-	if(fFitPanel)fFitPanel->ConnectNewCanvas(fCanvas1->GetCanvas());
-	else {
-		fFitPanel=new UltraFitEnv(0,fCanvas1->GetCanvas());
-		fFitPanel->Connect("Destroyed()", "jgating_tool", this,"FitPanelClose()");
+    
+    if(!fFitPanel){
+		fFitPanel=new UltraFitEnv(this,0,fCanvas1->GetCanvas(),2);
+        AddFrame(fFitPanel,new TGLayoutHints(kLHintsExpandY, 1, 1, 1, 1));
+        Resize(GetDefaultSize());
+        HideFrame(fFitPanel);
+    }
+    
+	if(IsVisible(fFitPanel)){
+        ftbutton->SetState(kButtonUp);
+        HideFrame(fFitPanel);
+        fFitPanel->KillCan();
+        DoUpdate();
+    }else{
+        ftbutton->SetState(kButtonDown);
+        ShowFrame(fFitPanel);
+        fFitPanel->ConnectNewCanvas(fCanvas1->GetCanvas());
 	}
+	ShareMainPanels();
 }
 
 void jgating_tool::jSaveAs(){
