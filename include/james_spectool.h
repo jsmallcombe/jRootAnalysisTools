@@ -42,6 +42,7 @@ using namespace std;
 class jSpecTool : public TGCompositeFrame {
 
 private:
+    TGMainFrame *ParentWindow;
 	TRootEmbeddedCanvas *fCanvas1;
 	TH1	*histin,*histsub,*histzero,*specback;
 	TGCheckButton   *fCheck0,*fCheck1,*fCheck2,*fCheck3,*fCheck4;
@@ -52,7 +53,6 @@ private:
 	string make_iterator();
 	unsigned int N,gStart;
 	string StrOpt;
-    TGMainFrame *ParentWindow;
 		
 	void RemovalPrep(TH1*);
 	int RemovalStart(TH1*);

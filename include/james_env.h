@@ -80,8 +80,6 @@ private:
 public:
 	jEnv();
 	virtual ~jEnv(){
-		if(fFitPanel){delete fFitPanel;}
-		//if(fSpecTool){delete fSpecTool;}
 		if(SameSave){delete SameSave;}
 		ClearFreeObjects();
 	};
@@ -89,6 +87,7 @@ public:
     void Terminate();
 
 	void FitPanel();
+	void FreeFitPanel();
 	void FitPanelClose(){fFitPanel=0;}
 	void Spectrum();
 	void SpecToolClose(){fSpecTool=0;}

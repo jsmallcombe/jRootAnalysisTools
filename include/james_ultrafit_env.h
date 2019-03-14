@@ -70,7 +70,7 @@
 
 using namespace std;
 
-class UltraFitEnv : public TQObject
+class UltraFitEnv : public TGCompositeFrame
 { 
     public:
 	    
@@ -79,7 +79,8 @@ class UltraFitEnv : public TQObject
 	
 	///////// Constructors copy etc //////////////
 	
-	UltraFitEnv(TH1* =0,TCanvas* =0,double=0,double=0,double=0);
+	UltraFitEnv(TH1* =0,TCanvas* =0);
+	UltraFitEnv(const TGWindow * p,TH1* =0,TCanvas* =0,int=0);
 	virtual ~UltraFitEnv();
 	
 	//These need to be implemented properly, what with all the pointers etc
@@ -107,7 +108,6 @@ class UltraFitEnv : public TQObject
 	///////////////////////////////////////////////////////////////////////////
 	
 // 	void MakeCanvas();
-	void DialogClose(){cBar=0; this->~UltraFitEnv();}
 	void ClickedCanvas(Int_t, Int_t, Int_t, TObject *);
 // 	void test(){cout<<endl<<endl<<"Test success"<<endl<<endl;}	
 	void PointMe(){cout<<endl<<this<<endl;}// For recovering command line access when working in root interpretive mode	
@@ -139,10 +139,15 @@ class UltraFitEnv : public TQObject
 	
 	void ClearExclusion();
 	
+    void Closed(TObject* obj){
+        Emit("Closed(TObject*)", (Long_t)obj);
+    }
+    
     private:	    
 	    
+    TGMainFrame* MainFrame; //null unless selfowned mainframe
+    
 	// Members
-	TGMainFrame* cBar;
 	TGHorizontalFrame* mainhold;
 	TGVerticalFrame* cFrame,*cShapePane;
 	TRootEmbeddedCanvas *cPan; 
@@ -180,7 +185,7 @@ class UltraFitEnv : public TQObject
 	unsigned int cNfree;
 	
 	// Internal Methods, not called directly or by GUI
-	void DialogBox();
+	void BuildDialogBox(int opt=0);
 	TObject* FindCan();
 	TCanvas* GetCan();
 	void KillCan();
@@ -192,7 +197,7 @@ class UltraFitEnv : public TQObject
 	void LoadSession(TFile* file);
 	void ImportPeaks(TFile* file);
     
-    void ExportSession(TString FileName="peakinfo.dat");
+    void ExportSession(TString FileName="peakinfo.root");
 	
 	vector< double > GetClicks(int=3);
 	void RemoveLines();
@@ -203,7 +208,7 @@ class UltraFitEnv : public TQObject
 	vector< double > MakeBoundryPeakListAbs();
 
 	static int UltraFitEnv_iterator;
-	ClassDef(UltraFitEnv, 2);
+	ClassDef(UltraFitEnv, 3);
 };
 
 // inline UltraFitEnv* gStart(double fSep=-1){

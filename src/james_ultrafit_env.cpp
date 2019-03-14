@@ -7,25 +7,288 @@
 
 int UltraFitEnv::UltraFitEnv_iterator = 0;
 
-UltraFitEnv::UltraFitEnv(TH1* fHist,TCanvas* fCan, double iSepA,double iSepB,double iSepC):TQObject(),
-cBar(0),cFrame(0),cPan(0),cCan(0),gHist(0),gHistDrawn(0),gHistDrawnName(""),cShift(0),cCtrl(0),cAlt(0),cGoodFit(0),cSaveConf(0),cClearConf(0),cNfit(1),cNfree(1)
+    
+UltraFitEnv::UltraFitEnv(TH1* fHist,TCanvas* fCan):UltraFitEnv(new TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),fHist,fCan,0){
+    const TGWindow *P=GetParent();
+    MainFrame = (TGMainFrame*)P;
+    
+    // To avoid double deletion when deleting from UltraFitEnv
+    MainFrame->SetCleanup(kNoCleanup);
+    SetCleanup(kDeepCleanup);
+    MainFrame->Connect("CloseWindow()","TGMainFrame",MainFrame,"DontCallClose()");
+    MainFrame->Connect("CloseWindow()","UltraFitEnv",this,"~UltraFitEnv()");
+    
+    MainFrame->AddFrame(this, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 1, 1, 1, 1));
+	MainFrame->Resize(MainFrame->GetDefaultSize());
+	MainFrame->MapWindow();
+	MainFrame->SetWindowName("UltraFitControls");
+}
+
+UltraFitEnv::UltraFitEnv(const TGWindow * p,TH1* fHist,TCanvas* fCan,int opt): TGCompositeFrame(p,100,100,kVerticalFrame),MainFrame(0),cFrame(0),cPan(0),cCan(0),gHist(0),gHistDrawn(0),gHistDrawnName(""),cShift(0),cCtrl(0),cAlt(0),cGoodFit(0),cSaveConf(0),cClearConf(0),cNfit(1),cNfree(1)
 {TVirtualPad* hold=gPad;
+    if(opt==1){
+        fCan=0;
+        //opt1 no link canvas option
+    }
     Stop.Start();
-	if(iSepA!=0)SetSep(2,iSepA);
-	if(iSepB!=0)SetSep(3,iSepB);
-	if(iSepC!=0)SetSep(4,iSepC);
-	DialogBox();
+	BuildDialogBox(opt);
 	ConnectNewCanvas(fCan);//does nothing if fCan=0
 	SetNewHist(fHist);//does nothing if fHist=0
 gPad=hold;};
 
 UltraFitEnv::~UltraFitEnv(){
-	if(cBar!=0){TQObject::Disconnect(cBar);cBar->Cleanup();delete cBar;}
+    Cleanup();
+    Closed(this);
+    TQObject::Disconnect(this);
+    if(MainFrame){
+        delete MainFrame;
+    }
+    
+    cout<<endl<<"UltraFitEnv DELETED"<<endl;
+   
 	KillCan();
 // 	if(gHist){delete gHist;gHist=0;} // No idea, old segfault
 	gHist=0;
 	ClearFits();
 };
+
+void UltraFitEnv::BuildDialogBox(int opt){
+	//cout<<endl<<"ERROR IN FN C"<<flush;
+    
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+    TGTextButton *button;
+    TGLayoutHints* buffright= new TGLayoutHints(kLHintsRight,5,5,3,2);
+    TGLayoutHints* buffleft= new TGLayoutHints(kLHintsLeft,5,5,3,2);
+    TGLayoutHints* buff= new TGLayoutHints(kLHintsLeft,5,5,3,2);
+    TGLayoutHints* ExpandX= new TGLayoutHints(kLHintsExpandX,5,5,3,2);
+    TGLayoutHints* ExpandXz= new TGLayoutHints(kLHintsExpandX,0,0,0,0);
+    TGLayoutHints* YY= new TGLayoutHints(kLHintsCenterY,8,8,3,3);
+    TGLayoutHints* XX= new TGLayoutHints(kLHintsCenterX,3,3,3,1);
+    TGLayoutHints* XB= new TGLayoutHints(kLHintsExpandX|kLHintsBottom,2,2,2,2);
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+
+    TGHorizontalFrame* menuB = new TGHorizontalFrame(this, 0, 0, 0);
+        button = new TGTextButton(menuB," Help ");
+        button->Connect("Clicked()","UltraFitEnv",this,"Help()");
+        menuB->AddFrame(button,new TGLayoutHints(kLHintsRight,0,0,0,0));
+        button = new TGTextButton(menuB," SaveAs ");
+        button->Connect("Clicked()","UltraFitEnv",this,"jSaveAs()");
+        menuB->AddFrame(button,new TGLayoutHints(kLHintsLeft,0,0,0,0));
+   AddFrame(menuB,ExpandXz);
+    
+    mainhold = new TGHorizontalFrame(this, 0, 0, 0); 
+    cFrame = new TGVerticalFrame(mainhold);
+
+    TGHorizontalFrame* capt = new TGHorizontalFrame(cFrame, 0, 0, 0);
+        button = new TGTextButton(capt," Capture Hist ");
+        button->Connect("Clicked()","UltraFitEnv",this,"SetCapture(int=1)");
+        button->SetToolTipText("Copy histogram from another frame\n(subsequent click).");
+        capt->AddFrame(button,ExpandXz);	
+    
+        if(opt!=1){
+            button = new TGTextButton(capt," Link Canvas ");
+            button->Connect("Clicked()","UltraFitEnv",this,"SetCapture(int=0)");
+            button->Resize(150);
+            button->SetToolTipText("Begin fitting in another canvas\n(subsequent click).");
+            capt->AddFrame(button,ExpandXz);
+        }
+    cFrame->AddFrame(capt,ExpandX);
+    
+    fCheck0 = new TGCheckButton(cFrame,"Peak Labels ");
+    fCheck0->SetState(kButtonDown);
+    fCheck0->Connect("Clicked()","UltraFitEnv",this,"DrawSaveLabels()");
+    fCheck0->SetToolTipText("Show peak labels on histogram.");
+    cFrame->AddFrame(fCheck0,XX);
+    
+    button = new TGTextButton(cFrame,"Re-Draw Hist");
+    button->Connect("Clicked()","UltraFitEnv",this,"ReDrawgHist()");
+    button->SetToolTipText("Re-draw the currently selected histogram\nand any saved fits.");
+    cFrame->AddFrame(button,ExpandX);
+    
+    button = new TGTextButton(cFrame,"Clear Exclusion");
+    button->Connect("Clicked()","UltraFitEnv",this,"ClearExclusion()");
+    button->SetToolTipText("Clear any user specified\n fit exclusion region.");
+    cFrame->AddFrame(button,ExpandX);
+    
+    
+    if(opt!=1){
+        button = new TGTextButton(cFrame,"");
+        button->Connect("Clicked()","UltraFitEnv",this,"PointMe()");
+        cFrame->AddFrame(button,ExpandX);
+    }
+    
+    button = new TGTextButton(cFrame,"Save Peak Info");
+    button->Connect("Clicked()","UltraFitEnv",this,"SaveFit()");
+    button->SetToolTipText("Save the most recently completed fit\nto the local list of fits\nand to the histogram.");
+    cFrame->AddFrame(button,ExpandX);
+        
+    button = new TGTextButton(cFrame,"Clear Saved Peaks");
+    button->Connect("Clicked()","UltraFitEnv",this,"ClearFitsD()");
+    button->SetToolTipText("Delete all fits saved\nto the local list of fits\nand to the histogram.");
+    cFrame->AddFrame(button,ExpandX);
+    
+    button = new TGTextButton(cFrame,"Print Peak Info");
+    button->Connect("Clicked()","UltraFitEnv",this,"PrintFits()");
+    button->SetToolTipText("Print the peak data for the\n list of saved fits\nto the terminal.");
+    cFrame->AddFrame(button,ExpandX);
+    
+    button = new TGTextButton(cFrame,"Export Peak Info");
+    button->Connect("Clicked()","UltraFitEnv",this,"ExportFits()");
+    button->SetToolTipText("Save the peak data for the list of\n saved fits in plain text to the file\n peakinfo.dat (overwrites)");
+    cFrame->AddFrame(button,ExpandX);
+    
+    button = new TGTextButton(cFrame,"Load Session");
+    button->Connect("Clicked()","UltraFitEnv",this,"LoadSession()");
+    button->SetToolTipText("Load a session saved with Export Peak Info");
+    cFrame->AddFrame(button,ExpandX);		
+    
+    button = new TGTextButton(cFrame,"");//Just filler
+    cFrame->AddFrame(button,ExpandX);	
+    
+    button = new TGTextButton(cFrame,"Fit Peaks");
+    button->Connect("Clicked()","UltraFitEnv",this,"FitGUIPeak()");
+    button->SetToolTipText("Fit the selected histogram using\nthe current inputs.");
+    cFrame->AddFrame(button,ExpandX);
+    
+    TGHorizontalFrame* fHframe0 = new TGHorizontalFrame(cFrame, 0, 0, 0);
+    
+        TGVerticalFrame* ticks = new TGVerticalFrame(fHframe0, 0, 0, 0);
+        
+            TGLabel *label = new TGLabel(ticks, "Background Mode");
+            ticks->AddFrame(label,XX);
+            
+            fCombo = new TGComboBox(ticks,100);
+            fCombo->AddEntry("pol0",Ultrapeak::cBackType0);
+            fCombo->AddEntry("pol0+step",Ultrapeak::cBackType0s);
+            fCombo->AddEntry("pol1 fixed",Ultrapeak::cBackType1f);
+            fCombo->AddEntry("pol1",Ultrapeak::cBackType1);
+            fCombo->AddEntry("pol1+step",Ultrapeak::cBackType1s);
+            fCombo->AddEntry("pol2",Ultrapeak::cBackType2);
+            fCombo->AddEntry("pol2+step",Ultrapeak::cBackType2s);
+            fCombo->Resize(110, 20);
+            fCombo->Select(Ultrapeak::cBackType1s);
+            ticks->AddFrame(fCombo,XX);	
+
+            
+            fCheck1 = new TGCheckButton(ticks,"Limit Tail  ");// A tick box with hover text belonging to a parent frame
+            fCheck1->SetState(kButtonUp);
+            fCheck1->SetToolTipText("Force strict maximum values on the\nexponential tail parameters.\n Recommended for fitting gamma rays.");
+            
+            fCheck3 = new TGCheckButton(ticks,"No Tail    ");// A tick box with hover text belonging to a parent frame
+            fCheck3->SetState(kButtonUp);
+            fCheck3->SetToolTipText("Turn off decay tail complelty");
+            
+            fCheck2 = new TGCheckButton(ticks,"Twin Gaus");// A tick box with hover text belonging to a parent frame
+            fCheck2->SetState(kButtonUp);
+            fCheck2->SetToolTipText("Use the peak fit mode which adds a\n second Gaussians compontent with \n larger sigma.");
+// 				fCheck2->Connect("Clicked()","UltraFitEnv",this,"SwitchDecayLabel()");
+            
+
+        ticks->AddFrame(fCheck1,XX);
+        ticks->AddFrame(fCheck3,XX);
+        ticks->AddFrame(fCheck2,XX);
+    fHframe0->AddFrame(ticks,ExpandXz);
+        
+        TGVerticalFrame* fHframepm = new TGVerticalFrame(fHframe0, 0, 0, 0);
+        
+            button = new TGTextButton(fHframepm," + ");
+            button->Connect("Clicked()","UltraFitEnv",this,"AddTextBox()");
+            button->SetToolTipText("Increase the number of peaks to fit.");
+            fHframepm->AddFrame(button,ExpandXz);
+            button = new TGTextButton(fHframepm," - ");
+            button->SetToolTipText("Decrease the number of peaks to fit.");
+            button->Connect("Clicked()","UltraFitEnv",this,"RemoveTextBox()");
+            fHframepm->AddFrame(button,ExpandXz);
+        
+        fHframe0->AddFrame(fHframepm,YY);
+        
+    cFrame->AddFrame(fHframe0,ExpandXz);		
+// 		
+    TGHorizontalFrame* fHframeN = new TGHorizontalFrame(cFrame, 0, 0, 0);
+
+    
+        fZERO = new TGTextEntry(fHframeN,new TGTextBuffer(5));
+            fZERO->Connect("TextChanged(char*)", "UltraFitEnv", this,"TextToSep()");//Continually does things while typing is occurring, so only link to simple fn
+            fZERO->SetDefaultSize(60,25);
+            fZERO->SetToolTipText("Peak Zero\n Centroid x.size())");
+        fHframeN->AddFrame(fZERO,buffleft);
+    // 				
+        cZc = new TGTextEntry(fHframeN,new TGTextBuffer(5));
+            cZc->SetDefaultSize(50,25);
+            cZc->SetEnabled(0);
+            cPTbox.push_back(cZc);			
+            cZc->SetToolTipText("Centroid\n Peak 0 absolute centroid\n Selected/Result.");
+        fHframeN->AddFrame(cZc,buffright);
+        
+        cNpd=new TGTextEntry(fHframeN,new TGTextBuffer(5));
+            cNpd->SetText("1");
+            cNpd->SetDefaultSize(25,25);
+            cNpd->Connect("TextChanged(char*)","UltraFitEnv",this,"SetN()");
+            cNpd->SetEnabled(0);
+            cNpd->SetToolTipText("Current number of peaks to fit.");
+        fHframeN->AddFrame(cNpd,buffright);
+
+// 		
+    cFrame->AddFrame(fHframeN,new TGLayoutHints(kLHintsExpandX));
+    
+    cShapePane= new TGVerticalFrame(cFrame);
+        TGHorizontalFrame* shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
+            cShapeTsig = new TGTextEntry(shapeelement,new TGTextBuffer(5));
+            cShapeTsig->SetDefaultSize(50,25);	
+            cShapeTsig->SetToolTipText("Sigma\n Fix or constrain peak sigma.");
+            shapeelement->AddFrame(cShapeTsig,buff);
+            label = new TGLabel(shapeelement, "Sigma");
+            shapeelement->AddFrame(label,buff);
+        cShapePane->AddFrame(shapeelement,ExpandXz);
+    
+        shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
+            cShapeTdecay = new TGTextEntry(shapeelement,new TGTextBuffer(5));
+            cShapeTdecay->SetDefaultSize(50,25);	
+            cShapeTdecay->SetToolTipText("Decay Tail\n Fix or constrain peak decay tail.");
+            shapeelement->AddFrame(cShapeTdecay,buff);
+            label = new TGLabel(shapeelement, "Decay  ");
+            decaysigmablabel=label;
+            shapeelement->AddFrame(label,buff);
+        cShapePane->AddFrame(shapeelement,ExpandXz);
+        
+        shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
+            cShapeTshare = new TGTextEntry(shapeelement,new TGTextBuffer(5));
+            cShapeTshare->SetDefaultSize(50,25);	
+            cShapeTshare->SetToolTipText("Sharing Parameter\n Fix or constrain peak sharing parameter.");
+            shapeelement->AddFrame(cShapeTshare,buff);
+            label = new TGLabel(shapeelement, "Sharing");
+            shapeelement->AddFrame(label,buff);
+        cShapePane->AddFrame(shapeelement,ExpandXz);
+    cFrame->AddFrame(cShapePane,XB);
+    
+    button = new TGTextButton(cFrame,"^");
+    button->Connect("Clicked()","UltraFitEnv",this,"HideShape()");
+    button->SetToolTipText("Show Peak Shape Controls.");
+    cFrame->AddFrame(button,XB);
+    
+    
+    mainhold->AddFrame(cFrame,new TGLayoutHints(kLHintsExpandY,0,0,0,0));
+    
+    stringstream ss;
+    ss <<"UltraFitCanvas"<<UltraFitEnv_iterator;
+    UltraFitEnv_iterator++;
+    can_name=ss.str();
+    cPan = new TRootEmbeddedCanvas(can_name.c_str(), mainhold, 800,600);
+    mainhold->AddFrame(cPan,new TGLayoutHints(kLHintsExpandY|kLHintsExpandX,3,3,3,3));
+
+   AddFrame(mainhold,new TGLayoutHints(kLHintsExpandY|kLHintsExpandX,0,0,0,0));
+    
+   SetWindowName("UltraFitControls");
+    
+    MapSubwindows();
+    MapWindow();
+    
+    HideCanvas();
+    HideShape();
+    cPan->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "UltraFitEnv", this,"ClickedCanvas(Int_t,Int_t,Int_t,TObject*)");
+    ReMargin(cPan->GetCanvas());
+}
+
 
 void UltraFitEnv::ClearFits(){
 	//cout<<endl<<"ERROR IN FN A"<<flush;
@@ -51,244 +314,6 @@ void UltraFitEnv::ClearFitsD(){
 	cSaveConf=false;
 };
 
-void UltraFitEnv::DialogBox() {
-	//cout<<endl<<"ERROR IN FN C"<<flush;
-	if(cBar==0){
-		cBar=new TGMainFrame(gClient->GetRoot(), 100, 100);
-		cBar->SetCleanup(kDeepCleanup);
-		
-// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
-		TGTextButton *button;
-		TGLayoutHints* buffright= new TGLayoutHints(kLHintsRight,5,5,3,2);
-		TGLayoutHints* buffleft= new TGLayoutHints(kLHintsLeft,5,5,3,2);
-		TGLayoutHints* buff= new TGLayoutHints(kLHintsLeft,5,5,3,2);
-		TGLayoutHints* ExpandX= new TGLayoutHints(kLHintsExpandX,5,5,3,2);
-		TGLayoutHints* ExpandXz= new TGLayoutHints(kLHintsExpandX,0,0,0,0);
-		TGLayoutHints* YY= new TGLayoutHints(kLHintsCenterY,8,8,3,3);
-		TGLayoutHints* XX= new TGLayoutHints(kLHintsCenterX,3,3,3,1);
-		TGLayoutHints* XB= new TGLayoutHints(kLHintsExpandX|kLHintsBottom,2,2,2,2);
-// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
-
-		TGHorizontalFrame* menuB = new TGHorizontalFrame(cBar, 0, 0, 0);
-			button = new TGTextButton(menuB," Help ");
-			button->Connect("Clicked()","UltraFitEnv",this,"Help()");
-			menuB->AddFrame(button,new TGLayoutHints(kLHintsRight,0,0,0,0));
-			button = new TGTextButton(menuB," SaveAs ");
-			button->Connect("Clicked()","UltraFitEnv",this,"jSaveAs()");
-			menuB->AddFrame(button,new TGLayoutHints(kLHintsLeft,0,0,0,0));
-		cBar->AddFrame(menuB,ExpandXz);
-		
-		mainhold = new TGHorizontalFrame(cBar, 0, 0, 0); 
-		cFrame = new TGVerticalFrame(mainhold);
-
-		TGHorizontalFrame* capt = new TGHorizontalFrame(cFrame, 0, 0, 0);
-			button = new TGTextButton(capt," Capture Hist ");
-			button->Connect("Clicked()","UltraFitEnv",this,"SetCapture(int=1)");
-			button->SetToolTipText("Copy histogram from another frame\n(subsequent click).");
-			capt->AddFrame(button,ExpandXz);	
-		
-			button = new TGTextButton(capt," Link Canvas ");
-			button->Connect("Clicked()","UltraFitEnv",this,"SetCapture(int=0)");
-			button->Resize(150);
-			button->SetToolTipText("Begin fitting in another canvas\n(subsequent click).");
-			capt->AddFrame(button,ExpandXz);	
-		cFrame->AddFrame(capt,ExpandX);
-		
-		fCheck0 = new TGCheckButton(cFrame,"Peak Labels ");
-		fCheck0->SetState(kButtonDown);
-		fCheck0->Connect("Clicked()","UltraFitEnv",this,"DrawSaveLabels()");
- 		fCheck0->SetToolTipText("Show peak labels on histogram.");
-		cFrame->AddFrame(fCheck0,XX);
-		
-		button = new TGTextButton(cFrame,"Re-Draw Hist");
-		button->Connect("Clicked()","UltraFitEnv",this,"ReDrawgHist()");
-		button->SetToolTipText("Re-draw the currently selected histogram\nand any saved fits.");
-		cFrame->AddFrame(button,ExpandX);
-		
-		button = new TGTextButton(cFrame,"Clear Exclusion");
-		button->Connect("Clicked()","UltraFitEnv",this,"ClearExclusion()");
-		button->SetToolTipText("Clear any user specified\n fit exclusion region.");
-		cFrame->AddFrame(button,ExpandX);
-		
-		button = new TGTextButton(cFrame,"");
-		button->Connect("Clicked()","UltraFitEnv",this,"PointMe()");
-		cFrame->AddFrame(button,ExpandX);	
-		
-		button = new TGTextButton(cFrame,"Save Peak Info");
-		button->Connect("Clicked()","UltraFitEnv",this,"SaveFit()");
-		button->SetToolTipText("Save the most recently completed fit\nto the local list of fits\nand to the histogram.");
-		cFrame->AddFrame(button,ExpandX);
-			
-		button = new TGTextButton(cFrame,"Clear Saved Peaks");
-		button->Connect("Clicked()","UltraFitEnv",this,"ClearFitsD()");
-		button->SetToolTipText("Delete all fits saved\nto the local list of fits\nand to the histogram.");
-		cFrame->AddFrame(button,ExpandX);
-		
-		button = new TGTextButton(cFrame,"Print Peak Info");
-		button->Connect("Clicked()","UltraFitEnv",this,"PrintFits()");
-		button->SetToolTipText("Print the peak data for the\n list of saved fits\nto the terminal.");
-		cFrame->AddFrame(button,ExpandX);
-		
-		button = new TGTextButton(cFrame,"Export Peak Info");
-		button->Connect("Clicked()","UltraFitEnv",this,"ExportFits()");
-		button->SetToolTipText("Save the peak data for the list of\n saved fits in plain text to the file\n peakinfo.dat (overwrites)");
-		cFrame->AddFrame(button,ExpandX);
-		
-		button = new TGTextButton(cFrame,"Load Session");
-		button->Connect("Clicked()","UltraFitEnv",this,"LoadSession()");
-		button->SetToolTipText("Load a session saved with Export Peak Info");
-		cFrame->AddFrame(button,ExpandX);		
-		
-		button = new TGTextButton(cFrame,"");//Just filler
-		cFrame->AddFrame(button,ExpandX);	
-		
-		button = new TGTextButton(cFrame,"Fit Peaks");
-		button->Connect("Clicked()","UltraFitEnv",this,"FitGUIPeak()");
-		button->SetToolTipText("Fit the selected histogram using\nthe current inputs.");
-		cFrame->AddFrame(button,ExpandX);
-		
-		TGHorizontalFrame* fHframe0 = new TGHorizontalFrame(cFrame, 0, 0, 0);
-		
-			TGVerticalFrame* ticks = new TGVerticalFrame(fHframe0, 0, 0, 0);
-			
-				TGLabel *label = new TGLabel(ticks, "Background Mode");
-				ticks->AddFrame(label,XX);
-				
-				fCombo = new TGComboBox(ticks,100);
-				fCombo->AddEntry("pol0",Ultrapeak::cBackType0);
-				fCombo->AddEntry("pol0+step",Ultrapeak::cBackType0s);
-				fCombo->AddEntry("pol1 fixed",Ultrapeak::cBackType1f);
-				fCombo->AddEntry("pol1",Ultrapeak::cBackType1);
-				fCombo->AddEntry("pol1+step",Ultrapeak::cBackType1s);
-				fCombo->AddEntry("pol2",Ultrapeak::cBackType2);
-				fCombo->AddEntry("pol2+step",Ultrapeak::cBackType2s);
-				fCombo->Resize(110, 20);
-				fCombo->Select(Ultrapeak::cBackType1s);
-				ticks->AddFrame(fCombo,XX);	
-
-				
-				fCheck1 = new TGCheckButton(ticks,"Limit Tail  ");// A tick box with hover text belonging to a parent frame
-				fCheck1->SetState(kButtonUp);
-				fCheck1->SetToolTipText("Force strict maximum values on the\nexponential tail parameters.\n Recommended for fitting gamma rays.");
-                
-                fCheck3 = new TGCheckButton(ticks,"No Tail    ");// A tick box with hover text belonging to a parent frame
-				fCheck3->SetState(kButtonUp);
-				fCheck3->SetToolTipText("Turn off decay tail complelty");
-				
-				fCheck2 = new TGCheckButton(ticks,"Twin Gaus");// A tick box with hover text belonging to a parent frame
-				fCheck2->SetState(kButtonUp);
-				fCheck2->SetToolTipText("Use the peak fit mode which adds a\n second Gaussians compontent with \n larger sigma.");
-// 				fCheck2->Connect("Clicked()","UltraFitEnv",this,"SwitchDecayLabel()");
-				
-
-			ticks->AddFrame(fCheck1,XX);
-			ticks->AddFrame(fCheck3,XX);
-			ticks->AddFrame(fCheck2,XX);
-		fHframe0->AddFrame(ticks,ExpandXz);
-			
-			TGVerticalFrame* fHframepm = new TGVerticalFrame(fHframe0, 0, 0, 0);
-			
-				button = new TGTextButton(fHframepm," + ");
-				button->Connect("Clicked()","UltraFitEnv",this,"AddTextBox()");
-				button->SetToolTipText("Increase the number of peaks to fit.");
-				fHframepm->AddFrame(button,ExpandXz);
-				button = new TGTextButton(fHframepm," - ");
-				button->SetToolTipText("Decrease the number of peaks to fit.");
-				button->Connect("Clicked()","UltraFitEnv",this,"RemoveTextBox()");
-				fHframepm->AddFrame(button,ExpandXz);
-			
-			fHframe0->AddFrame(fHframepm,YY);
-			
-		cFrame->AddFrame(fHframe0,ExpandXz);		
-// 		
-		TGHorizontalFrame* fHframeN = new TGHorizontalFrame(cFrame, 0, 0, 0);
-
-        
-			fZERO = new TGTextEntry(fHframeN,new TGTextBuffer(5));
-                fZERO->Connect("TextChanged(char*)", "UltraFitEnv", this,"TextToSep()");//Continually does things while typing is occurring, so only link to simple fn
-                fZERO->SetDefaultSize(60,25);
-                fZERO->SetToolTipText("Peak Zero\n Centroid x.size())");
-            fHframeN->AddFrame(fZERO,buffleft);
-     // 				
-			cZc = new TGTextEntry(fHframeN,new TGTextBuffer(5));
-				cZc->SetDefaultSize(50,25);
-				cZc->SetEnabled(0);
-				cPTbox.push_back(cZc);			
-				cZc->SetToolTipText("Centroid\n Peak 0 absolute centroid\n Selected/Result.");
-			fHframeN->AddFrame(cZc,buffright);
-            
-			cNpd=new TGTextEntry(fHframeN,new TGTextBuffer(5));
-				cNpd->SetText("1");
-				cNpd->SetDefaultSize(25,25);
-				cNpd->Connect("TextChanged(char*)","UltraFitEnv",this,"SetN()");
-				cNpd->SetEnabled(0);
-				cNpd->SetToolTipText("Current number of peaks to fit.");
-			fHframeN->AddFrame(cNpd,buffright);
-
-// 		
-		cFrame->AddFrame(fHframeN,new TGLayoutHints(kLHintsExpandX));
-		
-		cShapePane= new TGVerticalFrame(cFrame);
-			TGHorizontalFrame* shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
-				cShapeTsig = new TGTextEntry(shapeelement,new TGTextBuffer(5));
-				cShapeTsig->SetDefaultSize(50,25);	
-				cShapeTsig->SetToolTipText("Sigma\n Fix or constrain peak sigma.");
-				shapeelement->AddFrame(cShapeTsig,buff);
-				label = new TGLabel(shapeelement, "Sigma");
-				shapeelement->AddFrame(label,buff);
-			cShapePane->AddFrame(shapeelement,ExpandXz);
-		
-			shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
-				cShapeTdecay = new TGTextEntry(shapeelement,new TGTextBuffer(5));
-				cShapeTdecay->SetDefaultSize(50,25);	
-				cShapeTdecay->SetToolTipText("Decay Tail\n Fix or constrain peak decay tail.");
-				shapeelement->AddFrame(cShapeTdecay,buff);
-				label = new TGLabel(shapeelement, "Decay  ");
-				decaysigmablabel=label;
-				shapeelement->AddFrame(label,buff);
-			cShapePane->AddFrame(shapeelement,ExpandXz);
-			
-			shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
-				cShapeTshare = new TGTextEntry(shapeelement,new TGTextBuffer(5));
-				cShapeTshare->SetDefaultSize(50,25);	
-				cShapeTshare->SetToolTipText("Sharing Parameter\n Fix or constrain peak sharing parameter.");
-				shapeelement->AddFrame(cShapeTshare,buff);
-				label = new TGLabel(shapeelement, "Sharing");
-				shapeelement->AddFrame(label,buff);
-			cShapePane->AddFrame(shapeelement,ExpandXz);
-		cFrame->AddFrame(cShapePane,XB);
-		
-		button = new TGTextButton(cFrame,"^");
-		button->Connect("Clicked()","UltraFitEnv",this,"HideShape()");
-		button->SetToolTipText("Show Peak Shape Controls.");
-		cFrame->AddFrame(button,XB);
-		
-		
-		mainhold->AddFrame(cFrame,new TGLayoutHints(kLHintsExpandY,0,0,0,0));
-		
-		stringstream ss;
-		ss <<"UltraFitCanvas"<<UltraFitEnv_iterator;
-		UltraFitEnv_iterator++;
-		can_name=ss.str();
-		cPan = new TRootEmbeddedCanvas(can_name.c_str(), mainhold, 800,600);
-		mainhold->AddFrame(cPan,new TGLayoutHints(kLHintsExpandY|kLHintsExpandX,3,3,3,3));
-
-		cBar->AddFrame(mainhold,new TGLayoutHints(kLHintsExpandY|kLHintsExpandX,0,0,0,0));
-		
-		cBar->SetWindowName("UltraFitControls");
-		
-		cBar->MapSubwindows();
-		cBar->Resize(cBar->GetDefaultSize());
-		cBar->MapWindow();
-		
-		HideCanvas();
-		HideShape();
-		cPan->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "UltraFitEnv", this,"ClickedCanvas(Int_t,Int_t,Int_t,TObject*)");
-		ReMargin(cPan->GetCanvas());
-		
-		cBar->Connect("CloseWindow()","UltraFitEnv",this,"DialogClose()");
-	}
-}
 
 void UltraFitEnv::HideShape(){
 	cShapeTsig->SetText("");
@@ -512,15 +537,21 @@ void UltraFitEnv::HideCanvas(){
 	ReDrawFrames();
 }
 void UltraFitEnv::ShowCanvas(){
-	mainhold->ShowFrame(cPan);
-	cPan->Resize(800,600);
-	ReDrawFrames();
+    if(!mainhold->IsVisible(cPan)){
+        mainhold->ShowFrame(cPan);
+        cPan->Resize(1000,700);
+        ReDrawFrames();
+    }
 }
 void UltraFitEnv::ReDrawFrames(){
-// 	cFrame->MapSubwindows();
 	cFrame->Resize(cFrame->GetDefaultSize());
-	cBar->Resize(cBar->GetDefaultSize());
-	gClient->NeedRedraw(cBar);
+	Resize(GetDefaultSize());
+// 	gClient->NeedRedraw(this);
+    
+    //TGFrame *P=(TGFrame *)GetParent();//Dodgy 
+    TGFrame *P=(TGFrame *)GetMainFrame();//Double dodgy 
+    P->Resize(P->GetDefaultSize());
+	gClient->NeedRedraw(P);
 }
 
 
@@ -557,7 +588,7 @@ void  UltraFitEnv::SetSep(unsigned int fN,double fS,double fSe){
 	cTbox[fN-2]->SetText(ss.str().c_str());
 }
 	
-void  UltraFitEnv::AddTextBox(){if(!cBar)return;
+void  UltraFitEnv::AddTextBox(){
 	//cout<<endl<<"ERROR IN FN R"<<flush;
 	
 	TGHorizontalFrame* fHframe0;
@@ -602,7 +633,7 @@ void  UltraFitEnv::AddTextBox(){if(!cBar)return;
 	this->SetN();
 }
 	
-void  UltraFitEnv::RemoveTextBox(){if(!cBar)return;
+void  UltraFitEnv::RemoveTextBox(){
 	//cout<<endl<<"ERROR IN FN S"<<flush;
 	if(cNfit>1){
 		cFrame->HideFrame(cTframe[cNfit-2]);
@@ -850,7 +881,7 @@ vector< jPeakDat > UltraFitEnv::MakePeakList(){
 		fPass.push_back(jPeakDat(Pval,Pconstr,Perr,Rval,Rerr));
 		prevpos+=Pval;
 		
-		//update the text on the cBar
+		//update the text on the Control Bar
 		cPTbox[i+1]->SetText(TString::Format("%.1f",prevpos));
 		gClient->NeedRedraw(cPTbox[i+1]);		
 	}
@@ -1105,7 +1136,8 @@ void UltraFitEnv::ExportSession(TString FileName){
 }
 
 void UltraFitEnv::LoadSession(){
-	TFile* file =RootFileLoad(cBar);
+//     const TGWindow *P=GetParent();
+	TFile* file =RootFileLoad(this);
 	if(file){
 		LoadSession(file);
 	}
@@ -1260,7 +1292,7 @@ void UltraFitEnv::jSaveAs(){
     Stop.Stop();
     Stop.Reset();
 	if(gHist){
-        TString fileN=HistSaveAs(gHist,cBar,GetCan());
+        TString fileN=HistSaveAs(gHist,this,GetCan());
 		if(fileN.EndsWith(".root")){
             ExportSession(fileN);//Overwrite it with session file
         }

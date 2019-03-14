@@ -21,8 +21,8 @@ FontStruct_t jEnv::GetFont(){
 jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
     fFitPanel(0),fSpecTool(0),addsub(0),DirList(0),SameSave(0),gDrawSame(false),fTabs(0),
     fPixOffX(1),fPixOffY(33),
-    fDefaultDirWidth(180),fDefaultDirHeight(400),
-    fDefaultTabsWidth(800),fDefaultTabsHeight(600),
+    fDefaultDirWidth(200),fDefaultDirHeight(400),
+    fDefaultTabsWidth(1000),fDefaultTabsHeight(650),
     fDefaultGrabSize(140)
 {
 
@@ -47,10 +47,18 @@ TVirtualPad* hold=gPad;
 		DirList->Connect("NewObject(TObject*)","CCframe",fCanvas1,"NonGuiNew(TObject*)");
 		DirList->Connect("NewObject(TObject*)","jEnv",this,"NewDirObject(TObject*)");
 		
-		TGTextButton* fitter = new TGTextButton(controlframe1,"Fit Panel");
-        fitter->SetFont(ft);
-		fitter->Connect("Clicked()","jEnv",this,"FitPanel()");	
-		controlframe1->AddFrame(fitter,ExpandX);
+        TGHorizontalFrame* drawduelbuttons = new TGHorizontalFrame(controlframe1);            
+            TGTextButton* fitter = new TGTextButton(drawduelbuttons,"Fit Panel");
+            fitter->SetFont(ft);
+            fitter->Connect("Clicked()","jEnv",this,"FitPanel()");	
+            drawduelbuttons->AddFrame(fitter,ExpandX);
+			TGPictureButton *fPictureBut = new TGPictureButton(drawduelbuttons,gClient->GetPicture("newcanvas.xpm"));
+            fPictureBut->SetMinWidth(30);
+            fPictureBut->SetWidth(35);
+			fPictureBut->Connect("Clicked()","jEnv",this,"FreeFitPanel()");
+			drawduelbuttons->AddFrame(fPictureBut,new TGLayoutHints(kLHintsExpandY,0,5,3,2));
+		controlframe1->AddFrame(drawduelbuttons,new TGLayoutHints(kLHintsExpandX,0,0,0,0));
+
 		TGTextButton* Spect = new TGTextButton(controlframe1,"SpecTool");
         Spect->SetFont(ft);
 		Spect->Connect("Clicked()","jEnv",this,"Spectrum()");
@@ -68,12 +76,12 @@ TVirtualPad* hold=gPad;
 		tbrowser->Connect("Clicked()","jEnv",this,"Browser()");
 		controlframe1->AddFrame(tbrowser,ExpandX);
 		
-		TGHorizontalFrame* drawduelbuttons = new TGHorizontalFrame(controlframe1);
+		drawduelbuttons = new TGHorizontalFrame(controlframe1);
 			TGTextButton* Drawer = new TGTextButton(drawduelbuttons," Draw ");
             Drawer->SetFont(ft);
 			Drawer->Connect("Clicked()","jEnv",this,"DrawCpyTab()");
 			drawduelbuttons->AddFrame(Drawer,ExpandX);
-			TGPictureButton *fPictureBut = new TGPictureButton(drawduelbuttons,gClient->GetPicture("newcanvas.xpm"));
+			fPictureBut = new TGPictureButton(drawduelbuttons,gClient->GetPicture("newcanvas.xpm"));
             fPictureBut->SetMinWidth(30);
             fPictureBut->SetWidth(35);
              
@@ -172,20 +180,31 @@ void jEnv::AddFreeObject(TObject* obj,bool CanDelete){
     FreeObjects.Add(obj);
 }
 
-
 void jEnv::Browser(){
 	new TBrowser;
 	if(fCanvas1->Type()>0&&fCanvas1->Type()<3)fCanvas1->Hist()->DrawCopy("colz");
 }
+
 void jEnv::FitPanel(){
-	if(fFitPanel){
-		if(fCanvas1->Type()==1)fFitPanel->PassNewHist(fCanvas1->Hist());
-	}else {
-		if(fCanvas1->Type()==1)fFitPanel=new UltraFitEnv(fCanvas1->Hist());
-		else fFitPanel=new UltraFitEnv();  
-		fFitPanel->Connect("Destroyed()", "jEnv", this,"FitPanelClose()");
+    if(fCanvas1->Type()==1){
+        if(fFitPanel){
+            fFitPanel->PassNewHist(fCanvas1->Hist());
+            for(int i=0;i<fTabs->GetNumberOfTabs();i++)if(fFitPanel==fTabs->GetTabContainer(i)){fTabs->SetTab(i,kFALSE);break;}
+            if(!IsVisible(fTabs))ShowTabs();
+		}else {
+            fFitPanel=new UltraFitEnv(fTabs,fCanvas1->Hist(),0,1);
+            fTabs->AddTab("FitPanel",fFitPanel);
+            fTabs->SetTab(fTabs->GetNumberOfTabs()-1,kFALSE);
+            ShowTabs();
+		}
 	}
 };
+
+void jEnv::FreeFitPanel(){
+        if(fCanvas1->Type()==1)AddFreeObject(new UltraFitEnv(fCanvas1->Hist()),true);
+		else AddFreeObject(new UltraFitEnv(),true);
+}
+
 void jEnv::Spectrum(){
 	if(fCanvas1->Type()==1){
 		if(fSpecTool){

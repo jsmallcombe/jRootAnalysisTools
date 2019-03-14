@@ -19,16 +19,21 @@ vector<string> jSpecTool::BackOpt={"BackOrder2","BackOrder4","BackOrder6","BackO
     
 jSpecTool::jSpecTool(TH1* input):jSpecTool(new TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),input){
     const TGWindow *P=GetParent();
-    TGMainFrame* p=(TGMainFrame*)P;
-    p->SetCleanup(kDeepCleanup);
-    p->AddFrame(this, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 1, 1, 1, 1));
-	p->MapSubwindows();
-	p->Resize(GetDefaultSize());
-	p->MapWindow();
-	p->SetWindowName("SpectrumTool");
+    ParentWindow=(TGMainFrame*)P;
+
+    // To avoid double deletion when deleting from jSpecTool
+    ParentWindow->SetCleanup(kNoCleanup);
+    SetCleanup(kDeepCleanup);
+    ParentWindow->Connect("CloseWindow()","TGMainFrame",ParentWindow,"DontCallClose()");
+    ParentWindow->Connect("CloseWindow()","jSpecTool",this,"~jSpecTool()");
+    
+    ParentWindow->AddFrame(this, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 1, 1, 1, 1));
+	ParentWindow->Resize(ParentWindow->GetDefaultSize());
+	ParentWindow->MapWindow();
+	ParentWindow->SetWindowName("SpectrumTool");
 }
 
-jSpecTool::jSpecTool(const TGWindow * p,TH1* input) : TGCompositeFrame(p,100,100,kVerticalFrame),histin(0),histsub(0),histzero(0),specback(0){
+jSpecTool::jSpecTool(const TGWindow * p,TH1* input) : TGCompositeFrame(p,100,100,kVerticalFrame),ParentWindow(0),histin(0),histsub(0),histzero(0),specback(0){
 TVirtualPad* hold=gPad;
 
     if(input)input->GetXaxis()->SetRange(1,-1);
@@ -94,7 +99,6 @@ TVirtualPad* hold=gPad;
 	fTeh1->SetEnabled(kFALSE);
 	orderframe->AddFrame(fTeh1);
 	
-	
 	TGHorizontalFrame* smoothframe = new TGHorizontalFrame(this, 0, 0, 0);
 	label = new TGLabel(smoothframe, "   Smoothing N       ");
 	smoothframe->AddFrame(label);
@@ -128,6 +132,9 @@ TVirtualPad* hold=gPad;
 	AddFrame(smoothframe,ffExpandXpad);
 
 	NewInput(input);
+    
+    MapSubwindows();
+	MapWindow();
 	
 gPad=hold;
 }
@@ -164,6 +171,7 @@ jSpecTool::~jSpecTool()
    if(specback){delete specback;}
    if(histsub){delete histsub;}
    if(histzero){delete histzero;}
+   if(ParentWindow){delete ParentWindow;}
 
    cout<<endl<<"SPECTOOL DELETED"<<endl;
    
