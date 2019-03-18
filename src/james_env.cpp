@@ -389,8 +389,7 @@ void jEnv::NewDirObject(TObject* obj){
         TCanvas* Can=AddCanvasTab(obj->GetName());
         Can->cd();
 		gPad->Update();
-		TObject* graph=((TGraph*)obj)->DrawClone("al");
-        hformat(((TGraph*)graph)->GetHistogram());
+        DrawCopyGraphOpt((TGraph*)obj);
 	}	
 }
 

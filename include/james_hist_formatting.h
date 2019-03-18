@@ -123,8 +123,10 @@ void CanvasNegative(TVirtualPad* fPad=gPad);
 void HistogramNegative(TH1* Hist);
 void GraphNegative(TGraph* Graph);
 
-void SetGlobalNegative();
+void SetGlobalNegative(bool negative=true);
 extern bool gGlobalNegativeDraw;
+extern Color_t gGlobalBackColor;
+extern Color_t gGlobalForeColor;
 
 
 #endif // #ifdef jameshistfor_h
