@@ -39,7 +39,8 @@ TVirtualPad* hold=gPad;
 	//
 
 	fFitFcn = new TF1(("quickgausmain"+suffix).c_str(),"gaus(0)+pol2(3)",0,0);
-	fFitFcn->SetLineColor(1);
+    fFitFcn->SetLineColor(1);
+    if(gGlobalNegativeDraw)fFitFcn->SetLineColor(3);
  
 	proj=new TH1F();
 	proj_flow=new TH1F();
@@ -116,7 +117,7 @@ TVirtualPad* hold=gPad;
 	fCanvas1 = new TRootEmbeddedCanvas("Canvas1", this, 600, 500);
 		fCanvas1->GetCanvas()->SetFillColor(33);
 		fCanvas1->GetCanvas()->SetFrameFillColor(10);
-		fCanvas1->GetCanvas()->SetMargin(0.005,0.005,0.05,0.005);
+		fCanvas1->GetCanvas()->SetMargin(0.005,0.005,0.08,0.005);
 		//    fCanvas1->GetCanvas()->SetGrid();
 			fCanvas1->GetCanvas()->Connect("RangeChanged()", "j_gating_frame", this, "ReDrawOne()");
 			fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "j_gating_frame", this,"ClickedCanvasOne(Int_t,Int_t,Int_t,TObject*)");
@@ -940,15 +941,11 @@ void j_gating_frame::ShowFullProj(){
 		TVirtualPad* hold=gPad;
 		fCanvas1->GetCanvas()->cd();
 		proj_flow->GetXaxis()->SetRange(axis_down,axis_up);
-		proj_flow->Draw("hist");
-
-		if(hidebinerrors)proj->Draw("samehist");else proj->Draw("same");
-		
-		if(background_mode>4)b_man->Draw("samehist");
-		selected->Draw("samehist");
-		fFitFcn->Draw("same");
-		UpdateCanvas();
-		gPad=hold;
+		DrawHistOpt(proj_flow,true);
+        
+        UpdateDraw(true);
+        
+        gPad=hold;
 	action_hold=false;
 }
 
@@ -966,13 +963,14 @@ void j_gating_frame::HideFullProj(){
 
 // Draw histograms & canvas to the pad
 // these may be updated without redraw
-void j_gating_frame::UpdateDraw(){
+void j_gating_frame::UpdateDraw(bool overlay){
 	TVirtualPad* hold=gPad;
 	fCanvas1->GetCanvas()->cd();
-	if(hidebinerrors)proj->Draw("hist");else proj->Draw("");
-	if(backfit_mode>3)specback->Draw("samehist");
-	if(background_mode>4)b_man->Draw("samehist");
-	selected->Draw("samehist");
+    
+    DrawHistOpt(proj,hidebinerrors,false,overlay);
+    if(backfit_mode>3)DrawHistOpt(specback,true,false,true);
+    if(background_mode>4)DrawHistOpt(b_man,true,false,true);
+    DrawHistOpt(selected,true,false,true);
 	fFitFcn->Draw("same");
 	UpdateCanvas();
 	gPad=hold;

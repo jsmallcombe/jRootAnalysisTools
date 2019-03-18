@@ -1,4 +1,6 @@
 { 
+    SetGlobalNegative();
+    
     TH1 *A,*B,*C,*D;
     
 	TH1* ret;
@@ -37,14 +39,20 @@
     A->Draw("col");
     C1->cd(2);
     B->Draw("col");
+    CanvasNegative(C1->cd(2));
     C1->cd(3);
     C->Draw("col");
     C1->cd(4);
     D->Draw("col");
+    CanvasNegative(C1->cd(4));
     C1->cd(5);
+    gPad->Update();
     G1->DrawClone("al");
     C1->cd(6);
+    gPad->Update();
     G2->DrawClone("al");
+    CanvasNegative(C1->cd(6));
+    
     
     gPad->Update();
     

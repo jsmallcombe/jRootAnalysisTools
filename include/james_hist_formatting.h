@@ -30,9 +30,11 @@
 #include <TGClient.h>
 #include <TRootEmbeddedCanvas.h>
 #include <TSystem.h>
+#include <TFrame.h>
 
 #include "james_gpad_tools.h"
 #include "james_fitting.h"
+
 
 using namespace std;
 
@@ -102,16 +104,27 @@ void PadNDCtoUser(double& x,double& y,double* xy,bool reverse=false);
 TCanvas* DrawCopyCanvas(TH1* hist,bool HideErrors=true);//opt="hist" hide errors
 TCanvas* DrawCopyPeakClickerCanvas(TH1* hist,bool HideErrors=true);//opt="hist" hide errors
 
-//Draw without errors (but with functions) in current pad
+//Draw with or without errors (but with functions) in current pad
 TH1* DrawHistOpt(TH1* hist,bool HideErrors=false,bool Copy=false,bool Same=false);
 TH1* DrawCopyHistOpt(TH1* hist,bool HideErrors=true);
+
+TGraph* DrawGraphOpt(TGraph* hist,bool Copy=false,bool Same=false);
+TGraph* DrawCopyGraphOpt(TGraph* hist);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TString HistSaveAs(TH1* hist, TGWindow *window=0,TPad* pad=0);
 TFile* RootFileLoad(TGWindow *window=0);
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void CanvasNegativeFull(TVirtualPad* fPad=gPad);
+void CanvasNegative(TVirtualPad* fPad=gPad);
+void HistogramNegative(TH1* Hist);
+void GraphNegative(TGraph* Graph);
+
+void SetGlobalNegative();
+extern bool gGlobalNegativeDraw;
 
 
 #endif // #ifdef jameshistfor_h

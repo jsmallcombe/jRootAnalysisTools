@@ -439,6 +439,7 @@ TVirtualPad* hold=gPad;
 	MapWindow();
     
     
+    
 	fCanvas1->CFriends.push_back(fCanvas2->GetCanvas());
 	fCanvas1->CFriends.push_back(result->GetCanvas());
 	fCanvas2->CFriends.push_back(fCanvas1->GetCanvas());

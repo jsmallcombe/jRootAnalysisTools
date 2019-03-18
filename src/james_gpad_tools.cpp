@@ -94,6 +94,10 @@ void ClickPeakDrawConnect(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
 		TText peaknum;
 		peaknum.SetTextAlign(22);
 		peaknum.SetTextSize(0.035);	
+        int FillC=Can->GetFillColor();
+        if(FillC==1){
+            peaknum.SetTextColor(0);
+        }
 		
 		double shif=(h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetLast())-h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetFirst()))*0.05;
 		//GetXmin() doesnt account for zooming		

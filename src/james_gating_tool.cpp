@@ -151,7 +151,7 @@ TVirtualPad* hold=gPad;
     fCanvas1->GetCanvas()->SetBorderMode(0);
     fCanvas1->GetCanvas()->SetFrameFillColor(10);
 
-    fCanvas1->GetCanvas()->SetMargin(0.005,0.005,0.05,0.005);	
+    fCanvas1->GetCanvas()->SetMargin(0.005,0.005,0.08,0.005);	
     fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jgating_tool", this,"ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*)");
     fCanvas1->GetCanvas()->Connect("RangeChanged()", "jgating_tool", this, "NewAxisDrawn()");
     
@@ -410,9 +410,9 @@ void jgating_tool::DoUpdate(){
     RebinText->Deselect();
     gClient->NeedRedraw(RebinText);
     
-    H->GetXaxis()->SetLabelSize(0.03);
-    H->GetXaxis()->SetTicks("+");
-    H->GetXaxis()->SetLabelFont(42);
+//     H->GetXaxis()->SetLabelSize(0.03);
+//     H->GetXaxis()->SetTicks("+");
+//     H->GetXaxis()->SetLabelFont(42);
     H->GetYaxis()->SetNdivisions(8);
     H->GetYaxis()->SetTickLength(0.03);
     

@@ -43,6 +43,8 @@ using namespace std;
 
 #include "james_gate_subtract.h"
 #include "james_fitting.h"
+#include "james_hist_formatting.h"
+
 
 enum commandidentifiersjgatingtool {
    HId1,
@@ -112,7 +114,7 @@ private:
 	void UpdateSpecBack();
 
 	void DoAutoFit();
-	void UpdateDraw();
+	void UpdateDraw(bool overlay=false);
 	
 	string suffix;
 

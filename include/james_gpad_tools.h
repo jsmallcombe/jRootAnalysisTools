@@ -35,6 +35,7 @@
 #include "TSystem.h"
 
 #include "james_utility.h"
+#include "james_hist_formatting.h"
 
 
 using namespace std;

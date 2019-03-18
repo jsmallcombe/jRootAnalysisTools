@@ -88,16 +88,35 @@ void hformat(TH1* HH,bool setminzero){if(!HH)return;
 		ax[i]->SetTitleOffset(1.1);
 		ax[i]->SetTickLength(0.015);
 		ax[i]->CenterTitle(true);
+        if(gGlobalNegativeDraw){
+            ax[i]->SetTitleColor(0);
+            ax[i]->SetLabelColor(0);
+            ax[i]->SetAxisColor(0);
+        }
 	}
 	ax[1]->SetTitleOffset(-1.1);
 	
-	HH->SetLineColor(1);
+	
+    int DefaultCol=gStyle->GetHistLineColor();
+    int colL=HH->GetLineColor();
+// 	int colM=HH->GetMarkerColor();
+    if(colL==DefaultCol){
+        colL=1;
+        HH->SetLineColor(colL);
+    }
+    
+    if(gGlobalNegativeDraw&&colL==1){
+        HH->SetLineColor(0);
+        HH->SetMarkerColor(0);
+    }
+    
 	HH->SetStats(false);
 	HH->SetTitle("");
 	if(!(HH->InheritsFrom(TH2::Class()))){
 		if(setminzero)HH->SetMinimum(0);
 	}
 }
+
 
 TCanvas* DrawHformat(TH1* HH,bool setminzero){
 	TCanvas* canv=preapre_canvas();
@@ -506,6 +525,8 @@ TH1* DrawHistOpt(TH1* hist,bool HideErrors,bool Copy,bool Same){
     opt+="colz";
     if(Same)opt+="same";
     
+    if(gGlobalNegativeDraw)CanvasNegative();
+    
     TH1* h=hist;
     if(Copy){//h->Draw("SAMEFUNC");
         h=hist->DrawCopy(opt.c_str());
@@ -515,12 +536,49 @@ TH1* DrawHistOpt(TH1* hist,bool HideErrors,bool Copy,bool Same){
         hist->Draw(opt.c_str());
     }
     hformat(h,0);
+    
+    
+    
 	return h;	
 }
 	
 TH1* DrawCopyHistOpt(TH1* hist,bool HideErrors){
 	return DrawHistOpt(hist,HideErrors,true);
 }
+
+///////
+
+TGraph* DrawGraphOpt(TGraph* graph,bool Copy,bool Same){
+	if(!graph)return 0;
+    
+    string opt;
+    if(Same)opt="lsame";
+    else opt="al";
+    
+    if(gGlobalNegativeDraw){
+        if(!Same)CanvasNegative();
+        int colL=graph->GetLineColor();
+        int colM=graph->GetMarkerColor();
+        if(colL==1)graph->SetLineColor(0);
+        if(colM==1)graph->SetMarkerColor(0);
+    }
+    
+    gPad->Update();
+    TGraph* g=graph;
+    if(Copy){
+        graph->Draw(opt.c_str());
+    }else{
+        g=(TGraph*)graph->DrawClone(opt.c_str());
+    }
+    
+    return g;
+}
+
+TGraph* DrawCopyGraphOpt(TGraph* graph){
+    return DrawGraphOpt(graph,true,false);
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -652,3 +710,94 @@ TFile* RootFileLoad(TGWindow *window){
 
 }
 
+//
+// 
+//
+
+
+void CanvasNegativeFull(TVirtualPad* fPad){
+    fPad->Modified();
+    fPad->Update();
+    
+    TObjLink *lnk = fPad->GetListOfPrimitives()->FirstLink();
+    while (lnk) {
+        TObject *Ob=lnk->GetObject();
+        if(Ob->InheritsFrom(TH1::Class())){
+            HistogramNegative((TH1*)Ob);
+        }
+        if(Ob->InheritsFrom(TGraph::Class())){
+            GraphNegative((TGraph*)Ob);
+        }
+        lnk = lnk->Next();
+    }
+    
+    CanvasNegative(fPad);
+    fPad->Modified();
+    fPad->Update();
+}
+
+void CanvasNegative(TVirtualPad* fPad){
+    fPad->SetFillColor(1);
+    fPad->SetFrameLineColor(0);
+    fPad->SetFrameFillColor(1);
+    
+    TObjLink *lnk = fPad->GetListOfPrimitives()->FirstLink();
+    while (lnk) {
+        TObject *Ob=lnk->GetObject();
+        if(Ob->InheritsFrom(TFrame::Class())){
+            ((TFrame*)Ob)->SetFillColor(1);
+            ((TFrame*)Ob)->SetLineColor(0);
+        }          
+        lnk = lnk->Next();
+    }
+}
+    
+    
+    
+void HistogramNegative(TH1* Hist){
+    TAxis* ax[3]={Hist->GetXaxis(),Hist->GetYaxis(),Hist->GetZaxis()};
+	for(int i=0;i<3;i++){
+		ax[i]->SetTitleColor(0);
+		ax[i]->SetLabelColor(0);
+		ax[i]->SetAxisColor(0);
+	}
+
+	int colL=Hist->GetLineColor();
+	int colM=Hist->GetMarkerColor();
+    if(colL==1)Hist->SetLineColor(0);
+    if(colM==1)Hist->SetMarkerColor(0);
+    
+// 	Hist->SetFillColor(1);
+}
+    
+    
+void GraphNegative(TGraph* Graph){
+    HistogramNegative(Graph->GetHistogram());
+    
+	int colL=Graph->GetLineColor();
+	int colM=Graph->GetMarkerColor();
+    if(colL==1)Graph->SetLineColor(0);
+    if(colM==1)Graph->SetMarkerColor(0);
+}
+
+bool gGlobalNegativeDraw=false;
+
+
+void SetGlobalNegative(){
+    gGlobalNegativeDraw=true;
+    gStyle->SetCanvasColor(1);
+    gStyle->SetFrameFillColor(1);
+    
+    gStyle->SetTextColor(0);
+    gStyle->SetMarkerColor(0);
+    gStyle->SetLineColor(0);
+    gStyle->SetFrameLineColor(0);
+    
+    gStyle->SetLineColor(0);
+    gStyle->SetTitleTextColor(0);
+    gStyle->SetLabelColor(0);
+    gStyle->SetHistLineColor(0);
+    gStyle->SetAxisColor(0,"X");
+    gStyle->SetAxisColor(0,"Y");
+    gStyle->SetAxisColor(0,"Z");
+}

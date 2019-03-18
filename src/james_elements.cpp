@@ -69,25 +69,24 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,bool Trust){
 		
 		//Drawing Options
 			if(HType(fH)){
-		if(HType(fH)==3){
-			this->GetCanvas()->Clear();
-			TText t;
-			t.SetTextAlign(22);
-			t.SetTextSize(.6);
-			t.DrawTextNDC(.5,.5,"TH3");
-            string s=fH->GetName();
-			t.SetTextSize(1.8/(s.size()+1));
-			t.DrawTextNDC(.5,0.12,fH->GetName());
-		}else{
-			TH1* H=((TH1*)fH)->DrawCopy("COL");
-			H->GetXaxis()->SetLabelSize(0);
-			H->GetYaxis()->SetLabelSize(0);
-			H->SetStats(kFALSE);
-		}
+                if(HType(fH)==3){
+                    this->GetCanvas()->Clear();
+                    TText t;
+                    t.SetTextAlign(22);
+                    t.SetTextSize(.6);
+                    t.DrawTextNDC(.5,.5,"TH3");
+                    string s=fH->GetName();
+                    t.SetTextSize(1.8/(s.size()+1));
+                    t.DrawTextNDC(.5,0.12,fH->GetName());
+                }else{
+                    TH1* H=DrawCopyHistOpt((TH1*)fH);
+                    H->GetXaxis()->SetLabelSize(0);
+                    H->GetYaxis()->SetLabelSize(0);
+                    H->SetStats(kFALSE);
+                }
 			}else if(fH->InheritsFrom("TGraph")){
-		gPad->Update();
-		((TGraph*)fH)->DrawClone("al");
-		}
+                DrawCopyGraphOpt((TGraph*)fH);
+            }
 			this->GetCanvas()->Modified();
 			this->GetCanvas()->Update();
 			gPad=hold;
@@ -222,6 +221,8 @@ jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p, UInt_t w, UInt_t h, 
 		
 		this->AddFrame(result,new TGLayoutHints(kLHintsExpandY|kLHintsExpandX, 1, 1, 1, 1));
 	
+        
+        
 // 	result->Resize(600,400);
 // 	MapSubwindows();
 // 	Resize(GetDefaultSize());
@@ -263,10 +264,10 @@ void jAddSubTool::DrawAB(int i){
     
 	if(H){
 		Can->cd();
-		H->GetXaxis()->SetLabelSize(0);
+        H->GetXaxis()->SetLabelSize(0);
 		H->GetYaxis()->SetLabelSize(0);
 		H->SetStats(kFALSE);
-		H->DrawCopy("histcol");
+		DrawCopyHistOpt(H);
         if(!i)Abinwidth=H->GetXaxis()->GetBinWidth(1);
 	}else{
 		Can->Clear();
@@ -401,18 +402,18 @@ void jAddSubTool::DoSlider(){
         result->GetCanvas()->cd();
         
         if(gSubtract>1){
-            TH1* H;
-            if(fCheck1->GetState())H=AHist->DrawCopy("hist");else   H=AHist->DrawCopy("his"); 
-            hformat(H,0); 
+            TH1* H=DrawCopyHistOpt(AHist,fCheck1->GetState());
+            
             if(rmax>rmin)H->GetXaxis()->SetRange(rmin,rmax);
             if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
             
             SumHist->SetLineColor(2);
-            if(fCheck1->GetState())SumHist->Draw("histsame");else SumHist->Draw("hissame");
+            DrawHistOpt(SumHist,fCheck1->GetState(),false,true);
         }else{
             hformat(SumHist,0);
             if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
-            if(fCheck1->GetState())SumHist->Draw("histcol");else SumHist->Draw("hiscol"); 
+            
+            DrawHistOpt(SumHist,fCheck1->GetState(),false,false);
         }
                 
 // 			if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
