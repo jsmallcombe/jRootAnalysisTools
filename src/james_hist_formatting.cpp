@@ -620,16 +620,20 @@ again:
 			hist->SaveAs(fn);
 		}else if(fn.EndsWith(".pdf") ||
 			fn.EndsWith(".png") ){
+            bool NegHold=gGlobalNegativeDraw;
+            SetGlobalNegative(false);
 			if(pad){
+                CanvasNegativeFull(pad);
+                pad->Update();
 				pad->SaveAs(fn);
+                SetGlobalNegative(NegHold);
+                CanvasNegativeFull(pad);
 			}else{
-                bool NegHold=gGlobalNegativeDraw;
-                SetGlobalNegative(false);
 				TCanvas* fCan=DrawCopyCanvas(hist);
 				fCan->Update();
 				fCan->SaveAs(fn);
-                delete fCan;
                 SetGlobalNegative(NegHold);
+                delete fCan;
 			}
 		}else {//check if the type has been added to string or nor
 			if (!appendedType) {
