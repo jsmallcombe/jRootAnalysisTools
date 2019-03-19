@@ -793,20 +793,20 @@ void SetGlobalNegative(bool negative){
     
     gStyle->SetCanvasColor(gGlobalBackColor);
     gStyle->SetFrameFillColor(gGlobalBackColor);
-    
     gStyle->SetTextColor(gGlobalForeColor);
     gStyle->SetMarkerColor(gGlobalForeColor);
     gStyle->SetLineColor(gGlobalForeColor);
     gStyle->SetFrameLineColor(gGlobalForeColor);
-    
-    gStyle->SetLineColor(gGlobalForeColor);
     gStyle->SetTitleTextColor(gGlobalForeColor);
-    gStyle->SetLabelColor(gGlobalForeColor);
-    
     gStyle->SetHistLineColor(gGlobalForeColor);
-    gStyle->SetAxisColor(gGlobalForeColor,"x");
-    gStyle->SetAxisColor(gGlobalForeColor,"y");
-    gStyle->SetAxisColor(gGlobalForeColor,"z");
-//     
+    
+    
+	Option_t*  ax[3]={"x","y","z"};
+    for(int i=0;i<3;i++){
+        gStyle->SetLabelColor(gGlobalForeColor,ax[i]);
+        gStyle->SetTitleColor(gGlobalForeColor,ax[i]);
+        gStyle->SetAxisColor(gGlobalForeColor,ax[i]);
+    }
+
     //Changing gStyle alone is insufficient for histograms as any saved to disk aleardy have values set and will not take the defaults
 }
