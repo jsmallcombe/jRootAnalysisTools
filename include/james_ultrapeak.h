@@ -412,7 +412,7 @@ class  Ultrapeak{
 	
 	// Calculate all the data of the ultra peak and store in the FullFitHolder vector
 	static void MakeData(FullFitHolder* fHold,double binwidth=1);
-	static void MakeData(FullFitHolder* fHold,TH1* hist,bool exclusion=true);
+	static void MakeData(FullFitHolder* fHold,TH1* hist,TH1* exclusion=0);
 	static void InflateError(FullFitHolder* fHold);
 	
 

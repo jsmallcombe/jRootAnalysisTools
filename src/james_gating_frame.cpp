@@ -117,7 +117,7 @@ TVirtualPad* hold=gPad;
 	fCanvas1 = new TRootEmbeddedCanvas("Canvas1", this, 600, 500);
 		fCanvas1->GetCanvas()->SetFillColor(33);
 		fCanvas1->GetCanvas()->SetFrameFillColor(10);
-		fCanvas1->GetCanvas()->SetMargin(0.005,0.005,0.08,0.005);
+		fCanvas1->GetCanvas()->SetMargin(0.01,0.005,0.08,0.005);
 		//    fCanvas1->GetCanvas()->SetGrid();
 			fCanvas1->GetCanvas()->Connect("RangeChanged()", "j_gating_frame", this, "ReDrawOne()");
 			fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "j_gating_frame", this,"ClickedCanvasOne(Int_t,Int_t,Int_t,TObject*)");

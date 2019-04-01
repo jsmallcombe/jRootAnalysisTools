@@ -800,6 +800,7 @@ void SetGlobalNegative(bool negative){
     gStyle->SetTitleTextColor(gGlobalForeColor);
     gStyle->SetHistLineColor(gGlobalForeColor);
     
+    gStyle->SetFuncColor(2);
     
 	Option_t*  ax[3]={"x","y","z"};
     for(int i=0;i<3;i++){
