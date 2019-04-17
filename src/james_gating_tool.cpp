@@ -349,17 +349,18 @@ void jgating_tool::DoUpdate2D(){TVirtualPad* hold=gPad;
 		MainPanels->HideFrame(splitterB);
 		fCanvas1->GetCanvas()->cd();
 		if(fRButton2->GetState()){
-			TH1* H=gJframe1->full->DrawCopy("colz");
+            
+			TH1* H=DrawCopyHistOpt(gJframe1->full);
             H->GetXaxis()->SetRangeUser(x1,x2);
             H->GetYaxis()->SetRangeUser(y1,y2);
 		}else if(fRButton3->GetState()){
 			gJframe1->free_hist->Add(gJframe1->gate_hist,gJframe1->output_hist_point,1,-1);
-			TH1* H=gJframe1->free_hist->DrawCopy("colz");
+			TH1* H=DrawCopyHistOpt(gJframe1->free_hist);
             H->GetXaxis()->SetRangeUser(x1,x2);
             H->GetYaxis()->SetRangeUser(y1,y2);
 		}else{
 			TH1* H=gJframe1->output_hist_point;
-            H->Draw("colz");
+            DrawHistOpt(H);
             H->GetXaxis()->SetRangeUser(x1,x2);
             H->GetYaxis()->SetRangeUser(y1,y2);
 		}

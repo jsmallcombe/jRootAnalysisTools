@@ -79,6 +79,7 @@ void ClickPeakDrawConnect(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
 
 		TH1* h=hist_capture(Can);
 		if(!h) return;
+        if(HType(h)!=1) return;
 		
 		obj_removeall(TF1::Class(),Can);
 		obj_removeall(TText::Class(),Can);

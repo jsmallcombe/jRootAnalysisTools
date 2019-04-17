@@ -626,7 +626,7 @@ void jDirList::ProcessSystemDir(TList *files,TGListTreeItem* item){
       while ((file=(TSystemFile*)next())) {
          fname = file->GetName();
          if (file->IsDirectory()) {
-            if ((fname!="..") && (fname!=".")) { // skip it
+            if ((fname!="..") && (fname!=".") && (fname[0]!='.')) { // skip it
                fContents->AddItem(item,fname);
             }
          } else if (fname.EndsWith(".root")) {   // add root files
