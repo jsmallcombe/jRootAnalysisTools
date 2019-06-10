@@ -246,9 +246,10 @@ class  Ultrapeak{
 		kStep	= BIT(2),
 		kPol2	= BIT(3),
 		k2Gaus	= BIT(4),
-		kInflate= BIT(5)
+		kInflate= BIT(5),
+		kCentTrue= BIT(6)
 	};
-	static int PBits(int i) {return 0x1<<(i+6);}
+	static int PBits(int i) {return 0x1<<(i+7);}
 	
 	double para[48];
 	
@@ -293,11 +294,13 @@ class  Ultrapeak{
 	void SetBit(int i,bool b=true){cBits.SetBit(i,b);}
 	bool TestBit(int i){return cBits.TestBit(i);}
  
-	Ultrapeak(int n=1,bool p=1,bool b=1,bool s=1,bool g=0):N(n){
+	Ultrapeak(int n=1,bool p=1,bool b=1,bool s=1,bool g=0,bool c=0):N(n){
 		SetBit(kPeaks,p);
 		SetBit(kBack,b);
 		SetBit(kStep,s);
 		SetBit(k2Gaus,g);
+		SetBit(kInflate,0);
+		SetBit(kCentTrue,c);
 		if(N>gPeakNlimit)N=gPeakNlimit;
 	}
 	Ultrapeak(int n,TransientBitsClass<long> b):N(n),cBits(b){}
@@ -376,6 +379,10 @@ class  Ultrapeak{
 		// complex sharing parameter normalisation behaviour 
 		// Use OldCombArea and ignore "TrueCentroid"
 		//yeta=p[gPeakSharing];hach=1;X=x[0];
+        
+        if(TestBit(kCentTrue)){//New flag to use "True centroid" while still keeping yeta/hach
+            X=x[0];
+        }
 		
 		// The latter functions take peak height but now peak height inputs may be ratio
 		// So first we convert.
@@ -430,13 +437,13 @@ class  Ultrapeak{
 		
 	// An all singing all dancing function to fit N peaks that are in close enough proximity to assume constant peak parameters
 	// int=1 specified to attempt to use step background int=0 uses linear
-	static FullFitHolder* PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode=0,int peaktype=0,string sig="",string dec="",string sha="",TH1* fExHist=0);
+	static FullFitHolder* PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode=cBackType0,int peaktype=0,bool truecent=0,string sig="",string dec="",string sha="",TH1* fExHist=0);
 	// If the fit fails returns 0
 	
 	// Uses default values for simple single fit
 	// If the fit fails returns 0
 	
-	static FullFitHolder* QuickPeakFit(TH1* fHist,double fLeftUser,double fRightUser);
+	static FullFitHolder* QuickPeakFit(TH1* fHist,double fLeftUser,double fRightUser, bool fExtraOpt=0);
 
     
     //A TGraph used for the numberical solution to the decay peak

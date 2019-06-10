@@ -24,7 +24,7 @@ UltraFitEnv::UltraFitEnv(TH1* fHist,TCanvas* fCan):UltraFitEnv(new TGMainFrame(g
 	MainFrame->SetWindowName("UltraFitControls");
 }
 
-UltraFitEnv::UltraFitEnv(const TGWindow * p,TH1* fHist,TCanvas* fCan,int opt): TGCompositeFrame(p,100,100,kVerticalFrame),MainFrame(0),cFrame(0),cPan(0),cCan(0),gHist(0),gHistDrawn(0),gHistDrawnName(""),cShift(0),cCtrl(0),cAlt(0),cGoodFit(0),cSaveConf(0),cClearConf(0),cNfit(1),cNfree(1)
+UltraFitEnv::UltraFitEnv(const TGWindow * p,TH1* fHist,TCanvas* fCan,int opt): TGCompositeFrame(p,100,100,kVerticalFrame),MainFrame(0),cFrame(0),cPan(0),cCan(0),gHist(0),gHistDrawn(0),gHistDrawnName(""),cShift(0),cCtrl(0),cAlt(0),cGoodFit(0),cSaveConf(0),cClearConf(0),cTrueCent(0),cNfit(1),cNfree(1)
 {TVirtualPad* hold=gPad;
     if(opt==1){
         fCan=0;
@@ -263,6 +263,18 @@ void UltraFitEnv::BuildDialogBox(int opt){
             label = new TGLabel(shapeelement, "Sharing");
             shapeelement->AddFrame(label,buff);
         cShapePane->AddFrame(shapeelement,ExpandXz);
+        
+         shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
+            cTrueCentButton = new TGTextButton(shapeelement," YMax ");
+            cTrueCentButton->Connect("Clicked()","UltraFitEnv",this,"ChangeCentMode()");
+            cTrueCentButton->Resize(50);
+            cTrueCentButton->SetToolTipText("Centroid parameter input control.");
+            shapeelement->AddFrame(cTrueCentButton,buff);
+            label = new TGLabel(shapeelement, "Centroid");
+            shapeelement->AddFrame(label,buff);
+        cShapePane->AddFrame(shapeelement,ExpandXz);       
+        
+    
     cFrame->AddFrame(cShapePane,XB);
     
     button = new TGTextButton(cFrame,"^");
@@ -1006,7 +1018,7 @@ void  UltraFitEnv::FitGUIPeak(){
         fCheck1->SetState(kButtonUp);
     }
 	
-	FullFitHolder* fHold=Ultrapeak::PeakFit(gHist,bound_l,bound_u,fPass,fCombo->GetSelected(),fittype,fixsig,fixdec,fixsha,fExclusionHist);
+	FullFitHolder* fHold=Ultrapeak::PeakFit(gHist,bound_l,bound_u,fPass,fCombo->GetSelected(),fittype,cTrueCent,fixsig,fixdec,fixsha,fExclusionHist);
 // 	if(fExclusionHist)delete fExclusionHist;
 	
 	fFitFinished=true;
@@ -1216,6 +1228,15 @@ void UltraFitEnv::ImportPeaks(TFile* file){
 void UltraFitEnv::PrintFits(){
 	if(gHist)Ultrapeak::PrintData(cFitList,gHist);//Extra inputs shouldn't be needed as cVal already calculated
 	else Ultrapeak::PrintData(cFitList,1);
+}
+
+void UltraFitEnv::ChangeCentMode(){
+    cTrueCent=!cTrueCent;
+    if(cTrueCent){
+        cTrueCentButton->SetText(" True  ");
+    }else{
+        cTrueCentButton->SetText(" YMax ");
+    }
 }
 
 const char gHelpCanvas[] = "\n\

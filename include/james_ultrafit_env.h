@@ -129,6 +129,8 @@ class UltraFitEnv : public TGCompositeFrame
 	void ClearFitsD();
 	
 	void LoadSession();
+    
+    void ChangeCentMode();
 	
 	void HideShape();
 	
@@ -181,6 +183,8 @@ class UltraFitEnv : public TGCompositeFrame
 	TGTextEntry* cZc;//zeroth peak centroid
 	
 	TGTextEntry* fZERO;//zeroth peak centroid override
+	TGTextButton* cTrueCentButton;
+    bool cTrueCent;
 	
 	unsigned int cNfit;//Keeps track of the current number of peaks, heavily trusted in terms of the above vectors
 	unsigned int cNfree;
