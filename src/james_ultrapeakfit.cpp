@@ -551,7 +551,7 @@ FullFitHolder* Ultrapeak::QuickPeakFit(TH1* fHist,double fLeftUser,double fRight
     }
     
 	if(FFH){
-		MakeData(FFH,fHist);
+		PrintData(FFH,true,fHist);
 		FFH->Draw("same");
 	}
 	return FFH;

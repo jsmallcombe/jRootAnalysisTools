@@ -10,6 +10,8 @@
 #ifndef JUtility
 #define JUtility
 
+#include <sstream>
+
 #include <TMatrixD.h>
 #include <TMatrixDSym.h>
 #include <vector>
@@ -19,6 +21,8 @@
 #include <TH2.h>
 #include <TH3.h>
 #include <TClass.h>
+#include <TKey.h>
+#include <TFile.h>
 #include <TGraph.h>
 #include <TArray.h>
 #include <iostream>
@@ -383,8 +387,13 @@ class TH2Efficiency : public TH2D {
 	ClassDef(TH2Efficiency,1);
 };
 
+template<typename T>
+vector< vector<T>> csv_process(string file);
 
-
+TObject* ReadFirstObject(TFile* File,TClass* Class);
+TObject* ReadFirstObject(string File,TClass* Class);
+TH1* ReadFirstHist(TFile* File);
+TH1* ReadFirstHist(string File);
 
 
 #endif

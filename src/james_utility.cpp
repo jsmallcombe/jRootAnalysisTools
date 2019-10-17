@@ -229,3 +229,92 @@ void ExtractAsymErrorTest(string str){
 
 ClassImp(TH1Efficiency);
 ClassImp(TH2Efficiency);
+
+
+template<typename T>
+T csv_Tconv(string input){
+    std::stringstream ss; 
+    ss<<input;
+    T t;
+    ss>>t;
+    return t;
+}
+template <> string csv_Tconv<string>(string input){
+    return input;
+}
+    
+template<typename T>
+vector< vector<T>> csv_process(string file){
+    vector< vector<T> > ret;
+    ifstream infile(file.c_str());
+    if(!infile.good()) return ret;
+
+    T blank;
+    string line;
+    int columns=0;
+    int row=0;
+    while(getline(infile,line)){
+        for(int i=0;i<columns;i++)ret[i].push_back(blank);
+        
+        line=line+',';
+        int f=0,l=0,L=line.length();
+        int i=0;
+        while(l<=L){
+            if(line[l]==','){
+                if(i>=columns){
+                    columns++;
+                    ret.push_back(vector<T>(row+1,blank));
+                }
+                if(l>f){
+                    ret[i][row]=csv_Tconv<T>(line.substr(f,l-f));
+                }
+                f=l+1;
+                i++;
+            }
+            l++;
+        }
+        row++;
+    }
+    infile.close();
+
+    return ret;
+}
+template vector< vector<int>> csv_process<int>(string);
+template vector< vector<float>> csv_process<float>(string);
+template vector< vector<double>> csv_process<double>(string);
+template vector< vector<string>> csv_process<string>(string);
+
+
+TObject* ReadFirstObject(TFile* File,TClass* Class){
+	TKey *key;
+	TIter next(File->GetListOfKeys());
+	while ((key = (TKey*)next())){
+		TClass *cl = gROOT->GetClass(key->GetClassName());
+		if (cl->InheritsFrom(Class)){
+            TObject* Ob=key->ReadObj();
+            string Na=Ob->GetName();
+            return Ob->Clone((Na+"Cln").c_str());
+		}
+	}
+	return 0;
+}
+
+TObject* ReadFirstObject(string File,TClass* Class){
+    TFile tmp(File.c_str(),"READ");
+    gROOT->cd();
+    if(!tmp.IsOpen()){
+        cout<<endl<<"NO FILE OPENED :"<<File<<flush;
+        return 0;
+    }
+    TObject* Ob=ReadFirstObject(&tmp,Class);
+    tmp.Close();
+    return Ob;
+}
+    
+    
+TH1* ReadFirstHist(TFile* File){
+	return (TH1*) ReadFirstObject(File,TH1::Class());
+}
+TH1* ReadFirstHist(string File){
+	return (TH1*) ReadFirstObject(File,TH1::Class());
+}
