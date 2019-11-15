@@ -173,7 +173,10 @@ jSpecTool::~jSpecTool()
    if(histzero){delete histzero;}
    if(ParentWindow){delete ParentWindow;}
 
-   cout<<endl<<"SPECTOOL DELETED"<<endl;
+   Closed(this);
+   TQObject::Disconnect(this);
+    
+   cout<<"SPECTOOL DELETED"<<endl;
    
    // Clean up
    Cleanup();

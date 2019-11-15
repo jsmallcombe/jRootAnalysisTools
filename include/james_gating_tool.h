@@ -36,6 +36,8 @@
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <chrono>
+#include <ctime>    
 using namespace std;
 
 #include "james_ultrafit_env.h"
@@ -69,8 +71,7 @@ private:
     
     TGTransientFrame* MakeTH3Popup();
 	
-	TH1* saveadd;
-	vector< TH1* > savehists;
+    vector< TH1* > savehists;
 	vector< TGCheckButton* > savechecks;
 	vector< TGTextButton* > savebutton;
 	
@@ -82,6 +83,9 @@ private:
     double x1,x2,y1,y2;
     
     bool RangeUpdateHold;
+    
+	void ClearSaved();
+    std::chrono::time_point<std::chrono::high_resolution_clock> clicktime;
    
 public:
 	jgating_tool(const char *);

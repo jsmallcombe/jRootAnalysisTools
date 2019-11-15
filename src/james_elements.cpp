@@ -91,6 +91,7 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,bool Trust){
 			this->GetCanvas()->Update();
 			gPad=hold;
 		NewObject();
+		NewObject(fH);
 	}
 }
 

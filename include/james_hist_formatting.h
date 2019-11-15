@@ -100,9 +100,11 @@ void PadNDCtoUser(double& x,double& y,double* xy,bool reverse=false);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//Draw a formatted copy in a new window
+//Draw formatted in a new window
 TCanvas* DrawCopyCanvas(TH1* hist,bool HideErrors=true);//opt="hist" hide errors
-TCanvas* DrawCopyPeakClickerCanvas(TH1* hist,bool HideErrors=true);//opt="hist" hide errors
+TCanvas* DrawCanvas(TH1* hist,bool HideErrors=true,bool copy=false);
+TCanvas* DrawCopyPeakClickerCanvas(TH1* hist,bool HideErrors=true);
+TCanvas* DrawPeakClickerCanvas(TH1* hist,bool HideErrors=true,bool copy=false);
 
 //Draw with or without errors (but with functions) in current pad
 TH1* DrawHistOpt(TH1* hist,bool HideErrors=false,bool Copy=false,bool Same=false);

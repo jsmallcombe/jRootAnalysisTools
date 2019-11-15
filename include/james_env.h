@@ -76,6 +76,9 @@ private:
     
     void ClearFreeObjects();
     void AddFreeObject(TObject* obj,bool CanDelete=true);
+    
+    vector<TGButton*> OneOnly;
+    vector<TGButton*> OneNotly;
 	
 public:
 	jEnv();
@@ -90,6 +93,7 @@ public:
 	void FreeFitPanel();
 	void FitPanelClose(){fFitPanel=0;}
 	void Spectrum();
+	void FreeSpectrum();
 	void SpecToolClose(){fSpecTool=0;}
 	void Browser();
 	void Gatter();
@@ -102,6 +106,7 @@ public:
 	void DrawSm();
 	void DrawSmHere(TPad*,TObject*,Int_t);	
 	void NewDirObject(TObject*);
+	void NewCanvasObject(TObject*);
     
 	TGCompositeFrame* AddTab(string TabName="",bool ShowClose=true);
     TCanvas* AddCanvasTab(string TabName="");

@@ -76,6 +76,9 @@ class CCframe : public TRootEmbeddedCanvas {
         void NewObject(){
             Emit("NewObject()");
         }
+        void NewObject(TObject* obj){
+            Emit("NewObject(TObject*)", (Long_t)obj);
+        }
 		
 	ClassDef(CCframe, 2)
 };

@@ -1,5 +1,5 @@
 { 
-    SetGlobalNegative();
+//     SetGlobalNegative();
     
     TH1 *A,*B,*C,*D;
     
@@ -60,7 +60,7 @@
     gSystem->cd("./Test/data/");
     
     new jEnv();
-   new jScale();
-   new jEval();
+//    new jScale();
+//    new jEval();
 
 }

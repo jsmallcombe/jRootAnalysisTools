@@ -71,6 +71,10 @@ public:
 	void RemovalProcess(TH1*,int);
 	void NewInput(TH1*);
     void Invert();
+
+    void Closed(TObject* obj){
+        Emit("Closed(TObject*)", (Long_t)obj);
+    }
 		
 	ClassDef(jSpecTool, 1)
 };

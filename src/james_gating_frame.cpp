@@ -888,7 +888,7 @@ void j_gating_frame::DoHistogram(){
 				int compton_offset=gate_up+2;
 				if(backfit_mode<3){
 					compton_offset=proj->GetXaxis()->FindFixBin(fFitFcn->GetParameter(1)+3*fFitFcn->GetParameter(2));
-					if(compton_offset<gate_up)compton_offset=gate_up+1;
+					if(compton_offset<gate_up)compton_offset=gate_up+2;
 				}
 				if(compton_offset>proj->GetNbinsX())compton_offset=proj->GetNbinsX();
 				

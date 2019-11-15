@@ -81,7 +81,6 @@ TVirtualPad* hold=gPad;
     //   BUILD HISTOGRAM SAVING FRAME
     //
     
-    saveadd=0;
     savehists.clear();
     savechecks.clear();
     savebutton.clear();
@@ -260,6 +259,8 @@ gPad=hold;
 //______________________________________________________________________________
 jgating_tool::~jgating_tool()
 {
+    ClearSaved();//delete any saved result histograms
+    
 // 	if(fTip){fTip->Hide();delete fTip;} // Seems have created many crashes recently 
 	if(fInputStore){delete fInputStore;}
 	
@@ -582,8 +583,7 @@ void jgating_tool::StoreHistograms(Int_t i){
 }
 
 void jgating_tool::DrawSaved(){
-	if(saveadd)delete saveadd;
-	saveadd=0;
+	TH1* saveadd=0;
 	for(uint i=0;i<savehists.size();i++){
 		if(savehists[i]&&savechecks[i]->GetState()==EButtonState::kButtonDown){
 			if(saveadd){
@@ -597,17 +597,41 @@ void jgating_tool::DrawSaved(){
 	if(saveadd){
 		unsigned short rebin=fHslider1->GetPosition()+1;
 		if(rebin>1)saveadd->Rebin(rebin);
-		DrawCopyPeakClickerCanvas(saveadd,fCheck1->GetState());
+        DrawPeakClickerCanvas(saveadd);
+        saveadd->SetDirectory(0);
+        saveadd->SetBit(kCanDelete);
+        //Could have done drawcopy but this saves one copy if a big TH2
 	}
 }
 
+void jgating_tool::ClearSaved(){
+	for(uint i=0;i<savehists.size();i++){
+        if(savehists[i]){
+            delete savehists[i];
+            savehists[i]=0;
+        }
+    }
+}
+
+
 //Doesnt actually clear anything, you just cant select them
 void jgating_tool::CSaveButton(){
-	for(uint i=0;i<savehists.size();i++){
-		savechecks[i]->SetState(kButtonUp);
-		savechecks[i]->SetState(kButtonDisabled);
-		savebutton[i]->SetText("[Empty]");
-	}
+    
+    std::chrono::duration<double> diff= std::chrono::system_clock::now()-clicktime;
+    if(abs(diff.count())<2){
+        for(uint i=0;i<savehists.size();i++){
+            savechecks[i]->SetState(kButtonUp);
+            savechecks[i]->SetState(kButtonDisabled);
+            savebutton[i]->SetText("[Empty]");
+        }
+        ClearSaved();
+        
+//         cout<<endl<<"Saved results cleared."<<endl;
+    }else{
+        cout<<"Click twice to clear."<<endl;
+    }
+    
+    clicktime=std::chrono::system_clock::now();
 }
 
 void jgating_tool::NewAxisDrawn() //adjust sliders and control values for new axis

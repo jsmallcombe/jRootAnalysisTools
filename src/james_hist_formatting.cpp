@@ -485,16 +485,20 @@ void PadNDCtoUser(double& x,double& y,double* xy,bool reverse){
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 TCanvas* DrawCopyCanvas(TH1* hist,bool HideErrors){
+    return DrawCanvas(hist,HideErrors,true);
+}
+
+TCanvas* DrawCanvas(TH1* hist,bool HideErrors,bool copy){
 	if(hist){
 		TVirtualPad* hold=gPad;
 		string name=hist->GetName();
-		name+="DrawCopyCan";
+		name+="DrawCan";
+        if(copy){name+="Copy";}
 		TCanvas* Can=new TCanvas(name.c_str());
 		ReMargin(Can);
 		Can->cd();
-		DrawCopyHistOpt(hist,HideErrors);
+		DrawHistOpt(hist,HideErrors,copy);
 		Can->Modified();
 		Can->Update();
 		gPad=hold;
@@ -504,10 +508,15 @@ TCanvas* DrawCopyCanvas(TH1* hist,bool HideErrors){
 }
 
 TCanvas* DrawCopyPeakClickerCanvas(TH1* hist,bool HideErrors){
-	TCanvas* Can=DrawCopyCanvas(hist,HideErrors);
+	return DrawPeakClickerCanvas(hist,HideErrors,true);
+}
+
+TCanvas* DrawPeakClickerCanvas(TH1* hist,bool HideErrors,bool copy){
+	TCanvas* Can=DrawCanvas(hist,HideErrors,copy);
     ConnectPeakClickerCanvas(Can);
 	return Can;
 }
+
 
 TH1* DrawHistOpt(TH1* hist,bool HideErrors,bool Copy,bool Same){
 	if(!hist)return 0;
@@ -527,8 +536,6 @@ TH1* DrawHistOpt(TH1* hist,bool HideErrors,bool Copy,bool Same){
         hist->Draw(opt.c_str());
     }
     hformat(h,0);
-    
-    
     
 	return h;	
 }

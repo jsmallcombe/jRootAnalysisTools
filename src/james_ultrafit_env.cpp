@@ -44,7 +44,7 @@ UltraFitEnv::~UltraFitEnv(){
         delete MainFrame;
     }
     
-    cout<<endl<<"UltraFitEnv DELETED"<<endl;
+    cout<<"UltraFitEnv DELETED"<<endl;
    
 	KillCan();
 // 	if(gHist){delete gHist;gHist=0;} // No idea, old segfault

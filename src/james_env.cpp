@@ -39,14 +39,17 @@ TVirtualPad* hold=gPad;
     this->AddFrame(DirList,new TGLayoutHints(kLHintsExpandY,4,4,4,4));
     
 	TGVerticalFrame* controlframe1 = new TGVerticalFrame(this);
-		fCanvas1 = new CCframe("Embedded1", controlframe1, fDefaultGrabSize, fDefaultGrabSize);
-		
-		controlframe1->AddFrame(fCanvas1);
+        //// jBrowser show/hide
+		TGTextButton* jbrowser = new TGTextButton(controlframe1,"< jBrowser");
+        jbrowser->SetFont(ft);
+		jbrowser->Connect("Clicked()","jEnv",this,"ShowHideDir()");
+		controlframe1->AddFrame(jbrowser,ExpandX);
         
-// 		DirList->Connect("NewObject(TObject*)","CCframe",fCanvas1,"NonGuiNew(TObject*)");
-		DirList->Connect("NewObject(TObject*)","CCframe",fCanvas1,"NonGuiNew(TObject*)");
-		DirList->Connect("NewObject(TObject*)","jEnv",this,"NewDirObject(TObject*)");
+        ////// Click Grab Window
+		fCanvas1 = new CCframe("Embedded1", controlframe1, fDefaultGrabSize, fDefaultGrabSize);
+		controlframe1->AddFrame(fCanvas1);
 		
+        //// Fit Panel Buttons
         TGHorizontalFrame* drawduelbuttons = new TGHorizontalFrame(controlframe1);            
             TGTextButton* fitter = new TGTextButton(drawduelbuttons,"Fit Panel");
             fitter->SetFont(ft);
@@ -58,24 +61,24 @@ TVirtualPad* hold=gPad;
 			fPictureBut->Connect("Clicked()","jEnv",this,"FreeFitPanel()");
 			drawduelbuttons->AddFrame(fPictureBut,new TGLayoutHints(kLHintsExpandY,0,5,3,2));
 		controlframe1->AddFrame(drawduelbuttons,new TGLayoutHints(kLHintsExpandX,0,0,0,0));
+        OneOnly.push_back(fitter);
 
-		TGTextButton* Spect = new TGTextButton(controlframe1,"SpecTool");
-        Spect->SetFont(ft);
-		Spect->Connect("Clicked()","jEnv",this,"Spectrum()");
-		controlframe1->AddFrame(Spect,ExpandX);
-		TGTextButton* gatter = new TGTextButton(controlframe1,"Gate");
-        gatter->SetFont(ft);
-		gatter->Connect("Clicked()","jEnv",this,"Gatter()");	
-		controlframe1->AddFrame(gatter,ExpandX);
-		TGTextButton* jbrowser = new TGTextButton(controlframe1,"< jBrowser");
-        jbrowser->SetFont(ft);
-		jbrowser->Connect("Clicked()","jEnv",this,"ShowHideDir()");
-		controlframe1->AddFrame(jbrowser,ExpandX);
-		TGTextButton* tbrowser = new TGTextButton(controlframe1,"TBrowser");
-        tbrowser->SetFont(ft);
-		tbrowser->Connect("Clicked()","jEnv",this,"Browser()");
-		controlframe1->AddFrame(tbrowser,ExpandX);
-		
+        ///// Spec Tool Buttons
+        drawduelbuttons = new TGHorizontalFrame(controlframe1);
+            TGTextButton* Spect = new TGTextButton(drawduelbuttons,"SpecTool");
+            Spect->SetFont(ft);
+            Spect->Connect("Clicked()","jEnv",this,"Spectrum()");
+            drawduelbuttons->AddFrame(Spect,ExpandX);
+			fPictureBut = new TGPictureButton(drawduelbuttons,gClient->GetPicture("newcanvas.xpm"));
+            fPictureBut->SetMinWidth(30);
+            fPictureBut->SetWidth(35);
+			fPictureBut->Connect("Clicked()","jEnv",this,"FreeSpectrum()");
+			drawduelbuttons->AddFrame(fPictureBut,new TGLayoutHints(kLHintsExpandY,0,5,3,2));
+		controlframe1->AddFrame(drawduelbuttons,new TGLayoutHints(kLHintsExpandX,0,0,0,0));
+        OneOnly.push_back(Spect);
+        OneOnly.push_back(fPictureBut);
+        
+        //// Draw Buttons
 		drawduelbuttons = new TGHorizontalFrame(controlframe1);
 			TGTextButton* Drawer = new TGTextButton(drawduelbuttons," Draw ");
             Drawer->SetFont(ft);
@@ -84,19 +87,36 @@ TVirtualPad* hold=gPad;
 			fPictureBut = new TGPictureButton(drawduelbuttons,gClient->GetPicture("newcanvas.xpm"));
             fPictureBut->SetMinWidth(30);
             fPictureBut->SetWidth(35);
-             
 			fPictureBut->Connect("Clicked()","jEnv",this,"DrawCpy()");
 			drawduelbuttons->AddFrame(fPictureBut,new TGLayoutHints(kLHintsExpandY,0,5,3,2));
 		controlframe1->AddFrame(drawduelbuttons,new TGLayoutHints(kLHintsExpandX,0,0,0,0));
 		
+        //// Drawsame Button
 		TGTextButton* Drawsm = new TGTextButton(controlframe1,"DrawSame");
         Drawsm->SetFont(ft);
 		Drawsm->Connect("Clicked()","jEnv",this,"DrawSm()");
-		controlframe1->AddFrame(Drawsm,ExpandX);
+		controlframe1->AddFrame(Drawsm,ExpandX);       
+        
+        //// Gating tool button
+		TGTextButton* gatter = new TGTextButton(controlframe1,"Gate");
+        gatter->SetFont(ft);
+		gatter->Connect("Clicked()","jEnv",this,"Gatter()");	
+		controlframe1->AddFrame(gatter,ExpandX);
+        OneNotly.push_back(gatter);
+
+        //// SaveAs Button
 		TGTextButton* Saver = new TGTextButton(controlframe1,"SaveAs");
         Saver->SetFont(ft);
 		Saver->Connect("Clicked()","jEnv",this,"jSaveAs()");
 		controlframe1->AddFrame(Saver,ExpandX);
+        
+        //// TBrowser Button
+		TGTextButton* tbrowser = new TGTextButton(controlframe1,"TBrowser");
+        tbrowser->SetFont(ft);
+		tbrowser->Connect("Clicked()","jEnv",this,"Browser()");
+		controlframe1->AddFrame(tbrowser,ExpandX);
+        
+        //// Close and Exit Buttons
 		TGTextButton* close = new TGTextButton(controlframe1,"Close");
         close->SetFont(ft);
 		close->Connect("Clicked()","jEnv",this,"DeleteWindow()");
@@ -106,8 +126,8 @@ TVirtualPad* hold=gPad;
 		exit->Connect("Clicked()","jEnv",this,"Terminate()");
         exit->SetFont(ft);
         controlframe1->AddFrame(exit,ExpandX);
+        
     this->AddFrame(controlframe1);
-	
     
 	TGTextButton* expandB = new TGTextButton(this,">");
         expandB->Connect("Clicked()","jEnv",this,"ShowHideTabs()");	
@@ -138,6 +158,13 @@ TVirtualPad* hold=gPad;
     if(!fPixOffY)fPixOffY=33;
 #endif
 
+    //// Connect the various TObject grabbing systems
+    //// If the jDirList has a new selection this is passed to the CCframe to update it's graphics and reference
+    //// jDirList also passed directly to the jEnv to allow for extra objects outside the scope of CCframe
+    //// CCframe will pass to jEnv when it has a new object either from CCframe or from TCanvas
+    DirList->Connect("NewObject(TObject*)","CCframe",fCanvas1,"NonGuiNew(TObject*)");
+    DirList->Connect("NewObject(TObject*)","jEnv",this,"NewDirObject(TObject*)");
+    fCanvas1->Connect("NewObject(TObject*)","jEnv",this,"NewCanvasObject(TObject*)");
     
 // 	Connect("CloseWindow()","jEnv",this,"~jEnv()");
 	Connect("CloseWindow()","jEnv",this,"DontCallClose()");
@@ -215,7 +242,7 @@ void jEnv::Spectrum(){
             if(!IsVisible(fTabs))ShowTabs();
 		}else {
             ////// Old free jSpecTool
-//          fSpecTool=new jSpecTool(fCanvas1->Hist());
+//          fSpecTool=;
 // 			fSpecTool->Connect("Destroyed()", "jEnv", this,"SpecToolClose()");
             
             fSpecTool=new jSpecTool(fTabs,fCanvas1->Hist());
@@ -224,7 +251,15 @@ void jEnv::Spectrum(){
             ShowTabs();
 		}
 	}
-};
+}
+
+
+void jEnv::FreeSpectrum(){
+    if(fCanvas1->Type()==1){
+        AddFreeObject(new jSpecTool(fCanvas1->Hist()),true);
+    }
+}
+
 
 
 void jEnv::Gatter(){
@@ -385,12 +420,33 @@ void jEnv::HideDir(){
 }
 
 void jEnv::NewDirObject(TObject* obj){
+    // Only for object types outside the scope of CCframe
+    
 	if(obj->InheritsFrom(TGraph::Class())){
         TCanvas* Can=AddCanvasTab(obj->GetName());
         Can->cd();
 		gPad->Update();
         DrawCopyGraphOpt((TGraph*)obj);
 	}	
+}
+
+void jEnv::NewCanvasObject(TObject* obj){
+    //Shouldnt actually use that object pointer
+    int c=fCanvas1->Type();
+    for (auto i : OneOnly){
+        if(c==1){
+            i->SetEnabled();
+        }else{
+            i->SetEnabled(kFALSE);
+        }
+    }
+    for (auto i : OneNotly){
+        if(c>1){
+            i->SetEnabled();
+        }else{
+            i->SetEnabled(kFALSE);
+        }
+    }
 }
 
 void jEnv::ClosedObject(TObject* obj){
