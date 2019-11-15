@@ -432,6 +432,7 @@ void jEnv::NewDirObject(TObject* obj){
 
 void jEnv::NewCanvasObject(TObject* obj){
     //Shouldnt actually use that object pointer
+
     int c=fCanvas1->Type();
     for (auto i : OneOnly){
         if(c==1){

@@ -1135,6 +1135,17 @@ void UltraFitEnv::ExportFits(){
 	
 }
 
+void UltraFitEnv::ExportFitsMan(string name){
+	if(cFitList.size()>0){
+        if(name.find(".")<name.size())
+        name=name.substr(0,name.find("."))+".dat";
+        ofstream outFile(name);
+        if(gHist)Ultrapeak::PrintData(cFitList,gHist,outFile);//Extra inputs shouldn't be needed as cVal already calculated
+        else Ultrapeak::PrintData(cFitList,1,outFile);
+        outFile.close();
+    }
+}
+
 
 void UltraFitEnv::ExportSession(TString FileName){
     
@@ -1323,6 +1334,7 @@ void UltraFitEnv::jSaveAs(){
         TString fileN=HistSaveAs(gHist,this,GetCan());
 		if(fileN.EndsWith(".root")){
             ExportSession(fileN);//Overwrite it with session file
+            ExportFitsMan((string)fileN);
         }
     }
     Stop.Start();

@@ -309,7 +309,7 @@ class  Ultrapeak{
 	Ultrapeak(const Ultrapeak& tmp) : N(tmp.N),cBits(tmp.cBits) { }
 	Ultrapeak & operator=(const Ultrapeak & rhs) {N=rhs.N;cBits=rhs.cBits; return *this; }
 	
-	~Ultrapeak(){};
+	virtual ~Ultrapeak(){};
 	
 	static unsigned int NfromTF1(TF1* f){int i=0;while(f->GetNpar()>gPeakNC(i))i++;return i;}//Number of peaks if TF1 is an ultra
 	static unsigned int NparFromN(int i){return gPeakNC(i)-1;}//Total number of parameters if fn has i peaks
@@ -448,6 +448,8 @@ class  Ultrapeak{
     
     //A TGraph used for the numberical solution to the decay peak
 	static TGraph DecayXR10;
+    
+	ClassDef(Ultrapeak, 1);
 };
 
 

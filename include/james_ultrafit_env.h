@@ -99,6 +99,7 @@ class UltraFitEnv : public TGCompositeFrame
 	void SaveFit();
 	void PrintFits();
 	void ExportFits();
+	void ExportFitsMan(string);
 	void SetSep(unsigned int fN,double fS,double fSe=-1);
 	void ImportPeaks(string file);
 	void LoadSession(string file);

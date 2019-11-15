@@ -530,7 +530,7 @@ TH1* DrawHistOpt(TH1* hist,bool HideErrors,bool Copy,bool Same){
     TH1* h=hist;
     if(Copy){//h->Draw("SAMEFUNC");
         h=hist->DrawCopy(opt.c_str());
-        TObject *obj;TIter next(hist->GetListOfFunctions());
+        TObject *obj;TIter next(h->GetListOfFunctions());
         while ((obj = next()))((TF1*)obj)->DrawCopy("same");//Needed because of "Hist option turns off the functions"
     }else{
         hist->Draw(opt.c_str());
