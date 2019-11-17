@@ -1,6 +1,78 @@
 #include "james_ultrapeak.h"
 #include "TStyle.h"
 
+int Ultrapeak::Ultra_iterator = 0;
+
+TF1* Ultrapeak::PrepareTF1(double range1,double range2,int n,int backmode,bool twogaus){
+    stringstream ss;
+    ss<<"UltP"<<Ultra_iterator;
+    Ultra_iterator++;
+    
+    Ultrapeak fPeakFunc(n,1,1,Step(backmode),twogaus);
+	fPeakFunc.SetBit(kStep,Step(backmode));
+	fPeakFunc.SetBit(kPol2,Pol2(backmode));
+	if(twogaus)fPeakFunc.SetBit(k2Gaus,1);
+	TF1 *fUlt = new TF1(ss.str().c_str(),fPeakFunc,range1,range2,NparFromN(n));
+    
+    NameParam(fUlt,n,backmode,twogaus);
+    FixUnusedParam(fUlt,n,backmode,twogaus);
+
+    return fUlt;
+}
+
+void Ultrapeak::NameParam(TF1* fPeakFunc,int n,int backmode,bool tg){
+    fPeakFunc->SetParName(gUltraPol1,"na");
+    fPeakFunc->SetParName(gUltraStep,"na");
+    fPeakFunc->SetParName(gUltraOffsetOrPol2,"na");
+    fPeakFunc->SetParName(gPeakSigmaB,"na");
+    fPeakFunc->SetParName(gPeakSigmaC,"na");
+        
+    fPeakFunc->SetParName(gUltraPol0,"Pol0");
+    if(PolOrder(backmode)>0){
+        fPeakFunc->SetParName(gUltraPol1,"Pol1");
+        fPeakFunc->SetParName(gUltraOffsetOrPol2,"Pol1Offset");
+        if(PolOrder(backmode)==2){
+            fPeakFunc->SetParName(gUltraOffsetOrPol2,"Pol2");
+        }
+    }
+    if(Step(backmode)){
+        fPeakFunc->SetParName(gUltraStep,"Bkgd Step");
+    }
+    
+	fPeakFunc->SetParName(gPeakSigma,"Sigma");
+	fPeakFunc->SetParName(gPeakDecay,"Decay");
+    
+	if(tg){
+		fPeakFunc->SetParName(gPeakSigmaB,"SigmaRatio");
+		fPeakFunc->SetParName(gPeakSigmaC,"TGHRatio");
+	}
+	
+	fPeakFunc->SetParName(gPeakSharing,"Sharing");
+    
+	for(auto i=0;i<n;i++){
+		stringstream ss;
+		ss<<i;
+		fPeakFunc->SetParName(gPeakNC(i),("Peak "+ss.str()).c_str());
+        fPeakFunc->SetParName(gPeakNH(i),("Height "+ss.str()).c_str());
+	}
+    
+}
+
+void Ultrapeak::FixUnusedParam(TF1* fPeakFunc,int n,int backmode,bool tg){
+    if(PolOrder(backmode)==0){
+        fPeakFunc->FixParameter(gUltraPol1,0);
+        fPeakFunc->FixParameter(gUltraOffsetOrPol2,0);
+    }
+    if(!Step(backmode)){
+        fPeakFunc->FixParameter(gUltraStep,0);
+        
+    }
+	if(!tg){
+        fPeakFunc->FixParameter(gPeakSigmaB,0);
+        fPeakFunc->FixParameter(gPeakSigmaC,0);
+    }
+}
+
 void Ultrapeak::DrawPeak(FullFitHolder* fFit,TCanvas* pad,TH1* fHist){
 	if(pad)pad->cd();
 

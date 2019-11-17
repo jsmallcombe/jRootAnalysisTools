@@ -31,18 +31,17 @@
 #include <iomanip>
 using namespace std;
 
-// The following peak functions are written in many parts to make the maths transparent
-
-////////////////////////////////////////////////////
-// Basic Gaussian centred at zero and height 1    //
-////////////////////////////////////////////////////
+// These globals are set to enable the maths functions declared at global scope to use parameters
+// lists Ultrapeak without compatibility issues and for future extension of parameter list without
+// intense rewrite. However as Parameter lists are subsequently long and contain unused values, 
+// care must be taken fix parameters not in use. There are Ultrapeak functions provided to this end.
 
 const short gPeakBackA=0;
 const short gPeakBackB=1;
 const short gPeakBackC=2;
 const short gPeakBackD=3;
-const short gPeakSigma=4;
-const short gPeakDecay=5;
+const short gPeakDecay=4;
+const short gPeakSigma=5;
 const short gPeakSigmaB=6;
 const short gPeakSigmaC=7;
 const short gPeakSharing=8;
@@ -50,6 +49,13 @@ inline short gPeakNH(unsigned short i){return i*2+9;}
 inline short gPeakNC(unsigned short i){return i*2+10;}
 
 const short gPeakNlimit=10;
+
+
+// The following peak functions are written in many parts to make the maths transparent
+
+////////////////////////////////////////////////////
+// Basic Gaussian centred at zero and height 1    //
+////////////////////////////////////////////////////
 
 inline double UniGaus(double& x,double& sig){return exp(-((x*x)/(sig*sig*2)));}
 
@@ -153,11 +159,7 @@ inline double MulitPeakBackUni(double *par,int Np,double& x,double& yeta){
 	for(int i=0;i<Np;i++){cent+=par[gPeakNC(i)];
 		a=x-cent;
 		ret+=(par[gPeakNH(i)]/sum)*CombRDstep(a, par[gPeakSigma],par[gPeakDecay],b1);}
-	return ret;//*par[gPeakBackB]+par[gPeakBackA];
-}
-
-inline double MulitPeakBack(double *par,int Np,double& x,double& yeta){
-	return MulitPeakBackUni(par,Np,x,yeta)*par[gPeakBackB]+par[gPeakBackA];
+	return ret;
 }
 
 
@@ -224,12 +226,6 @@ inline double MulitPeakBackUniTwo(double *par,int Np,double& x,double& yeta){
 	return ret;
 }
 
-inline double MulitPeakBackTwo(double *par,int Np,double& x,double& yeta){
-	return MulitPeakBackUniTwo(par,Np,x,yeta)*par[gPeakBackB]+par[gPeakBackA];
-}
-
-
-
 ///////////////////////////////////////////
 //    Ultra peal class definition	 //
 ///////////////////////////////////////////
@@ -294,11 +290,11 @@ class  Ultrapeak{
 	void SetBit(int i,bool b=true){cBits.SetBit(i,b);}
 	bool TestBit(int i){return cBits.TestBit(i);}
  
-	Ultrapeak(int n=1,bool p=1,bool b=1,bool s=1,bool g=0,bool c=0):N(n){
+	Ultrapeak(int n=1,bool p=1,bool b=1,bool s=1,bool tg=0,bool c=0):N(n){
 		SetBit(kPeaks,p);
 		SetBit(kBack,b);
 		SetBit(kStep,s);
-		SetBit(k2Gaus,g);
+		SetBit(k2Gaus,tg);
 		SetBit(kInflate,0);
 		SetBit(kCentTrue,c);
 		if(N>gPeakNlimit)N=gPeakNlimit;
@@ -310,6 +306,10 @@ class  Ultrapeak{
 	Ultrapeak & operator=(const Ultrapeak & rhs) {N=rhs.N;cBits=rhs.cBits; return *this; }
 	
 	virtual ~Ultrapeak(){};
+    
+    static TF1* PrepareTF1(double range1=0,double range2=1000,int n=1,int backmode=0,bool twogaus=0);
+    static void NameParam(TF1* t,int n=1,int b=1,bool tg=0);
+    static void FixUnusedParam(TF1* t,int n=1,int b=1,bool tg=0);
 	
 	static unsigned int NfromTF1(TF1* f){int i=0;while(f->GetNpar()>gPeakNC(i))i++;return i;}//Number of peaks if TF1 is an ultra
 	static unsigned int NparFromN(int i){return gPeakNC(i)-1;}//Total number of parameters if fn has i peaks
@@ -448,6 +448,8 @@ class  Ultrapeak{
     
     //A TGraph used for the numberical solution to the decay peak
 	static TGraph DecayXR10;
+    
+	static int Ultra_iterator;
     
 	ClassDef(Ultrapeak, 1);
 };
