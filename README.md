@@ -5,6 +5,10 @@ Users are recommended to use the latest release and not the master branch
 https://github.com/jsmallcombe/jRootAnalysisTools/releases/latest
 Please report any issues on the github issues page.
 
+Please cite using doi:
+[![DOI](https://zenodo.org/badge/88855371.svg)](https://zenodo.org/badge/latestdoi/88855371)
+J. Smallcombe, jROOT Tools.
+
 This package contains an add-on library for CERN's root analysis package.
 The primary tools are:
 -jEnv : A graphical session manager
