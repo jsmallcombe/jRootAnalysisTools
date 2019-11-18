@@ -2,7 +2,7 @@
 //
 //	James Root Library
 //	An object that runs a root based gating and background subtraction environment for TH2 and TH3
-//	05 Mar 2017
+//	17 Nov 2019
 //	james.smallcombe@outlook.com
 //
 //

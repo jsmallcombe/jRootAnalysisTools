@@ -2,7 +2,7 @@
 //
 //	James Root Library
 //	Functions for handling root TH2/TH3 projection/gating in desired way
-//	05 Mar 2017
+//	17 Nov 2019
 //	james.smallcombe@outlook.com
 //
 //

@@ -1137,8 +1137,10 @@ void UltraFitEnv::ExportFits(){
 
 void UltraFitEnv::ExportFitsMan(string name){
 	if(cFitList.size()>0){
-        if(name.find(".")<name.size())
-        name=name.substr(0,name.find("."))+".dat";
+        if(name.find(".")<name.size()){
+            name=name.substr(0,name.find("."));
+        }
+        name+=".dat";
         ofstream outFile(name);
         if(gHist)Ultrapeak::PrintData(cFitList,gHist,outFile);//Extra inputs shouldn't be needed as cVal already calculated
         else Ultrapeak::PrintData(cFitList,1,outFile);

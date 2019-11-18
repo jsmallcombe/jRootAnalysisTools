@@ -2,7 +2,7 @@
 //
 //	James Root Library
 //	Class for fitting of tailed gaussians with step and polynomail background
-//	05 Mar 2017
+//	17 Nov 2019
 //	james.smallcombe@outlook.com
 //
 //

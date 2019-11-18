@@ -2,7 +2,7 @@
 //
 //	James Root Library
 //	GUI tool for fitting and saving with ultrapeak fuction
-//	05 Mar 2017
+//	17 Nov 2019
 //	james.smallcombe@outlook.com
 //
 //

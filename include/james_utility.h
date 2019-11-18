@@ -2,7 +2,7 @@
 //
 //	James Root Library
 //	Utility functions and classes for Vectors, TF1s etc
-//	05 Mar 2017
+//	17 Nov 2019
 //	james.smallcombe@outlook.com
 //
 //

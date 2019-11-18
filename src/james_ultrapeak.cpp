@@ -142,6 +142,9 @@ void Ultrapeak::DrawPeak(FullFitHolder* fFit,TCanvas* pad,TH1* fHist){
 // Calculated the peak error based on fit parameters
 // If binwidth!=1 is provided the areas will be accordingly corrected
 void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
+    fHold->RedChiInflateErr=fHold->TestBit(Ultrapeak::kInflate);
+    double SqrtRC=sqrt(fHold->InflateChi());
+    // InflateChi returns 1 if the option to inflate is false
     
     //As this is the value in CVal, if it is not set, MakeData will be re-called later.
     fHold->CVal(VPIe(NfromTF1(fHold)-1),0);
@@ -183,7 +186,7 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
         if(fHold->TestBit(Ultrapeak::kCentTrue)){
             fHold->CVal(VPC(i),fCent.Eval(0)-fCentOff);
         }
-		fHold->CVal(VPCe(i),AnalyticalFullCovError(&fCent,fHold->GetCov()));
+		fHold->CVal(VPCe(i),SqrtRC*AnalyticalFullCovError(&fCent,fHold->GetCov()));
         // Now a full covariant centroid error
 		
 		// Full Area Count
@@ -191,16 +194,22 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
 		TF1 fArea("fArea",fPeakArea,-1,1,fHold->GetNpar());
 		fArea.SetParameters(fParam);
 		double sA=fArea.Eval(0);
-		double sE=AnalyticalFullCovError(&fArea,fHold->GetCov());
+		double sE=SqrtRC*AnalyticalFullCovError(&fArea,fHold->GetCov());
+        
+        sA/=binwidth;
+        sE/=binwidth;
 		if(sE<sqrt(abs(sA)))sE=sqrt(abs(sA));
-		fHold->CVal(VPA(i),sA/binwidth);
-		fHold->CVal(VPAe(i),sE/binwidth);
+		fHold->CVal(VPA(i),sA);
+		fHold->CVal(VPAe(i),sE);
 	}
 }
 
 // Calculate areas based on fit function and integration
 // Requires the histogram that was the target of the fit
 void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist,TH1* exclusion){
+    fHold->RedChiInflateErr=fHold->TestBit(Ultrapeak::kInflate);
+    double RC=fHold->InflateChi();
+    // InflateChi returns 1 if the option to inflate is false
 
 	//Calculate the area from the peak function
 	MakeData(fHold,hist->GetXaxis()->GetBinWidth(1));
@@ -249,8 +258,8 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist,TH1* exclusion){
         }
     }
     
-//     cout<<endl<<endl<<"groupsN "<<groupsN;
-    
+//  cout<<endl<<endl<<"groupsN "<<groupsN;
+        
 	for(int i=0;i<N;i++){
         if(!used[i])continue;
         
@@ -266,22 +275,39 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist,TH1* exclusion){
             if(!goodrange)continue;
         }
         
-        // Calculate full integrals
-        double fLower=hist->GetXaxis()->GetBinLowEdge(downbin[i]);
-        double fUpper=hist->GetXaxis()->GetBinUpEdge(upbin[i]);
-        double total=hist->Integral(downbin[i],upbin[i]);
+        // Calculate full integrals and error of the histogram
+        double IntErr=0;
+        double fTotal=hist->IntegralAndError(downbin[i],upbin[i],IntErr);
         
         // Prepare our background functions
+        double fLower=hist->GetXaxis()->GetBinLowEdge(downbin[i]);
+        double fUpper=hist->GetXaxis()->GetBinUpEdge(upbin[i]);
         Ultrapeak fPeakFunc(N,fHold->cBits);
         fPeakFunc.SetBit(kPeaks,0);
         TF1 fBack("fBack",fPeakFunc,fLower,fUpper,fHold->GetNpar());
         fBack.SetParameters(fParam);
-        double fIntegralBack=fBack.Integral(fLower,fUpper)/hist->GetXaxis()->GetBinWidth(1);
+        
+        // Calculate integral of the background function
+        double bWidth=hist->GetXaxis()->GetBinWidth(1);
+        double fBackInt=fBack.Integral(fLower,fUpper)/bWidth;
+    
+        // Calculate very coarse background fn error
+        double fBackIntErrSq=0;
+        for(int b=downbin[i];b<=upbin[i];b++){
+            double bErr=AnalyticalFullCovError(&fBack,fHold->GetCov(),hist->GetXaxis()->GetBinCenter(b))*bWidth;
+            fBackIntErrSq+=bErr*bErr;
+        }
+        fBackIntErrSq*=RC;
+      
+        if(fBackInt>fBackIntErrSq)fBackIntErrSq=fBackInt;
         
         // Start calculating and adding things
-        double peakcounts=total-fIntegralBack;
-        double peakcerror=sqrt(total+fIntegralBack);
+        double peakcounts=fTotal-fBackInt;
+        double peakcerror=sqrt(IntErr*IntErr+fBackIntErrSq);
         
+        // If this integration region contains multiple peaks,
+        // The area integral area is split based on their relative size in the fit/
+        // The fit error on their relative fraction is caluclated and included.
         if(ipeak[i].size()>1){
             UltrapeakFrac fPeakFrac(ipeak[i],N,0,fHold->cBits);
             for(unsigned int s=0;s<ipeak[i].size();s++){
@@ -295,8 +321,8 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist,TH1* exclusion){
           		double peak=peakcounts*pF;
                 double peakerror=pow(pFE/pF,2)+pow(peakcerror/peakcounts,2);	
                 peakerror=sqrt(peakerror)*peak;
-                // Integral Area Count
-            
+                //peakerror=sqrt(peakerror*RC)*peak;// As peakcerror already include a RedChi inflation decided not to do another here as that appeared to be double inflating. The cowboy RedChi inflation going on around here is already a bit much
+                
                 fHold->CVal(VPI(Ni),peak);
                 fHold->CVal(VPIe(Ni),peakerror);      
             }  
@@ -305,20 +331,6 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist,TH1* exclusion){
             fHold->CVal(VPIe(i),peakcerror);   
         }
     }
-}
-
-void Ultrapeak::InflateError(FullFitHolder* fHold){
-	if(fHold->TestBit(Ultrapeak::kInflate))return;
-	double RedChi=fHold->ReducedChi();
-	if(RedChi>1&&RedChi<1E5){
-		RedChi=sqrt(RedChi);
-		for(int i=0;i<fHold->CVal(VN);i++){
-			double err=RedChi*fHold->CVal(VPAe(i));
-			fHold->CVal(VPAe(i),err);
-		}
-		fHold->SetBit(Ultrapeak::kInflate);
-	}
-	return;
 }
 
 void Ultrapeak::PrintTitles(ostream& ofs){

@@ -1,7 +1,7 @@
 #
 #
 #	James Root Analysis Tools Library
-#	20 April 2017
+#	17 Nov 2019
 #	james.smallcombe@outlook.com
 #
 #

@@ -2,7 +2,7 @@
 //
 //	James Root Library
 //	Tool panel and helper enviroment for GUI working in root
-//	05 Mar 2017
+//	17 Nov 2019
 //	james.smallcombe@outlook.com
 //
 //

@@ -466,13 +466,16 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	
 	FullFitHolder* fHold = new FullFitHolder(fFit,fResult->GetCovarianceMatrix(),fPeakFunc.cBits);
 	
-		//This form does not calculate the integral if exclusion range overlaps
-	Ultrapeak::MakeData(fHold,fHist,fExHist);
-	
+    bool infl=false;
 	if(statmode==0){
-		Ultrapeak::InflateError(fHold);
-		cout<<endl<<"Fit Areas Errors inflated by sqrt(RedChi)"<<flush;
+		cout<<endl<<"Fit Area Errors inflated by sqrt(RedChi)"<<flush;
+        infl=true;
 	}
+    fHold->SetBit(Ultrapeak::kInflate,infl);
+    fHold->RedChiInflateErr=infl;
+    
+	//This form does not calculate the integral if exclusion range overlaps
+	Ultrapeak::MakeData(fHold,fHist,fExHist);
 	
 	return fHold;	
 }

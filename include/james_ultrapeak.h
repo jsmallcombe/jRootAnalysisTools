@@ -2,7 +2,7 @@
 //
 //	James Root Library
 //	Class for fitting of tailed gaussians with step and polynomail background
-//	05 Mar 2017
+//	17 Nov 2019
 //	james.smallcombe@outlook.com
 //
 //
@@ -420,8 +420,6 @@ class  Ultrapeak{
 	// Calculate all the data of the ultra peak and store in the FullFitHolder vector
 	static void MakeData(FullFitHolder* fHold,double binwidth=1);
 	static void MakeData(FullFitHolder* fHold,TH1* hist,TH1* exclusion=0);
-	static void InflateError(FullFitHolder* fHold);
-	
 
 	static void MakeData(vector< FullFitHolder* > in,TH1* hist){for(int i=0;(unsigned)i<in.size();i++)MakeData(in[i],hist);}
 	static void MakeData(vector< FullFitHolder* > in,double binwidth=1){for(int i=0;(unsigned)i<in.size();i++)MakeData(in[i],binwidth);}

@@ -2,7 +2,7 @@
 //
 //	James Root Library
 //	An object for using the QT functionality to manage TFiles
-//	16 Feb 2019
+//	17 Nov 2019
 //	james.smallcombe@outlook.com
 //
 //

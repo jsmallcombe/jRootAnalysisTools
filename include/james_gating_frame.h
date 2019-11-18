@@ -2,7 +2,7 @@
 //
 //	James Root Library
 //	A root GUI panel for TH2/TH3 gating & subtraction, designed to be built/packages into other tools/applets 
-//	06 Mar 2017
+//	17 Nov 2019
 //	james.smallcombe@outlook.com
 //
 //

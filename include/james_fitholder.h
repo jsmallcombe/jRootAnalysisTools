@@ -2,7 +2,7 @@
 //
 //	James Root Library
 //	Fit Holder Class, for storing full error matrix
-//	05 Mar 2017
+//	17 Nov 2019
 //	james.smallcombe@outlook.com
 //
 //
@@ -79,19 +79,21 @@ class FullFitHolder: public TF1
 	
 	// Methods
 	double ReducedChi(){if(GetNDF()>0)return GetChisquare()/GetNDF();else return 1E8;}
+	double InflateChi(){
+        if(RedChiInflateErr){
+            double RedChi=ReducedChi();
+			if(RedChi>1&&RedChi<1E5){
+                return RedChi;
+            }
+        }
+        return 1;
+    }
+    
 // 	double Eval(double X=0){return cFit.Eval(X);}
 	double EvalError(double X=0){
-		if(RedChiInflateErr){
-			double RedChi=ReducedChi();
-			if(RedChi>1&&RedChi<1E5){
-				return sqrt(RedChi)*AnalyticalFullCovError(this,&cCov,X);
-				//TMath::StudentQuantile(0.5 + 0.67/2, GetNDF())*TMath::Sqrt(ReducedChi());
-			}
-		}
-		return AnalyticalFullCovError(this,&cCov,X);
+		return AnalyticalFullCovError(this,&cCov,X)*sqrt(InflateChi());
+        //TMath::StudentQuantile(0.5 + 0.67/2, GetNDF())*TMath::Sqrt(ReducedChi());
 	}
-	
-	
 	
 // 	operator TF1() { return cFit; }
 // 	operator TF1*() { return this; }

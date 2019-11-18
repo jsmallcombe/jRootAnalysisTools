@@ -150,8 +150,9 @@ void jSpecTool::NewInput(TH1* input){
 	if(histzero){delete histzero;}
 
 	histin=(TH1*)input->Clone(("massahist"+make_iterator()).c_str());
-	histsub=(TH1*)input->Clone(("massasubhist"+make_iterator()).c_str());
-	histzero=(TH1*)input->Clone(("massasubzero"+make_iterator()).c_str());
+    histin->GetListOfFunctions()->Clear();
+	histsub=(TH1*)histin->Clone(("massasubhist"+make_iterator()).c_str());
+	histzero=(TH1*)histin->Clone(("massasubzero"+make_iterator()).c_str());
 	RemovalPrep(histzero);
 	gStart=RemovalStart(histin);
 	
