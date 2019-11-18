@@ -26,13 +26,16 @@
 \MakeOuterQuote{"}
 
 %opening
-\title{JAnalysisTools Manual}
+\title{jRoot Analysis Tools Manual}
 \author{J. T. Smallcombe}
 \begin{document}
 
 \maketitle
+\begin{center}
+\includegraphics[width=0.25\textwidth]{Emblem.png}
+\end{center}
 \tableofcontents
-
+\newpage
 \section{Introduction}
 This library, designed to help working with root for analysis, contains several GUI analysis tools and useful sets of functions. An explanation of some of the major components is given here, but subclasses and functions will not be detailed.
 Within the GUI classes hover over control to view explanatory tooltip text.
@@ -83,6 +86,7 @@ in a ROOT interactive session. A new window will open:
 \end{tabular}
 \end{center}
 
+\newpage
 \subsection{Histogram Grabbing}
 Whenever an instance of jEnv exists histogram grabbing is enabled in all $TCanvas$ instances, including those embedded in other classes/windows. Whenever a window containing a drawn histogram is clicked, a pointer to the first histogram of the frame is grabbed by jEnv and the small "Selected Histogram" icon will change. If a frame contains multiple histograms and you must click exactly on the desired histogram itself, not on the whitespace.
 
@@ -94,7 +98,6 @@ Whenever an instance of jEnv exists histogram grabbing is enabled in all $TCanva
 
 Once a histogram is grabbed a copy of it will be passed to any of the functions of jEnv.
 
-\newpage
 \begin{wrapfigure}[14]{r}{0.25\textwidth}
 \includegraphics[width=0.25\textwidth]{jEnvE.png}
 \end{wrapfigure}
@@ -116,6 +119,7 @@ When \textit{TObjects} are selected they a passed to \textit{jEnv} from where yo
 Initially hidden on the right hand side of the jEnv are the environment tabs. Only the AddSubCompare tool tab is present initially. Fit panel, Spectrum tool and drawn objects will appear in subsequent tabs or can be explicitly drawn in their own windows by using the appropriate icon button.
 The tabs can be shown/hidden by clicking on the long narrow button running along the side of the primary jEnv window.
 
+\newpage
 \subsection{Histogram AddSubCompare Tool}
 To the right side of jEnv is tab containing the AddSubCompare tool, this can be show/hidden by clicking the long button narrow button to the right of the primary jEnv window. The AddSubCompare tab is a simple tool to allow quick addition/subtraction and comparison of histograms from anywhere in the ROOT session.
 Click either of the selected histograms windows $\alpha$ or $\beta$ to assign the currently grabbed histogram from jEnv, at this point a copy IS saved, not a pointer.
@@ -147,7 +151,6 @@ Additional \textit{TH1} comparison modes have been added which overlay the two h
 \end{tabular}
 \end{center}
 
-\newpage
 \section{Gating and Background Subtraction Tool}
 The gating tool is designed to provide live graphical gating and background subtraction for \textit{TH2} and \textit{TH3} histograms filled with any data. 
 A new instance can be created from the jEnv toolbar or typing any of the following:
@@ -202,10 +205,13 @@ Depending on the nature of the data contained in the histogram and the the spect
 \item ManRel - Relative position manual gate. As Man but the background gate will move when the data gate moves. Useful for scanning.
 \end{enumerate}
 
+\newpage
 \subsection{Result Window}
 \begin{center}
-\includegraphics[width=0.5\textwidth]{toolD.png}
-\end{center}
+\begin{tabular}{ c c }
+\raisebox{-.5\height}{\includegraphics[width=0.42\textwidth]{toolD.png}}
+&
+\begin{minipage}{0.55\textwidth}
 \begin{enumerate}
 \item Draw Overlays - Show the total ungated-projection (scaled), or the currently subtracted background spectrum, overlain in the result window.
 \item Open Peak Fit Panel - Open an instance of $UltraFitEnv$, the fitting tool is "connected" to the result canvas and will update with new input if the gate is changed. See Section \ref{sec:peakfit}.
@@ -214,14 +220,16 @@ Depending on the nature of the data contained in the histogram and the the spect
 \item Show/Hide Gate Summing Tool.
 \item Result Frame. Double clicking in this window will perform a quick Gaussian fit at the cursor and display the centroid.
 \item Rebin Result - Select a factor by which to rebin result histograms.
-\end{enumerate}
+\end{enumerate} \end{minipage}
+\\
+\end{tabular}
+\end{center}
 
-\newpage
 \subsection{Gate Summing Tool}
 The Gate Summing Tool is used for saving the result histograms in memory after gating so that the results of multiple gates can be quickly summed.
 \begin{center}
 \begin{tabular}{ c c }
-\begin{minipage}{0.6\textwidth}
+\begin{minipage}{0.65\textwidth}
 \begin{enumerate}
 \item Show/Hide Gate Summing Tool.
 \item Create additional save slot.
@@ -236,7 +244,7 @@ The Gate Summing Tool is used for saving the result histograms in memory after g
 \end{tabular}
 \end{center}
 
-
+\newpage
 \subsection{3D Gating Window}
 For the first gate on a \textit{TH3} there is significant amount of computation so this is not done live. The output of the first gate is only performed when a new projection is selected, a different background mode is selected, or when the [Update] button is pressed.
 \begin{center}
@@ -469,6 +477,7 @@ FullFitHolder* Ultrapeak::PeakFit(
 	vector< jPeakDat > ListOfPeaks,
 	int BackGroundMode = 0,
 	int PeakType = 0,
+	bool TrueCent=0,
 	string SigmaParameterOveride="",
 	string DecayParameterOveride="",
 	string SharingParameterOveride="",
@@ -501,9 +510,11 @@ The centroids, "integral" and their respective errors can be fetched with $VPC$,
       \setcounter{enumi}{-1}
       \item Constant background
       \item Constant + step under peaks
-      \item Linear highly constrained by the fit range markers
+      \setcounter{enumi}{9}
       \item Linear
       \item Linear + step under peaks
+      \item Linear highly constrained by the fit range markers
+      \setcounter{enumi}{19}
       \item Quadratic
       \item Quadratic + step under peaks
       \end{enumerate}
@@ -514,6 +525,7 @@ The centroids, "integral" and their respective errors can be fetched with $VPC$,
       \item Gaussian + small exponential tail
       \item Two Gaussians with identical centroid + one exponential tail
       \end{enumerate}
+    \item \textit{TrueCent} Indicates if centroids are specified as the true spectroscopic value or if they are given by the maximum value, which may have been skewed by a large tail. 
     \item $SigmaParameterOveride$, $DecayParameterOveride$, $SharingParameterOveride$ - these allow changing of the peak shape values from their defaults. Defaults are optimised for HPGe and Si(Li) spectra in keV. If used, provide a number in the string, the new value will be fixed in the fit. If desired include and uncertainty in the string (as explained in Section \ref{sec:errors}) to free the parameter
     \item $ExclusionHistogram$ should not be used in command line or script fitting.   
 \end{itemize}

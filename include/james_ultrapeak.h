@@ -429,9 +429,9 @@ class  Ultrapeak{
 	static void PrintData(FullFitHolder* fHold,bool titles=true,double binwidth=1,ostream& =cout);
 	static void PrintData(FullFitHolder* fHold,bool titles,TH1* hist,ostream& =cout);
 	static void PrintData(vector< FullFitHolder* > in,TH1* hist,ostream& ofs=cout){
-		PrintTitles(ofs);for(int i=0;(unsigned)i<in.size();i++)PrintData(in[i],false,hist,ofs);}	
+		PrintTitles(ofs);for(int i=0;(unsigned)i<in.size();i++)PrintData(in[i],false,hist,ofs);ofs<<endl;}	
 	static void PrintData(vector< FullFitHolder* > in,double binwidth=1,ostream& ofs=cout){
-		PrintTitles(ofs);for(int i=0;(unsigned)i<in.size();i++)PrintData(in[i],false,binwidth,ofs);}
+		PrintTitles(ofs);for(int i=0;(unsigned)i<in.size();i++)PrintData(in[i],false,binwidth,ofs);ofs<<endl;}
 		
 	// An all singing all dancing function to fit N peaks that are in close enough proximity to assume constant peak parameters
 	// int=1 specified to attempt to use step background int=0 uses linear

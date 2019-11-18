@@ -1256,12 +1256,7 @@ const char gHelpCanvas[] = "\n\
   This fitting environment is designed for the automatic fitting of Gaussian \n\
   peaks convolved with exponential tails.\n\
 \n\
-  The tool operates in two primary modes:\n\
-	-A histogram may be captured and stored by the tool.\n\
-	-A canvas can be linked to the tool, any new histogram drawn in that \n\
-	 canvas will become the fitting target.\n\
-\n\
-  In order to begin fitting click either [Capture Hist] or [Link Canvas] and\n\
+  To begin fitting click either [Capture Hist] or [Link Canvas] and\n\
   then immediately click on the Canvas/Histogram you want to fit.\n\
 \n\
   While the mouse pointer is over the fit histogram,\n\
@@ -1277,47 +1272,28 @@ const char gHelpCanvas[] = "\n\
 		    <[0]-[9] keys>	Set the number of peaks.\n\
 		   <[.]/[s]/[Del]>	Save latest fit to list & histogram.\n\
 			     <[c]>	Clear the selected exclusion region.\n\
-\n\n\
-  The tool is designed for fits over small energy regions, as such, all shape \n\
-  parameters of degenerate peaks are shared, as these parameters are dominated\n\
-  by energy dependant physical effects which do not change rapidly.\n\
-  Background across the fit region is approximated by a polynomial + an \n\
-  optional step function constrained by the peak parameters. The step should be\n\
-  used when peak sizes are large compared to background.\n\
-  Pol0, pol1 and pol2 backgrounds may be selected (pol2 are poorly constrained).\n\
 \n\
-  For multi-peak/degenerate fits peak separation are set rather than absolute\n\
-  centroids. This provides more accurate fitting overall as it is less sensitive\n\
-  to small deviations in the absolute scale i.e. poor calibration.\n\
+  If the controls do not seem to be working, click on an empty part of the \n\
+  environment to de-select any text-input boxes.\n\
+\n\
+  The tool is designed for fits over small energy regions, as such, all shape \n\
+  parameters of degenerate peaks are shared.\n\
+\n\
+  For multi-peak fits, peak separation are set rather than absolute centroids.\n\
   The area ratio between peaks may also be set if it is in known.\n\
 \n\
-  When inputting multiple peaks to a fit, any constrained peaks should\n\
-  immediately follow the peak to which they are fixed. Un-constrained peaks\n\
-  should be in ascending order.\n\
-    e.g. We have 3 peaks:\n\
-           An unknown ~130 keV, a known 125 keV and a known 145 keV.\n\
-           Inputs : A = 125\n\
-                    B = A + 20\n\
-		    C = 130\n\
-          -We set the tool for 3 peaks\n\
-          -Enter [20] in to the peak 0-1 \"separation\" input box.\n\
-          -Click on each peak A and C in the histogram window.\n\
-          -Click [Fit Peaks].\n\
-  \n\
-  For both separation and area ratio between peaks, the box should be left\n\
-  blank to free the fit. Uncertainties on both constraint parameters may also\n\
-  be added in the input box. If no error is given the parameter will be fixed.\n\
-  Plain text input is fairly robust and accepts ENSDF format errors.\n\
+  Separation and ratio text inputs provide fit constraints, the box should be \n\
+  blank to free the fit. Input without errors fill fix the parameter.\n\
   Example inputs : \"25.0\" \"0.051(2)\" \"-16.0 5\" \"6+-5\" \"3E-5+3e-6\"  \n\
   \n\
   For very small numbers of counts the fit mode will automatically switch to\n\
   Poisson Likelihood fitting rather than Pearson Chi Squared minimisation.\n\
   Exclusion regions will not function for Likelihood fitting.\n\
   \n\
-  For problematic fits the shape parameters (Sigma, Decay and Sharing)\n\
-  may be constrained. The bottom most button on the panel [^] will expose\n\
-  these options. As with centroid & ratio these parameters may be fixed\n\
-  or given with uncertainties and should be left blank when not constrained.\n\
+  Shape parameters (Sigma, Decay and Sharing) may be constrained.\n\
+  The bottom most button on the panel [^] will expose these options.\n\
+\n\
+  Please read the full pdf manual for more details.\n\
 \n\n\n\
 ";
 
