@@ -38,6 +38,7 @@
 #include "james_hist_formatting.h"
 #include "james_spectool.h"
 #include "james_elements.h"
+#include "james_clipboard_parse.h"
 
 
 using namespace std;
@@ -107,6 +108,8 @@ public:
 	void DrawSmHere(TPad*,TObject*,Int_t);	
 	void NewDirObject(TObject*);
 	void NewCanvasObject(TObject*);
+    
+    static void Clipboard(Int_t,Int_t,Int_t,TObject*);
     
 	TGCompositeFrame* AddTab(string TabName="",bool ShowClose=true);
     TCanvas* AddCanvasTab(string TabName="");

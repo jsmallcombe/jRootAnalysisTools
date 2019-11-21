@@ -1,4 +1,5 @@
-// James library master  18 Nov 2019
+// James library master  21 Nov 2019
+#include <james_clipboard_parse.h>
 #include <james_effpeaks.h>
 #include <james_elements.h>
 #include <james_env.h>
@@ -15,3 +16,4 @@
 #include <james_ultrapeakfit.h>
 #include <james_ultrapeak.h>
 #include <james_utility.h>
+#include <james_X11paste.h>

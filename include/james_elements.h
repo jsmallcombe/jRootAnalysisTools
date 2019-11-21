@@ -42,7 +42,6 @@
 
 using namespace std;
 
-
 //current_capture_frame
 class CCframe : public TRootEmbeddedCanvas {
 	private:

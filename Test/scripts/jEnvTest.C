@@ -52,15 +52,19 @@
     gPad->Update();
     G2->DrawClone("al");
     CanvasNegative(C1->cd(6));
-    
-    
     gPad->Update();
+    
     
     gROOT->cd();
     gSystem->cd("./Test/data/");
     
     new jEnv();
+    
 //    new jScale();
 //    new jEval();
 
+    
+    C1->SetWindowPosition(1000,200);
+    C1->Modified();
+    C1->Update();
 }

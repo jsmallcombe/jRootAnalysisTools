@@ -47,6 +47,7 @@ TVirtualPad* hold=gPad;
         
         ////// Click Grab Window
 		fCanvas1 = new CCframe("Embedded1", controlframe1, fDefaultGrabSize, fDefaultGrabSize);
+        fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jEnv", 0,"Clipboard(Int_t,Int_t,Int_t,TObject*)");
 		controlframe1->AddFrame(fCanvas1);
 		
         //// Fit Panel Buttons
@@ -454,6 +455,18 @@ void jEnv::ClosedObject(TObject* obj){
 //     cout<<endl<<"A free object has closed. Here is a pointer to where it HAD been located in memory "<<obj<<endl;    
     FreeObjects.Remove(obj);
 }
+
+
+
+void jEnv::Clipboard(Int_t event,Int_t x,Int_t y,TObject *o){
+    if(event == kButton2Up){
+        TVirtualPad* hold=gPad;
+        int clipstatus= DrawFromClipboard();
+        gPad=hold;
+        clipstatus++;
+    }
+}
+
 
 ////////////////////////////////////////////////////////////////
 
