@@ -1,8 +1,8 @@
 #
 #
-#	James Root Analysis Tools Library
+#	 Root Analysis Tools Library
 #	17 Nov 2019
-#	james.smallcombe@outlook.com
+#	.smallcombe@outlook.com
 #
 #
 
@@ -11,15 +11,15 @@ ROOT_GCC_FLAGS = $(shell root-config --cflags)
 ROOT_LIBSEXTRA = -lSpectrum
 # -lX11
 
-JAMES_LIB = $(shell pwd)
-JAMES_INCLUDE = $(shell pwd)/include
+J_LIB = $(shell pwd)
+J_INCLUDE = $(shell pwd)/include
 
 CC = $(shell root-config --cxx)
 CFLAGS = -std=c++11 -g -fPIC -Wall $(ROOT_GCC_FLAGS)
-#-Xlinker --verbose -std=c++0x -I$(JAMESLIB)/include
+#-Xlinker --verbose -std=c++0x -I$(LIB)/include
 
 
-HEAD = $(wildcard include/james*.h)
+HEAD = $(wildcard include/j_*.h)
 OBJECTS = $(patsubst include/%.h,bin/build/%.o,$(HEAD))
 
 TARG = bin/libJanalysistools.so
@@ -33,24 +33,24 @@ date:
 	bash bin/build/date.sh $(HEAD)
 	
 $(TARG): $(OBJECTS) bin/DictOutput.cxx
-	$(CC) $(CFLAGS) -o $@ -shared bin/DictOutput.cxx $(OBJECTS) -I. -I$(JAMES_INCLUDE) $(ROOT_LIBS) $(ROOT_LIBSEXTRA)
+	$(CC) $(CFLAGS) -o $@ -shared bin/DictOutput.cxx $(OBJECTS) -I. -I$(J_INCLUDE) $(ROOT_LIBS) $(ROOT_LIBSEXTRA)
 	bash bin/build/header.sh
 	bash bin/build/make_export.sh
 
 bin/DictOutput.cxx: $(HEAD)
 	bash bin/build/link.sh $(HEAD)
-	rootcint -f $@ -c -I$(JAMES_INCLUDE) $(HEAD) bin/build/Linkdef.h
+	rootcint -f $@ -c -I$(J_INCLUDE) $(HEAD) bin/build/Linkdef.h
 
 bin/build/%.o: src/%.cpp include/%.h
-	$(CC) $(CFLAGS) -o $@ -c $< -I$(JAMES_INCLUDE)
+	$(CC) $(CFLAGS) -o $@ -c $< -I$(J_INCLUDE)
 
 bin/build/%.o: src/*/%.cpp include/%.h
-	$(CC) $(CFLAGS) -o $@ -c $< -I$(JAMES_INCLUDE)
+	$(CC) $(CFLAGS) -o $@ -c $< -I$(J_INCLUDE)
 
 clean:
-	rm -f $(JAMES_LIB)/bin/build/*.o
-	rm -f $(JAMES_LIB)/bin/build/Linkdef.h
-	rm -f $(JAMES_LIB)/bin/*.*
+	rm -f $(J_LIB)/bin/build/*.o
+	rm -f $(J_LIB)/bin/build/Linkdef.h
+	rm -f $(J_LIB)/bin/*.*
 	rm -f $(MINI)
 	rm -f $(TARG)
 	rm -f $(TARGB)

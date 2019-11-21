@@ -7,7 +7,7 @@ echo "#pragma link C++ nestedclasses;" >> bin/build/Linkdef.h
 echo "" >> bin/build/Linkdef.h
 
 
-for f in include/james*.h
+for f in include/j_*.h
 do
 # for f in $@
 # do
