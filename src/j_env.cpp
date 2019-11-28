@@ -463,7 +463,7 @@ void jEnv::Clipboard(Int_t event,Int_t x,Int_t y,TObject *o){
         TVirtualPad* hold=gPad;
         int clipstatus= DrawFromClipboard();
         gPad=hold;
-        clipstatus++;
+        clipstatus++;//just here to supress warning, clipstatus currently unused
     }
 }
 

@@ -10,12 +10,14 @@ struct ClipboardBufferVectors{
 };
 int CopyBufferToVectors(ClipboardBufferVectors &CPY,bool clip=true);
 bool ManualStringNumberTest(string s);
+bool Transpose(ClipboardBufferVectors &clip);
 
 // Attempt to pass a ClipboardBufferVectors to a ROOT class
 // Following a few assumed rules 
 TH1* TryCBV2Hist(ClipboardBufferVectors &clip);
 TMultiGraph* TryCBV2GraphHeaders(ClipboardBufferVectors &clip);
 TGraph* TryCBV2Graph(ClipboardBufferVectors &clip);
+
 
 ///////// Definitions ///////////////
 
@@ -35,6 +37,14 @@ int CopyBufferToVectors(ClipboardBufferVectors &CPY,bool clip){
         
         // Replace all commas so data is white space delimited 
         std::replace(line.begin(),line.end(),',', ' '); 
+        
+        // Some copied text from chrome included weird whitespace that wasnt whitespace
+        // Manually whitespace and negative ascii charaters
+        int i=0;
+        for(auto c:line){
+            if((int)c<0)line[i]=' ';
+            i++;
+        }
         
         stringstream ssline;
         ssline<<line;
@@ -95,6 +105,28 @@ bool ManualStringNumberTest(string s){
     return true;
 }
 
+bool Transpose(ClipboardBufferVectors &clip){
+    if(clip.W<=clip.H)return false;
+    
+    vector< vector< double > > tmp(clip.W,vector< double >(clip.H,0));
+    
+    // You lose anything that is outside the minimum rectangle
+    // And for now we dont bother with text
+    for(int i=0;i<clip.W;i++){
+        for(int j=0;j<clip.H;j++){
+            tmp[i][j]=clip.Db[j][i];
+        }
+    }
+    clip.Db=tmp;
+    int w=clip.W;
+    clip.W=clip.H;
+    clip.H=w;
+    clip.MW=w;
+    
+    return true;  
+}
+
+
 static unsigned int clipbuff_hist_iterator=0;
 TH1* TryCBV2Hist(ClipboardBufferVectors &clip){
     if(clip.W<1)return 0; // If no data return;
@@ -131,7 +163,8 @@ TH1* TryCBV2Hist(ClipboardBufferVectors &clip){
                 double g=abs(clip.Db[i+1][0]-clip.Db[i][0]);
                 double m=g/gap;
                 double f=m-round(m);
-                if(f>1E-6){//Check all gaps are integer number of bin steps
+                
+                if(abs(f)>1E-6){//Check all gaps are integer number of bin steps
                     validbin=false;
                     break;
                 }
@@ -304,6 +337,7 @@ TMultiGraph* TryCBV2GraphHeaders(ClipboardBufferVectors &clip){
 TObject* CopyBufferHistOrGraph(bool clip){
     ClipboardBufferVectors CPY;
     int status=CopyBufferToVectors(CPY,clip);
+    Transpose(CPY);
     if(status==0){
         // Ordered from most selective input to least
 		TMultiGraph* m=TryCBV2GraphHeaders(CPY);
