@@ -84,7 +84,7 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,bool Trust){
                     H->GetYaxis()->SetLabelSize(0);
                     H->SetStats(kFALSE);
                 }
-			}else if(fH->InheritsFrom("TGraph")){
+			}else if(fH->IsA()->InheritsFrom(TGraph::Class())){
                 DrawCopyGraphOpt((TGraph*)fH);
             }
 			this->GetCanvas()->Modified();
@@ -506,6 +506,8 @@ jDirList::jDirList(const TGWindow* p, UInt_t w, UInt_t h, UInt_t options):TGComp
    fIconH3 = gClient->GetPicture("h3_t.xpm");
    fIconGr = gClient->GetPicture("bld_embedcanvas.xpm");
 // fIconGr = gClient->GetPicture("profile_t.xpm");
+   fIconMGr = gClient->GetPicture("selection_t.xpm");
+   fIconTF = gClient->GetPicture("f1_t.xpm");
 
    // use hierarchical cleaning
    SetCleanup(kDeepCleanup);
@@ -549,6 +551,8 @@ jDirList::~jDirList()
    gClient->FreePicture(fIconH2);
    gClient->FreePicture(fIconH3);
    gClient->FreePicture(fIconGr);
+   gClient->FreePicture(fIconMGr);
+   gClient->FreePicture(fIconTF);
    
     RootFileList.Clear("nodelete");
     Closed(this);
@@ -712,8 +716,8 @@ void jDirList::AddTDir(TGListTreeItem* item, TDirectory* dir){
 		////////////////////////////////////////////////////////////////////////////////////////////
 		// This section determines which TObjects will be allowed to be viewed and hence accessed //
 		////////////////////////////////////////////////////////////////////////////////////////////
-		
-		switch(HistoClassDetect(key->GetClassName())) {
+
+		switch(HistoClassDetect(gROOT->GetClass(key->GetClassName()))) {
 			case 1 :
 				fContents->AddItem(item,key->GetName(),fIconH1,fIconH1);
 				continue;
@@ -727,10 +731,18 @@ void jDirList::AddTDir(TGListTreeItem* item, TDirectory* dir){
 				break;
 		}
             
-		if(GraphClassDetect(key->GetClassName())){
+		if(gROOT->GetClass(key->GetClassName())->InheritsFrom(TGraph::Class())){
 			fContents->AddItem(item,key->GetName(),fIconGr,fIconGr);
 		}
+		
+		if(gROOT->GetClass(key->GetClassName())==TMultiGraph::Class()){
+			fContents->AddItem(item,key->GetName(),fIconMGr,fIconMGr);
+		}
 
+		if(gROOT->GetClass(key->GetClassName())->InheritsFrom(TF1::Class())){
+			fContents->AddItem(item,key->GetName(),fIconTF,fIconTF);
+		}
+		
     }
         
     // Use *UserData* to indicate that item was already browsed

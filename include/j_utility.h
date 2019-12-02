@@ -24,6 +24,7 @@
 #include <TKey.h>
 #include <TFile.h>
 #include <TGraph.h>
+#include <TMultiGraph.h>
 #include <TArray.h>
 #include <iostream>
 #include <fstream>
@@ -34,15 +35,6 @@
 
 using namespace std;
 
-inline int HType(TObject* H){
-	if(H){
-		if(H->InheritsFrom("TH3"))return 3;
-		if(H->InheritsFrom("TH2"))return 2;
-		if(H->InheritsFrom("TH1"))return 1;
-	}
-	return 0;
-}
-
 
 inline int HistoClassDetect(TClass* tclass){
     if(tclass->InheritsFrom(TH3::Class()))return 3;
@@ -50,19 +42,11 @@ inline int HistoClassDetect(TClass* tclass){
     if(tclass->InheritsFrom(TH1::Class()))return 1;
     return 0;
 }
-
-inline int HistoClassDetect(TString classname){
-    return HistoClassDetect(gROOT->GetClass(classname));
+inline int HType(TObject* H){
+    if(H==nullptr)return 0;
+	return HistoClassDetect(H->IsA());
 }
 
-
-inline bool GraphClassDetect(TClass* tclass){
-    return tclass->InheritsFrom(TGraph::Class());
-}
-
-inline bool GraphClassDetect(TString classname){
-    return GraphClassDetect(gROOT->GetClass(classname));
-}
 
 //////////////////////////////////////////////////
 //	FUNCTIONS FOR EQUATION EVALUATION	//

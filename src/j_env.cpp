@@ -23,7 +23,7 @@ jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
     fPixOffX(1),fPixOffY(33),
     fDefaultDirWidth(200),fDefaultDirHeight(400),
     fDefaultTabsWidth(1000),fDefaultTabsHeight(650),
-    fDefaultGrabSize(140)
+    fDefaultGrabSize(140),Alternator(0)
 {
 
     FontStruct_t ft =GetFont();
@@ -423,12 +423,30 @@ void jEnv::HideDir(){
 void jEnv::NewDirObject(TObject* obj){
     // Only for object types outside the scope of CCframe
     
-	if(obj->InheritsFrom(TGraph::Class())){
+	if(obj->IsA()->InheritsFrom(TGraph::Class())){
         TCanvas* Can=AddCanvasTab(obj->GetName());
         Can->cd();
 		gPad->Update();
         DrawCopyGraphOpt((TGraph*)obj);
 	}	
+	    
+	if(obj->IsA()==TMultiGraph::Class()){
+        TCanvas* Can=AddCanvasTab(obj->GetName());
+        Can->cd();
+		gPad->Update();
+        if(Alternator)((TMultiGraph*)obj)->DrawClone("al");
+        else ((TMultiGraph*)obj)->DrawClone("ap");
+        Alternator=!Alternator;
+        cout<<endl<<"Alternator "<<Alternator;
+	}	
+	
+	if(obj->IsA()->InheritsFrom(TF1::Class())){
+        TCanvas* Can=AddCanvasTab(obj->GetName());
+        Can->cd();
+		gPad->Update();
+        ((TF1*)obj)->DrawCopy();
+	}		
+	
 }
 
 void jEnv::NewCanvasObject(TObject* obj){

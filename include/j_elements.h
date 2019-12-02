@@ -140,6 +140,8 @@ protected:
    const TGPicture  *fIconH2;
    const TGPicture  *fIconH3;
    const TGPicture  *fIconGr;
+   const TGPicture  *fIconMGr;
+   const TGPicture  *fIconTF;
    TList RootFileList;
    
    TString DirName(TGListTreeItem* item);

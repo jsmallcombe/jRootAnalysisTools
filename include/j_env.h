@@ -80,6 +80,8 @@ private:
     
     vector<TGButton*> OneOnly;
     vector<TGButton*> OneNotly;
+    
+    bool Alternator;
 	
 public:
 	jEnv();
