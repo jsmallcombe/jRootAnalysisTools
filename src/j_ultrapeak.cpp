@@ -2,6 +2,7 @@
 #include "TStyle.h"
 
 int Ultrapeak::Ultra_iterator = 0;
+short Ultrapeak::gMaxPeaks = 10;
 
 TF1* Ultrapeak::PrepareTF1(double range1,double range2,int n,int backmode,bool twogaus){
     stringstream ss;

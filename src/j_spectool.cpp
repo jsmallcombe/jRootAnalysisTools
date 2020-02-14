@@ -82,7 +82,7 @@ TVirtualPad* hold=gPad;
 	rebinframe->AddFrame(label);	
 	fHslider1 = new TGHSlider(rebinframe, 9, kSlider2);
 	fHslider1->SetPosition(0);
-	fHslider1->Connect("PositionChanged(Int_t)", "jSpecTool", this, "DoUpdateF()");
+	fHslider1->Connect("PositionChanged(Int_t)", "jSpecTool", this, "DoUpdate()");
 	rebinframe->AddFrame(fHslider1, ffExpandXpad);
 	
 	TGHorizontalFrame* orderframe = new TGHorizontalFrame(this, 0, 0, 0);
@@ -151,6 +151,7 @@ void jSpecTool::NewInput(TH1* input){
 
 	histin=(TH1*)input->Clone(("massahist"+make_iterator()).c_str());
     histin->GetListOfFunctions()->Clear();
+    histin->GetXaxis()->SetRange(1,-1);
 	histsub=(TH1*)histin->Clone(("massasubhist"+make_iterator()).c_str());
 	histzero=(TH1*)histin->Clone(("massasubzero"+make_iterator()).c_str());
 	RemovalPrep(histzero);
@@ -235,11 +236,15 @@ void jSpecTool::DoUpdate(bool saveaxis){TVirtualPad* hold=gPad;
 
 	//Get the currently drawn axis
 	int axis_down=1,axis_up=-1;
+	int range_down=1,range_up=-1;
 	TH1* hp=hist_capture(fCanvas1->GetCanvas());
 	if(hp&&saveaxis){
 		axis_down=hp->GetXaxis()->GetFirst();
 		axis_up=hp->GetXaxis()->GetLast();
+        range_down=hp->GetXaxis()->GetBinLowEdge(axis_down);
+        range_up=hp->GetXaxis()->GetBinUpEdge(axis_up);
 	}
+	
 	
 	fCanvas1->GetCanvas()->cd();
 	
@@ -255,11 +260,10 @@ void jSpecTool::DoUpdate(bool saveaxis){TVirtualPad* hold=gPad;
 	}else{H=histin;}
 
 	
-	//If Hide Bin Errors
-	H=DrawCopyHistOpt(H,fCheck1->GetState());//Needed if any functions have been drawn
+	// If Hide Bin Errors
+	H=DrawCopyHistOpt(H,fCheck1->GetState());// Needed if any functions have been drawn
 
-	
-	//H is now the draw copy, not modifying original
+	// H is now the draw copy, not modifying original
 	
 	if(specback){
 		// if Remove Background
@@ -275,12 +279,15 @@ void jSpecTool::DoUpdate(bool saveaxis){TVirtualPad* hold=gPad;
 // 		cout<<endl<<H;
 		H->Rebin(rebin);
 		if(S)S->Rebin(rebin);
-	}
+        H->GetXaxis()->SetRangeUser(range_down,range_up);
+        if(histin)histin->GetXaxis()->SetRangeUser(range_down,range_up);// So that TSpectrum only calculates background over selected range
+	}else{
+        H->GetXaxis()->SetRange(axis_down,axis_up);
+        if(histin)histin->GetXaxis()->SetRange(axis_down,axis_up);
+    }
 	
 	hformat(H,false);
-	
-	H->GetXaxis()->SetRange(axis_down,axis_up);
-
+    
 	fCanvas1->GetCanvas()->Modified();
 	fCanvas1->GetCanvas()->Update();
 gPad=hold;

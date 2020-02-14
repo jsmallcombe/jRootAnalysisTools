@@ -437,7 +437,6 @@ void jEnv::NewDirObject(TObject* obj){
         if(Alternator)((TMultiGraph*)obj)->DrawClone("al");
         else ((TMultiGraph*)obj)->DrawClone("ap");
         Alternator=!Alternator;
-        cout<<endl<<"Alternator "<<Alternator;
 	}	
 	
 	if(obj->IsA()->InheritsFrom(TF1::Class())){

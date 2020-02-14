@@ -22,6 +22,12 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	// Possible problems:
 	// Peak parameters are estimated from an initial fit which assumes peak zero is the furthest left peak 
 
+    bool BackOff=false;
+    if(backmode<0){
+        BackOff=true;
+        backmode=cBackType0;
+    }
+    
 	//Check any shape parameter overrides
 	bool SigFree=true,DecFree=true,ShareFree=true;
 	double SigmaF,SigmaFE,DecayF,DecayFE,ShareF,ShareFE;
@@ -31,8 +37,8 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	
 	cout<<endl<<endl<<endl;
 	
-	unsigned int fNp=fInput.size();if(fNp<1)return 0;
-	if(fNp>10)fNp=10;
+	int fNp=fInput.size();if(fNp<1)return 0;
+	if(fNp>gMaxPeaks)fNp=gMaxPeaks;
 
 	int fLeftBin=fHist->GetXaxis()->FindBin(fLeftUser),fRightBin=fHist->GetXaxis()->FindBin(fRightUser);
 	fLeftUser=fHist->GetBinCenter(fLeftBin);
@@ -67,7 +73,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	// Hang over from old version
 	//
 	vector <double> fPeaks;
-	for(unsigned int i=0;i<fNp;i++)fPeaks.push_back(fInput[i].Centroid);
+	for(int i=0;i<fNp;i++)fPeaks.push_back(fInput[i].Centroid);
 		
 	double p0=fPeaks[0];//Because FindLocalMax changes input and have decided I dont want that
 	double fHH=FindLocalMax(fHist,p0);
@@ -100,6 +106,11 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 
 	fParam[gUltraPol1] = (fRightHeight-fLeftHeight)/(fRightUser-fLeftUser); //grad
 	fParam[gUltraPol0] = fRightHeight-fRightUser*fParam[gUltraPol1]; //intercept
+	if(BackOff){
+        fParam[gUltraPol1] =0;
+        fParam[gUltraPol0] =0;
+    }
+    
 	fLin.SetParameters(fParam[gUltraPol0],fParam[gUltraPol1]);
 	fParam[gPeakSigma] = 2.5; // Peak sigma
 	fParam[gPeakSigmaB] = 1.5; // Peak sigma ratio for 2gaus
@@ -109,9 +120,10 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	fParam[gPeakNH(0)] = abs(fHH-fLin.Eval(fPeaks[0]));// First Peak Height
 	fParam[gPeakNC(0)] = fPeaks[0];// First Peak Centroid
 	
+	
 	//This little check makes sure the initial shape fit skips any negligible shoulder peaks
 	double tCC=fPeaks[0];
-	for(unsigned int i=1;i<3&&i<fNp;i++){
+	for(int i=1;i<3&&i<fNp;i++){
 		tCC+=fPeaks[i];
 		double tH=fHist->GetBinContent(fHist->GetXaxis()->FindBin(tCC));
 		tH-=fLin.Eval(tCC);
@@ -219,7 +231,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	fPeakFunc.SetBit(kStep,step);
 	fPeakFunc.SetBit(kPol2,Pol2(backmode));
 	if(peaktype==2)fPeakFunc.SetBit(k2Gaus,1);
-	for(unsigned int i=1;i<fNp;i++)
+	for(int i=1;i<fNp;i++)
 		if(fInput[i].Ratio>0)
 			fPeakFunc.SetBit(PBits(i));
 
@@ -267,7 +279,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	///////// Additional Peaks ////////
 	
 	double sPe=fPeaks[0];
-	for(unsigned int i=1;i<fNp;i++){
+	for(int i=1;i<fNp;i++){
 		fParam[gPeakNC(i)]=fPeaks[i];
 		sPe+=fPeaks[i];
 		double lH=fHist->GetBinContent(fHist->GetXaxis()->FindBin(sPe));
@@ -328,6 +340,10 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
     }else{
 // 		double a=abs(fRightHeight/(fRightUser*fRightUser));
 // 		fFit->SetParLimits(gUltraOffsetOrPol2,-2*a,2*a);
+    }
+    
+	if(BackOff){
+        fPre->FixParameter(gUltraPol0,0); 
     }
     
 	///////// Shape parameters ////////
@@ -393,7 +409,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	///////// Additional Peaks ////////
 	
 	double fFree=1;
-	for(unsigned int i=1;i<fNp;i++){
+	for(int i=1;i<fNp;i++){
 		int h=gPeakNH(i),c=gPeakNC(i);
 		if(fInput[i].Ratio>0){// Height/ratio
 			double err=fInput[i].RatioError;

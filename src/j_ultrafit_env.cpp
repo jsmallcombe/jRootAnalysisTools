@@ -7,6 +7,12 @@
 
 int UltraFitEnv::UltraFitEnv_iterator = 0;
 
+double UltraFitEnv::GetFitVal(unsigned int f,unsigned int v){
+    if(f<cFitList.size()){
+        return cFitList[f]->CVal(v);
+    }
+    return 0;
+}
     
 UltraFitEnv::UltraFitEnv(TH1* fHist,TCanvas* fCan):UltraFitEnv(new TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),fHist,fCan,0){
     const TGWindow *P=GetParent();
@@ -162,6 +168,7 @@ void UltraFitEnv::BuildDialogBox(int opt){
             ticks->AddFrame(label,XX);
             
             fCombo = new TGComboBox(ticks,100);
+            fCombo->AddEntry("null",-1);
             fCombo->AddEntry("pol0",Ultrapeak::cBackType0);
             fCombo->AddEntry("pol0+step",Ultrapeak::cBackType0s);
             fCombo->AddEntry("pol1 fixed",Ultrapeak::cBackType1f);
@@ -423,6 +430,7 @@ void UltraFitEnv::ExternalHistUpdateCheck(){
 
 void UltraFitEnv::SetNewHist(TH1* fHist,bool format){if(!fHist)return;
 	//cout<<endl<<"ERROR IN FN H"<<flush;
+    ClearFits();
 	stringstream ss;
 	ss <<"gHist"<<UltraFitEnv_iterator;
 	UltraFitEnv_iterator++;

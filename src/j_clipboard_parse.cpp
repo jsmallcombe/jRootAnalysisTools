@@ -323,6 +323,7 @@ TMultiGraph* TryCBV2GraphHeaders(ClipboardBufferVectors &clip){
 	TMultiGraph *ret=new TMultiGraph();
 	int col=1;
     for(auto& g: coll){
+		g->SetName(grp[col-1].c_str());
 		g->SetLineColor(col);
 		g->SetMarkerColor(col);
 		g->SetMarkerStyle(col+19);

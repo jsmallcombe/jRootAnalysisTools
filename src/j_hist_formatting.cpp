@@ -91,7 +91,6 @@ void hformat(TH1* HH,bool setminzero){if(!HH)return;
 	}
 	ax[1]->SetTitleOffset(-1.1);
 	
-    
     HistogramNegative(HH);
 	
 //  int DefaultCol=gStyle->GetHistLineColor();
@@ -549,15 +548,20 @@ TH1* DrawCopyHistOpt(TH1* hist,bool HideErrors){
 TGraph* DrawGraphOpt(TGraph* graph,bool Copy,bool Same){
 	if(!graph)return 0;
     
-    string opt;
-    if(Same)opt="lsame";
-    else opt="al";
+    string opt="l";
+    if(graph->IsA()->InheritsFrom(TGraphErrors::Class())){
+        opt="p";
+    }else{
+        graph->Sort();
+    }
+    if(Same)opt=opt+"same";
+    else opt="a"+opt;
     
     if(gGlobalNegativeDraw){
         if(!Same)CanvasNegative();
-        if(graph->GetLineColor()==gGlobalBackColor)graph->SetLineColor(gGlobalForeColor);
-        if(graph->GetMarkerColor()==gGlobalBackColor)graph->SetMarkerColor(gGlobalForeColor);
     }
+    if(graph->GetLineColor()==gGlobalBackColor)graph->SetLineColor(gGlobalForeColor);
+    if(graph->GetMarkerColor()==gGlobalBackColor)graph->SetMarkerColor(gGlobalForeColor);
     
     gPad->Update();
     TGraph* g=graph;

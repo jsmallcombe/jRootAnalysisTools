@@ -73,6 +73,8 @@ using namespace std;
 class UltraFitEnv : public TGCompositeFrame
 { 
     public:
+    double GetFitVal(unsigned int f,unsigned int v);
+        
 	    
 	////////////// Public Access Environment variables ///////////////////   
 	FullFitHolder cLastFit;

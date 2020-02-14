@@ -251,6 +251,7 @@ class  Ultrapeak{
 	
 	int N;
 	TransientBitsClass<long> cBits;
+	static short gMaxPeaks;
 	
 	static const short gUltraPol0=gPeakBackA;
 	static const short gUltraPol1=gPeakBackB;

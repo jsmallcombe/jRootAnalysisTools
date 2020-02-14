@@ -125,10 +125,19 @@ class FullFitHolder: public TF1
 			A.SetPoint(i-1,x,y+ey);
 			B.SetPoint(i-1,x,y-ey);
 		}
-		if(!BOnly)DrawCopy(option);
 		
+        Option_t * Aopt="samel";
+        if(BOnly){
+            TString opt1 = option;
+            opt1.ToLower();
+            Int_t index  = opt1.Index("same");
+            if (index<0) Aopt="al";
+        }else{
+            DrawCopy(option);
+        }
+        
 		vector<TGraph*> ret;
-		ret.push_back((TGraph*)A.DrawClone("samel"));
+		ret.push_back((TGraph*)A.DrawClone(Aopt));
 		ret.push_back((TGraph*)B.DrawClone("samel"));
 		
 		return ret;
