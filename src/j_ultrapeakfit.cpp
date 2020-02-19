@@ -457,19 +457,38 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	////////////////////////////////// POST FIT OUTPUT ///////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////
 	
-	
+	vector<double> FracErr; double FracErrSum=0;
+    
 	// Dont print the whole detail every time, just print when error or parameter limit
 	for(unsigned int i=0;i<NparFromN(fNp);i++){
 		double sU,sD,sP;
+        sP=fFit->GetParameter(i);
+        
+        double frcerr=0;
+        if(fFit->GetParError(i)>0&&sP>0){
+            frcerr=fFit->GetParError(i)/sP;
+        }
+        FracErr.push_back(frcerr);
+        FracErrSum+=frcerr;
+        
 		fFit->GetParLimits(i,sD,sU);
 		if(sU>sD){
             double sR=abs(sU-sD);
             if(sR==0)continue;
-			sP=fFit->GetParameter(i);
 			if(abs(sU-sP)/sR<1E-4)cout<<endl<<fFit->GetParName(i)<<" at/near UPPER limit : "<<sU<<endl;
 			if(abs(sD-sP)/sR<1E-4)cout<<endl<<fFit->GetParName(i)<<" at/near LOWER limit : "<<sD<<endl;
 		}
 	}
+	
+	if(FracErrSum>0.2){
+        cout<<endl;
+        for(unsigned int i=0;i<NparFromN(fNp);i++){
+            if(FracErr[i]>0.1){
+                cout<<endl<<fFit->GetParName(i)<<" large error:  "<<FracErr[i]<<flush;
+            }
+        }
+        cout<<endl;
+    }
 	
 	if(fResult->Status()!=4000){
 		cout<<endl<<"FIT FAILURE."<<endl;
