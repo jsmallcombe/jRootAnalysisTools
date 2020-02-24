@@ -72,10 +72,7 @@ using namespace std;
 
 class UltraFitEnv : public TGCompositeFrame
 { 
-    public:
-    double GetFitVal(unsigned int f,unsigned int v);
-        
-	    
+    public:       
 	////////////// Public Access Environment variables ///////////////////   
 	FullFitHolder cLastFit;
 	
@@ -216,6 +213,13 @@ class UltraFitEnv : public TGCompositeFrame
 
 	static int UltraFitEnv_iterator;
 	ClassDef(UltraFitEnv, 3);
+    
+    public: 
+    double GetFitVal(unsigned int f,unsigned int v);
+    
+    // Because list of peaks may be spread over several multipeak fits
+    double GetPeakVal(unsigned int f,unsigned int v);
+    
 };
 
 // inline UltraFitEnv* gStart(double fSep=-1){

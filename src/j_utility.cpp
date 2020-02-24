@@ -27,6 +27,16 @@ double AnalyticalFullCovError(TF1* fFunc,TMatrixD* fMatrix,double fX){
 }
 
 
+double AnalyticalFullCovError(TF1* fFunc,double fX){
+	int fNpar=fFunc->GetNpar();
+    TMatrixD TempMatrix(fNpar,fNpar);
+	for(int i=0;i<fNpar;i++){
+        TempMatrix[i][i]=pow(fFunc->GetParError(i),2);
+    }
+	return AnalyticalFullCovError(fFunc,&TempMatrix,fX);
+}
+
+
 //////////////////////////////////
 //	VECTOR SORT FUNCTIONS	//
 //////////////////////////////////
@@ -226,6 +236,62 @@ void ExtractAsymErrorTest(string str){
 	cout<<endl<<v<<" + "<<u<<" - "<<d<<endl;
 }
 
+
+string ScientificErrorPrint(double val,double abserr, unsigned short sigfig, bool sigfigerror, bool print){
+    abserr=abs(abserr);
+    if(!sigfig)return "";
+    sigfig--;
+    if(!val)return "";
+    
+    // Find the decimal place of val
+    int ten=-50;
+    while(ten<50){
+        if(abs((int)(val*pow(10,ten)))>0)break;
+        ten++;
+    }
+    int dp=-ten;
+    
+	if(sigfigerror){
+	
+		int errten=-50;
+		while(errten<50){
+			if(abs((int)(abserr*pow(10,errten)))>0)break;
+			errten++;
+		}
+		if(errten>ten){
+			sigfig+=(errten-ten);
+		}
+		
+	}
+	
+    double power=pow(10,ten+sigfig);
+    val=round(val*power)/power;
+    abserr=round(abserr*power);
+    if(!abserr)abserr=1;
+    
+    stringstream ss;
+    if(abs(dp)>4){
+        ss<<std::fixed;
+        ss<<std::setprecision(sigfig);
+        ss<<std::scientific;
+    }else{
+        if(dp<sigfig){
+            ss<<std::fixed;
+            ss<<std::setprecision(abs(dp-sigfig));
+        }
+        if(dp>sigfig){
+            abserr/=power;
+        }
+    }
+    
+    ss<<val;
+    ss<<"("<<(int)abserr<<")";
+    if(print)cout<<ss.str()<<flush;
+    return ss.str();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
 
 ClassImp(TH1Efficiency);
 ClassImp(TH2Efficiency);

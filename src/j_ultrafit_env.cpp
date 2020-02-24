@@ -6,13 +6,6 @@
 ///////////////////////////////////////
 
 int UltraFitEnv::UltraFitEnv_iterator = 0;
-
-double UltraFitEnv::GetFitVal(unsigned int f,unsigned int v){
-    if(f<cFitList.size()){
-        return cFitList[f]->CVal(v);
-    }
-    return 0;
-}
     
 UltraFitEnv::UltraFitEnv(TH1* fHist,TCanvas* fCan):UltraFitEnv(new TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),fHist,fCan,0){
     const TGWindow *P=GetParent();
@@ -1329,4 +1322,34 @@ void UltraFitEnv::jSaveAs(){
 void UltraFitEnv::ClearExclusion(){
 	cExClicker.clear();
 	this->UpdateLines();
+}
+
+
+double UltraFitEnv::GetFitVal(unsigned int f,unsigned int v){
+    if(f<cFitList.size()){
+        return cFitList[f]->CVal(v);
+    }
+    return 0;
+}
+
+
+double UltraFitEnv::GetPeakVal(unsigned int p,unsigned int v){
+    int tp=p;
+    
+    for(unsigned int f=0;f<cFitList.size();f++){
+        int Nf=Ultrapeak::NfromTF1(cFitList[f]);
+        if(tp<Nf){
+            switch (v) {
+                case 1: return cFitList[f]->CVal(Ultrapeak::VPC(tp)); break;
+                case 2: return cFitList[f]->CVal(Ultrapeak::VPCe(tp)); break; 
+                case 3: return cFitList[f]->CVal(Ultrapeak::VPA(tp)); break; 
+                case 4: return cFitList[f]->CVal(Ultrapeak::VPAe(tp)); break;
+                case 5: return cFitList[f]->CVal(Ultrapeak::VPI(tp)); break; 
+                case 6: return cFitList[f]->CVal(Ultrapeak::VPIe(tp)); break; 
+                default: return 0;
+            }
+        }
+        tp-=Nf;
+    }
+    return 0;
 }

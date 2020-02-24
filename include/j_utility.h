@@ -56,6 +56,7 @@ inline int HType(TObject* H){
 // Provide a TF1 the full error with variance and covariance in the matrix is calculated at X (or leave =0 for no X dependence)
 //
 double AnalyticalFullCovError(TF1*,TMatrixD*,double=0);
+double AnalyticalFullCovError(TF1*,double=0);
 
 
 //////////////////////////////////
@@ -151,10 +152,12 @@ void ExtractError(string str,double& value,double& error);
 
 void ExtractErrorTest(string str);
 
-
 void ExtractAsymError(string str,double& value,double& errorup,double& errordwn);
 
 void ExtractAsymErrorTest(string str);
+
+// Format absolute errors into scientific error notation with desired precision
+string ScientificErrorPrint(double val,double abserr, unsigned short sigfig=3, bool sigfigerror=false, bool print=true);
 
 //////////////////////////////////////////////////////////
 //		mini maths functions			//
