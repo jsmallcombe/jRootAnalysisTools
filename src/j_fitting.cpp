@@ -1,12 +1,68 @@
 //
 //
 //	James functions for auto fitting and such 1.0
-// 	27/05/10		05/10/2015
+// 	02/03/2019
 //	james.smallcombe@outlook.com
 //
 //
 
 #include "j_fitting.h"
+
+// No easy way to get if par fixed, TF1 doesnt actually store this info.
+// Part copied from TF1::GetNumberFreeParameters()
+bool IsParFixed(TF1* func,unsigned int par){
+    if(!func) return false;
+    if(par>=(unsigned)func->GetNpar())return false;
+    Double_t al, bl;
+    func->GetParLimits(par,al,bl);
+    return (al * bl != 0 && al >= bl);
+}
+
+// Check for diagonal matrix elements, should be non zero if error estimation was good
+bool CovDiag(TFitResultPtr fResult){
+    TMatrixDSym cov=fResult->GetCovarianceMatrix();
+    double OffDiag=0;
+    for(int i=0;i<cov.GetNcols();i++)for(int j=0;j<i;j++)OffDiag+=abs(cov[i][j]);
+    return (OffDiag);
+}
+
+
+bool ParAtLimit(TF1* func,unsigned int par,bool Upper){
+    if(IsParFixed(func,par))return false;
+    Double_t al, bl;
+    func->GetParLimits(par,al,bl);
+    double p=func->GetParameter(par);
+    double range=abs(bl-al);
+    if(Upper)al=bl;
+    
+    return (abs(p-al)/range<1E-9);
+}
+
+bool ParAtLimit(TF1* func,unsigned int par){
+    return (ParAtLimit(func,par,0)||ParAtLimit(func,par,1));
+}
+
+bool AnyParAtLimit(TF1* func){
+    for(int i=0;i<func->GetNpar();i++){
+        if(ParAtLimit(func,i))return true;
+    }
+    return false;
+    // gMinuit->fLimset if immediate
+}
+
+void FixLimitPushers(TF1* func){
+    for(int i=0;i<func->GetNpar();i++){
+        Double_t al, bl;
+        func->GetParLimits(i,al,bl);
+        if(ParAtLimit(func,i,0)){
+            func->FixParameter(i,al);
+        }else if(ParAtLimit(func,i,1)){
+            func->FixParameter(i,bl);
+        }
+    }
+}
+
+
 TF1* UserQuickSingleGausAutoFit(TH1* h,double c,double a,double b,int autoR){
 	TAxis* x=h->GetXaxis();if(a==0&&b==0){a=c-20;b=c+20;}
 	return QuickSingleGausAutoFit(h,x->FindBin(c),x->FindBin(a),x->FindBin(b),autoR);

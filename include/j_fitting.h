@@ -36,6 +36,24 @@
 
 using namespace std;
 
+
+///////////////////////////////////////////////////////
+////////////////// TF1 Augmented Use //////////////////
+///////////////////////////////////////////////////////
+
+bool IsParFixed(TF1* func,unsigned int par);
+bool CovDiag(TFitResultPtr fResult);  // Use S fitting option to get fResult
+
+bool ParAtLimit(TF1* func,unsigned int par,bool Upper);
+bool ParAtLimit(TF1* func,unsigned int par);
+bool AnyParAtLimit(TF1* func);
+
+void FixLimitPushers(TF1* func);
+
+/////////////////////////////////////////////////////////////////////////
+////////////////// Quick automated fitting routines /////////////////////
+/////////////////////////////////////////////////////////////////////////
+
 //Using user coordinates
 //hist,centroid,user range left,user range right
 //Range is absolute, not relative

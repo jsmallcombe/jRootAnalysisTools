@@ -14,10 +14,10 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	// Which is a likely desire if fitting multiple peaks anyway
 	// All entries are relative to the previous one, so place them in the correct order for any linked pairs
     
-	bool limittail=false;
-	bool twogaus=false;
-	if(peaktype==1)limittail=true;
-	if(peaktype==2)twogaus=true;
+	bool limittail=(peaktype==1);
+	bool twogaus=(peaktype==2);
+// 	if(peaktype==1)limittail=true;
+// 	if(peaktype==2)twogaus=true;
 	
 	// Possible problems:
 	// Peak parameters are estimated from an initial fit which assumes peak zero is the furthest left peak 
@@ -35,7 +35,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	ExtractError(dec,DecayF,DecayFE);if(DecayF>0)DecFree=false;
 	if(sha.size()>0){ExtractError(sha,ShareF,ShareFE);if(ShareF<=1)ShareFree=false;}
 	
-	cout<<endl<<endl<<endl;
+	cout<<endl;
 	
 	int fNp=fInput.size();if(fNp<1)return 0;
 	if(fNp>gMaxPeaks)fNp=gMaxPeaks;
@@ -230,13 +230,13 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	fPeakFunc.N=fNp;
 	fPeakFunc.SetBit(kStep,step);
 	fPeakFunc.SetBit(kPol2,Pol2(backmode));
-	if(peaktype==2)fPeakFunc.SetBit(k2Gaus,1);
+	if(twogaus)fPeakFunc.SetBit(k2Gaus,1);
 	for(int i=1;i<fNp;i++)
 		if(fInput[i].Ratio>0)
 			fPeakFunc.SetBit(PBits(i));
 
-		
-	TF1 *fFit = new TF1("fFit",fPeakFunc,fLeftUser,fRightUser,NparFromN(fNp));
+	int Npar=NparFromN(fNp);
+	TF1 *fFit = new TF1("fFit",fPeakFunc,fLeftUser,fRightUser,Npar);
     NameParam(fFit,fNp,backmode,twogaus);
 	
 	//////////////////////////////////// SET PARAMETERS ////////////////////////////////
@@ -437,81 +437,190 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	}
 	
 	//////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////// FULL FIT //////////////////////////////////////
+	///////////////////////////////// FULL FIT ZONE //////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////
+	
 // 	ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(9999);
 	ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
 
-	
 	TH1* fFitHist=fHist;
-	if(fExHist)fFitHist=fExHist;//Use the bin cancelled exclusion histogram if passed
+	if(fExHist)fFitHist=fExHist; // Use the bin cancelled exclusion histogram if passed
 
-	fFitHist->Fit(fFit, "RMNQ");//Get close, then do extra fit with error analysis
-	
-	TFitResultPtr fResult;
-	if(statmode==0)fResult=fFitHist->Fit(fFit, "RMENS");
-	if(statmode==1)fResult=fFitHist->Fit(fFit, "RMNSL");
-	if(statmode==2)fResult=fFitHist->Fit(fFit, "RENSWL");
-	
+    string MasterFitOpt="RSNQ";
+    // R - use Range
+    // S - return full TFitResultPtr
+    // N - do not adda anything to histogram or draw
+    // Q - quiet no text output
+    
+    // First fit
+	// Get close, with basic fit options
+ 	TFitResultPtr fResult=fFitHist->Fit(fFit,MasterFitOpt.c_str());
+    
+    // TFitResultPtr is a "smart pointer" has an automatic conversion to an integer, the value of which corresponds to the fit status
+    Int_t FitStatus = fResult;
+    // Currently using TMinuit minimiser:
+    // FitStatus = migradResult + 10*minosResult + 100*hesseResult + 1000*improveResult ( 0 no error, 4 if error )
+    // FitStatus < 0 if error not connected with the minimizer
+    
+    if(FitStatus){
+        cout<<endl<<"BASIC FIT FAILED! TFitResultPtr Status = "<<FitStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fResult)<<", Limits = "<<AnyParAtLimit(fFit)<<flush;
+        // fResult->GetCovarianceMatrix().Print();
+        // fResult->Print("V");
+        return 0;
+    }else{
+        // cout<<endl<<"Initial fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<flush;
+    }
+    
+    // If sharing is near 1, fix sharing and decay to avoid problems
+    if(abs(fFit->GetParameter(gPeakSharing)-1)<0.001){
+        if(!IsParFixed(fFit,gPeakSharing)){cout<<endl<<"Tail Disabled."<<flush;}
+        fFit->FixParameter(gPeakSharing,1);
+        fFit->FixParameter(gPeakDecay,1);
+    }
+    
+    // If step is near 0, turn it off
+    if(step&&fFit->GetParameter(gUltraStep)<1){
+        cout<<endl<<"Step Disabled."<<flush;
+        step=false;
+        fFit->FixParameter(gUltraStep,0);
+    }
+    
+    // L - use logliklihood not chisquared (because low stats)
+    // WL - use weighted logliklihood because non-integer bings (i.e. subtraction)
+	if(statmode==1)MasterFitOpt+="L";
+	if(statmode==2)MasterFitOpt+="WL";
+    
+    // Do a second fit with statoptions and option M
+    // M option is supposed to find improved minimum, but seems to ALWAYS return error code 4000
+ 	fResult=fFitHist->Fit(fFit,(MasterFitOpt+"M").c_str());
+    FitStatus = fResult;
+    // cout<<endl<<"M fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<flush;
+    
+    // Set last few impovement options for a final fit 
+    
+    double binwidth=fFitHist->GetBinWidth(1);
+    if(binwidth>=fFit->GetParameter(gPeakSigma)){
+        MasterFitOpt+="I";
+        // I - use integral of function instead of value in bin center.
+        // Much slower but needed if bin width is wide relative to peaks
+    }
+    
+    // E - better errors estimation by using Minos technique
+    MasterFitOpt+="E";
+
+    // Opt M should be the last thing on the string so it is the first removed, due to usually being troublesome
+    if(CovDiag(fResult)&&!FitStatus){
+        MasterFitOpt+="M";
+    }
+    
+    // This loop will do a final fit with all options
+    // If full options fit is imperfect remove options in order of least importance (right to left) and retry    
+    while(MasterFitOpt.length()>3){
+        
+        if(abs(fFit->GetParameter(gPeakSharing)-1)<0.001){ // As above
+            if(!IsParFixed(fFit,gPeakSharing)){cout<<endl<<"Tail Disabled."<<flush;}
+            fFit->FixParameter(gPeakSharing,1);
+            fFit->FixParameter(gPeakDecay,1);
+        }  
+        if(step&&fFit->GetParameter(gUltraStep)<1){ // As above
+            cout<<endl<<"Step Disabled."<<flush;
+            step=false;
+            fFit->FixParameter(gUltraStep,0);
+        }
+
+        fResult=fFitHist->Fit(fFit,MasterFitOpt.c_str());
+        FitStatus = fResult;
+        
+        if(!FitStatus&&CovDiag(fResult)){break;}
+        
+        cout<<endl<<MasterFitOpt<<" fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<", Failed."<<flush;
+        MasterFitOpt=MasterFitOpt.substr(0,MasterFitOpt.length()-1);
+    }
+    // *should* now have a good fit as the above loop reduced back to the original options until a good fit
+    // And if the original fit options failed then function terminated there
+    
+//////// Debugging ////////
+//    fFitHist->Fit(fFit,"RSNE");
+//     fResult->Print("V");    
+//////////////////////////
+
 	//////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////// POST FIT OUTPUT ///////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////
-	
-	vector<double> FracErr; double FracErrSum=0;
+
+//fResult->Print("V");
+
+    // Switched to a manual output due to a strange error with opt "E"
+    // which caused the values of some parameters to be changed between terminal output and fit result
     
-	// Dont print the whole detail every time, just print when error or parameter limit
-	for(unsigned int i=0;i<NparFromN(fNp);i++){
-		double sU,sD,sP;
-        sP=fFit->GetParameter(i);
+    cout<<endl<<endl<<"     FIT STATUS : "<<gMinuit->fCstatu;
+	for(int i=0;i<Npar;i++){
+        string pname=fFit->GetParName(i);
+        double val=fFit->GetParameter(i);
+        double err=fFit->GetParError(i);
         
-        double frcerr=0;
-        if(fFit->GetParError(i)>0&&sP>0){
-            frcerr=fFit->GetParError(i)/sP;
-        }
-        FracErr.push_back(frcerr);
-        FracErrSum+=frcerr;
+        if(!pname.compare("na"))continue;
+        cout.precision(5);
         
-		fFit->GetParLimits(i,sD,sU);
-		if(sU>sD){
-            double sR=abs(sU-sD);
-            if(sR==0)continue;
-			if(abs(sU-sP)/sR<1E-4)cout<<endl<<fFit->GetParName(i)<<" at/near UPPER limit : "<<sU<<endl;
-			if(abs(sD-sP)/sR<1E-4)cout<<endl<<fFit->GetParName(i)<<" at/near LOWER limit : "<<sD<<endl;
-		}
-	}
-	
-	if(FracErrSum>0.2){
-        cout<<endl;
-        for(unsigned int i=0;i<NparFromN(fNp);i++){
-            if(FracErr[i]>0.1){
-                cout<<endl<<fFit->GetParName(i)<<" large error:  "<<FracErr[i]<<flush;
+        //////////// Identical to normal TF1 fit output ////////////
+        // cout<<endl<<setw(4)<<right<<i<<"  "<<left<<setw(10)<<pname<<setw(14)<<right<<scientific<<val<<setw(14)<<err<<flush;
+        ////////////////////////////////////////////////////////////    
+
+        cout<<endl<<setw(3)<<right<<i<<"  ";
+        cout<<left<<setw(10)<<pname<<right<<setw(12);
+        
+        if(IsParFixed(fFit,i)){
+                cout<<val<<"       fixed";
+        }else if(ParAtLimit(fFit,i)){
+                cout<<val<<"      Warning!   Parameter At ";
+                if(ParAtLimit(fFit,i,0))cout<<"Lower";
+                else cout<<"Upper";
+                cout<<" Limit. Errors Invalid.";;
+        }else{
+            ScientificErrorPrint(val,err,2,true,true);
+            if(abs(err/val)>0.1){
+                cout.precision(3);
+                cout<<"  Warning!   "<<abs(100*err/val)<<"% Error";
             }
         }
-        cout<<endl;
+        cout<<flush;
     }
-	
-	if(fResult->Status()!=4000){
-		cout<<endl<<"FIT FAILURE."<<endl;
-// 		return 0;
+    cout<<endl;
+    cout<<resetiosflags(cout.flags()); // clears all flags
+    
+    if(fResult->Status()){
+        cout<<endl<<"       WARNING FIT FAILURE!";
+        cout<<endl<<"  Fit Status code : "<<fResult->Status();
+        cout<<endl<<"  Fit Status word : "<<gMinuit->fCstatu;
+        cout<<endl;
+		return 0;
 	}
 	
-	
-	if(statmode>0)cout<<endl<<"Likelihood fit, use 'chi-squared' with caution!"<<flush;
-	if(statmode>1)cout<<endl<<"Weighted Likelihood fit, errors can be weird. Recommend using error from integral form."<<flush;
-	
+	// Actually populate the return value
 	FullFitHolder* fHold = new FullFitHolder(fFit,fResult->GetCovarianceMatrix(),fPeakFunc.cBits);
 	
-    bool infl=false;
-	if(statmode==0){
-		cout<<endl<<"Fit Area Errors inflated by sqrt(RedChi)"<<flush;
-        infl=true;
-	}
+    bool infl=(statmode==0);
     fHold->SetBit(Ultrapeak::kInflate,infl);
     fHold->RedChiInflateErr=infl;
     
-	//This form does not calculate the integral if exclusion range overlaps
-	Ultrapeak::MakeData(fHold,fHist,fExHist);
+    // Calculate all data (area etc) and stores in fHold's vector
+	MakeData(fHold,fHist,fExHist);
+    
+	// PrintData can call MakeData internally, but doesnt handel exclusion ranges so the above direct call is added 
+    PrintData(fHold,true,binwidth);
+    
+    if(fHold->InflateChi()>1)cout<<endl<<"  Fit area errors inflated by sqrt(RedChi)."<<flush;
+	if(statmode>0)cout<<endl<<"  Likelihood fit, use 'chi-squared' with caution."<<flush;
+	if(statmode>1)cout<<endl<<"  Weighted Likelihood fit. Use error from integral form."<<flush;  
+    cout<<endl;
 	
+	if(!CovDiag(fResult)||AnyParAtLimit(fFit)){
+        cout<<endl<<"       Warning Error Problems!";
+        if(!CovDiag(fResult))cout<<endl<<"    Covariance Matrix Incomplete.";
+        if(AnyParAtLimit(fFit))cout<<endl<<"        Parameters at Limits.";
+        cout<<endl;
+    }
+
 	return fHold;	
 }
 

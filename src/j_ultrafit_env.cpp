@@ -1034,9 +1034,6 @@ void UltraFitEnv::UltraFitAfter(FullFitHolder* fHold){
 // 		cRClicker.clear();
 // 		cClicker.clear();
 // 		cExClicker.clear();
-		
-		//This calculates all the data (area etc) internally using MakeUltraData(fHold) and stores in fHold's vector
-		Ultrapeak::PrintData(fHold,1,gHist);
 				
 		//update the text on the cBar
 		cPeakLabels.clear();

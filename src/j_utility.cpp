@@ -285,8 +285,10 @@ string ScientificErrorPrint(double val,double abserr, unsigned short sigfig, boo
     }
     
     ss<<val;
+    if(print){
+        cout<<ss.str()<<"("<<(int)abserr<<")"<<flush;
+    }
     ss<<"("<<(int)abserr<<")";
-    if(print)cout<<ss.str()<<flush;
     return ss.str();
 }
 

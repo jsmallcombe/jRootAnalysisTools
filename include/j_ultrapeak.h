@@ -23,6 +23,7 @@
 #include <TFitResult.h>
 #include <TList.h>
 #include <TKey.h>
+#include <TMinuit.h>
 
 #include <cmath>
 #include <TMath.h>

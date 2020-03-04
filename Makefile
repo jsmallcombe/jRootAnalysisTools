@@ -8,7 +8,7 @@
 
 ROOT_LIBS = $(shell root-config --glibs)
 ROOT_GCC_FLAGS = $(shell root-config --cflags)
-ROOT_LIBSEXTRA = -lSpectrum
+ROOT_LIBSEXTRA = -lSpectrum -lMinuit
 # -lX11
 
 J_LIB = $(shell pwd)
