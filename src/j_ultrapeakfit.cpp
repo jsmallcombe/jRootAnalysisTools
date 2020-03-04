@@ -91,10 +91,18 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 		binsums+=abs(n);
 	}
 	
+	// If average bin content<10 definitely use Log Likelihood
 	if(binsums<(fRightBin-fLeftBin+1)*10){
 		statmode=1;//likelihood
 		if(nonintergerbins)statmode=2;//weighted likelihood
+		
+		if(fExHist){
+            fExHist=0;
+            cout<<endl<<"  Low stats Likelihood fitting incompatible with exclusion zones! "<<endl;
+        }
 	}
+	// If background is fully subtracted ~0 and large peaks are present, likelihood will not be used.
+	// If background is still being fit in this case it will likely be overestimated.
 	
 	//////////////////////////////////////////////////////////////////////////////////////
 	//////////////// PERFORM PRELIMINARY FIT FOR PEAK PARAMETERS /////////////////////////
@@ -463,7 +471,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
     // FitStatus < 0 if error not connected with the minimizer
     
     if(FitStatus){
-        cout<<endl<<"BASIC FIT FAILED! TFitResultPtr Status = "<<FitStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fResult)<<", Limits = "<<AnyParAtLimit(fFit)<<flush;
+        cout<<endl<<" BASIC FIT FAILED! TFitResultPtr Status = "<<FitStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fResult)<<", Limits = "<<AnyParAtLimit(fFit)<<flush;
         // fResult->GetCovarianceMatrix().Print();
         // fResult->Print("V");
         return 0;
@@ -473,14 +481,14 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
     
     // If sharing is near 1, fix sharing and decay to avoid problems
     if(abs(fFit->GetParameter(gPeakSharing)-1)<0.001){
-        if(!IsParFixed(fFit,gPeakSharing)){cout<<endl<<"Tail Disabled."<<flush;}
+        if(!IsParFixed(fFit,gPeakSharing)){cout<<endl<<"  Tail Disabled."<<flush;}
         fFit->FixParameter(gPeakSharing,1);
         fFit->FixParameter(gPeakDecay,1);
     }
     
     // If step is near 0, turn it off
     if(step&&fFit->GetParameter(gUltraStep)<1){
-        cout<<endl<<"Step Disabled."<<flush;
+        cout<<endl<<"  Step Disabled."<<flush;
         step=false;
         fFit->FixParameter(gUltraStep,0);
     }
@@ -492,8 +500,9 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
     
     // Do a second fit with statoptions and option M
     // M option is supposed to find improved minimum, but seems to ALWAYS return error code 4000
- 	fResult=fFitHist->Fit(fFit,(MasterFitOpt+"M").c_str());
+    fResult=fFitHist->Fit(fFit,(MasterFitOpt+"M").c_str());
     FitStatus = fResult;
+    bool Mfit=(CovDiag(fResult)&&!FitStatus);
     // cout<<endl<<"M fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<flush;
     
     // Set last few impovement options for a final fit 
@@ -505,11 +514,13 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
         // Much slower but needed if bin width is wide relative to peaks
     }
     
-    // E - better errors estimation by using Minos technique
-    MasterFitOpt+="E";
+    if(statmode!=2){ // WL incompatible with E
+        // E - better errors estimation by using Minos technique
+        MasterFitOpt+="E";
+    }
 
     // Opt M should be the last thing on the string so it is the first removed, due to usually being troublesome
-    if(CovDiag(fResult)&&!FitStatus){
+    if(Mfit){
         MasterFitOpt+="M";
     }
     
@@ -518,12 +529,12 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
     while(MasterFitOpt.length()>3){
         
         if(abs(fFit->GetParameter(gPeakSharing)-1)<0.001){ // As above
-            if(!IsParFixed(fFit,gPeakSharing)){cout<<endl<<"Tail Disabled."<<flush;}
+            if(!IsParFixed(fFit,gPeakSharing)){cout<<endl<<"  Tail Disabled."<<flush;}
             fFit->FixParameter(gPeakSharing,1);
             fFit->FixParameter(gPeakDecay,1);
         }  
         if(step&&fFit->GetParameter(gUltraStep)<1){ // As above
-            cout<<endl<<"Step Disabled."<<flush;
+            cout<<endl<<"  Step Disabled."<<flush;
             step=false;
             fFit->FixParameter(gUltraStep,0);
         }
@@ -615,8 +626,8 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
     cout<<endl;
 	
 	if(!CovDiag(fResult)||AnyParAtLimit(fFit)){
-        cout<<endl<<"       Warning Error Problems!";
-        if(!CovDiag(fResult))cout<<endl<<"    Covariance Matrix Incomplete.";
+        cout<<endl<<"     Warning, Uncertainty Problems!";
+        if(!CovDiag(fResult))cout<<endl<<"     Covariance Matrix Incomplete.";
         if(AnyParAtLimit(fFit))cout<<endl<<"        Parameters at Limits.";
         cout<<endl;
     }
