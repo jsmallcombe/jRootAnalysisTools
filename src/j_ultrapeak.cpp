@@ -4,75 +4,144 @@
 int Ultrapeak::Ultra_iterator = 0;
 short Ultrapeak::gMaxPeaks = 10;
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////  TF1 assisting functions/  //////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 TF1* Ultrapeak::PrepareTF1(double range1,double range2,int n,int backmode,bool twogaus){
     stringstream ss;
     ss<<"UltP"<<Ultra_iterator;
     Ultra_iterator++;
     
-    Ultrapeak fPeakFunc(n,1,1,Step(backmode),twogaus);
-	fPeakFunc.SetBit(kStep,Step(backmode));
-	fPeakFunc.SetBit(kPol2,Pol2(backmode));
-	if(twogaus)fPeakFunc.SetBit(k2Gaus,1);
+    Ultrapeak fPeakFunc(n,1,backmode,twogaus);
 	TF1 *fUlt = new TF1(ss.str().c_str(),fPeakFunc,range1,range2,NparFromN(n));
-    
-    NameParam(fUlt,n,backmode,twogaus);
-    FixUnusedParam(fUlt,n,backmode,twogaus);
+    fPeakFunc.NameParam(fUlt);
+    fPeakFunc.FixUnusedParam(fUlt);
 
     return fUlt;
 }
 
-void Ultrapeak::NameParam(TF1* fPeakFunc,int n,int backmode,bool tg){
+void Ultrapeak::NameParam(TF1* t){
+    NameParam(t,N,cBits);
+}
+
+void Ultrapeak::NameParam(TF1* t,int bm,bool tg){
+    TransientBitsClass<long> bits;
+    bits.SetBit(kPeaks,1);
+    bits.SetBit(kBack,!(cBackTypeN==bm));
+    bits.SetBit(kStep,Step(bm));
+    bits.SetBit(kPol0,Pol0(bm));
+    bits.SetBit(kPol1,Pol1(bm));
+    bits.SetBit(kPol2,Pol2(bm));
+    bits.SetBit(k2Gaus,tg);
+    bits.SetBit(kCentTrue,0);
+    NameParam(t,NfromTF1(t),bits);
+}
+
+void Ultrapeak::NameParam(TF1* fPeakFunc,int n,TransientBitsClass<long>& bits){
+    fPeakFunc->SetParName(gUltraPol0,"na");
     fPeakFunc->SetParName(gUltraPol1,"na");
     fPeakFunc->SetParName(gUltraStep,"na");
     fPeakFunc->SetParName(gUltraOffsetOrPol2,"na");
-    fPeakFunc->SetParName(gPeakSigmaB,"na");
-    fPeakFunc->SetParName(gPeakSigmaC,"na");
-        
-    fPeakFunc->SetParName(gUltraPol0,"Pol0");
-    if(PolOrder(backmode)>0){
-        fPeakFunc->SetParName(gUltraPol1,"Pol1");
-        fPeakFunc->SetParName(gUltraOffsetOrPol2,"Pol1Offset");
-        if(PolOrder(backmode)==2){
-            fPeakFunc->SetParName(gUltraOffsetOrPol2,"Pol2");
+    fPeakFunc->SetParName(gUltraTGWR,"na");
+    fPeakFunc->SetParName(gUltraTGHR,"na");
+	fPeakFunc->SetParName(gPeakSigma,"na");
+	fPeakFunc->SetParName(gPeakDecay,"na");
+	fPeakFunc->SetParName(gPeakSharing,"na");
+    
+    if(bits.TestBit(kPeaks)||bits.TestBit(kStep)){
+        fPeakFunc->SetParName(gPeakSigma,"Sigma");
+        fPeakFunc->SetParName(gPeakDecay,"Decay");
+        fPeakFunc->SetParName(gPeakSharing,"Sharing");
+    }
+    
+    if(bits.TestBit(kBack)){
+        fPeakFunc->SetParName(gUltraPol0,"Pol0");
+        if(!bits.TestBit(kPol0)){
+            fPeakFunc->SetParName(gUltraPol1,"Pol1");
+            if(bits.TestBit(kPol1))fPeakFunc->SetParName(gUltraOffsetOrPol2,"Pol1Offset");
+            else fPeakFunc->SetParName(gUltraOffsetOrPol2,"Pol2");
         }
-    }
-    if(Step(backmode)){
-        fPeakFunc->SetParName(gUltraStep,"Bkgd Step");
+        if(bits.TestBit(kStep))fPeakFunc->SetParName(gUltraStep,"Bkgd Step");
     }
     
-	fPeakFunc->SetParName(gPeakSigma,"Sigma");
-	fPeakFunc->SetParName(gPeakDecay,"Decay");
-    
-	if(tg){
-		fPeakFunc->SetParName(gPeakSigmaB,"SigmaRatio");
-		fPeakFunc->SetParName(gPeakSigmaC,"TGHRatio");
+    if(bits.TestBit(k2Gaus)){
+		fPeakFunc->SetParName(gUltraTGWR,"SigmaRatio");
+		fPeakFunc->SetParName(gUltraTGHR,"TGHRatio");
 	}
 	
-	fPeakFunc->SetParName(gPeakSharing,"Sharing");
-    
 	for(auto i=0;i<n;i++){
-		stringstream ss;
-		ss<<i;
-		fPeakFunc->SetParName(gPeakNC(i),("Peak "+ss.str()).c_str());
-        fPeakFunc->SetParName(gPeakNH(i),("Height "+ss.str()).c_str());
-	}
-    
+        if(bits.TestBit(kPeaks)||bits.TestBit(kStep)){
+            stringstream ss; ss<<i;
+            fPeakFunc->SetParName(gPeakNC(i),("Peak "+ss.str()).c_str());
+            if(bits.TestBit(PBits(i)))fPeakFunc->SetParName(gPeakNH(i),("Ratio "+ss.str()).c_str());
+            else fPeakFunc->SetParName(gPeakNH(i),("Height "+ss.str()).c_str());
+        }else{
+            fPeakFunc->SetParName(gPeakNC(i),"na");
+            fPeakFunc->SetParName(gPeakNH(i),"na");
+        }
+    }
 }
 
-void Ultrapeak::FixUnusedParam(TF1* fPeakFunc,int n,int backmode,bool tg){
-    if(PolOrder(backmode)==0){
+
+
+// It is always advisable to fix any TF1 parameters which have no effect on the output function
+// else minimisation errors may occur.
+//
+// Note that while twogaus can be turned off internally with bits (due to extra complexity),
+// decay tails cannot be turned off with bits and are present when either peaks or steps are on.
+// Decay tails can only be contrained in the TF1.
+
+void Ultrapeak::FixUnusedParam(TF1* t){
+    FixUnusedParam(t,N,cBits);
+}
+
+void Ultrapeak::FixUnusedParam(TF1* t,int bm,bool tg){
+    TransientBitsClass<long> bits;
+    bits.SetBit(kPeaks,1);
+    bits.SetBit(kBack,!(cBackTypeN==bm));
+    bits.SetBit(kStep,Step(bm));
+    bits.SetBit(kPol0,Pol0(bm));
+    bits.SetBit(kPol1,Pol1(bm));
+    bits.SetBit(kPol2,Pol2(bm));
+    bits.SetBit(k2Gaus,tg);
+    bits.SetBit(kCentTrue,0);
+    FixUnusedParam(t,NfromTF1(t),bits);
+}
+
+void Ultrapeak::FixUnusedParam(TF1* fPeakFunc,int n,TransientBitsClass<long>& bits){
+    if(!bits.TestBit(kBack)){
+        fPeakFunc->FixParameter(gUltraPol0,0);
+        
+    }
+    if(bits.TestBit(kPol0)||!bits.TestBit(kBack)){
         fPeakFunc->FixParameter(gUltraPol1,0);
         fPeakFunc->FixParameter(gUltraOffsetOrPol2,0);
     }
-    if(!Step(backmode)){
+    
+    if(!bits.TestBit(kStep)){
         fPeakFunc->FixParameter(gUltraStep,0);
-        
     }
-	if(!tg){
-        fPeakFunc->FixParameter(gPeakSigmaB,0);
-        fPeakFunc->FixParameter(gPeakSigmaC,0);
+	if(!bits.TestBit(k2Gaus)||!(bits.TestBit(kPeaks)||bits.TestBit(kStep))){
+        fPeakFunc->FixParameter(gUltraTGWR,0.5);
+        fPeakFunc->FixParameter(gUltraTGHR,0.5);
+    }
+    if(!(bits.TestBit(kPeaks)||bits.TestBit(kStep))){
+        fPeakFunc->FixParameter(gPeakSharing,1);
+        fPeakFunc->FixParameter(gPeakDecay,1);
+        fPeakFunc->FixParameter(gPeakSigma,1);
+        for(int i=0;i<n;i++){
+            fPeakFunc->FixParameter(gPeakNH(i),0);
+            fPeakFunc->FixParameter(gPeakNC(i),0);
+        }
     }
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Ultrapeak::DrawPeak(FullFitHolder* fFit,TCanvas* pad,TH1* fHist){
 	if(pad)pad->cd();
@@ -143,7 +212,7 @@ void Ultrapeak::DrawPeak(FullFitHolder* fFit,TCanvas* pad,TH1* fHist){
 // Calculated the peak error based on fit parameters
 // If binwidth!=1 is provided the areas will be accordingly corrected
 void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
-    fHold->RedChiInflateErr=fHold->TestBit(Ultrapeak::kInflate);
+    fHold->RedChiInflateErr=fHold->TestBit(kInflate);
     double SqrtRC=sqrt(fHold->InflateChi());
     // InflateChi returns 1 if the option to inflate is false
     
@@ -184,7 +253,7 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
 		TF1 fCent("fCent",fPeakCent,-1,1,fHold->GetNpar());
 		fCent.SetParameters(fParam);
 		fHold->CVal(VPC(i),fCent.Eval(0));
-        if(fHold->TestBit(Ultrapeak::kCentTrue)){
+        if(fHold->TestBit(kCentTrue)){
             fHold->CVal(VPC(i),fCent.Eval(0)-fCentOff);
         }
 		fHold->CVal(VPCe(i),SqrtRC*AnalyticalFullCovError(&fCent,fHold->GetCov()));
@@ -208,7 +277,7 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
 // Calculate areas based on fit function and integration
 // Requires the histogram that was the target of the fit
 void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist,TH1* exclusion){
-    fHold->RedChiInflateErr=fHold->TestBit(Ultrapeak::kInflate);
+    fHold->RedChiInflateErr=fHold->TestBit(kInflate);
     double RC=fHold->InflateChi();
     // InflateChi returns 1 if the option to inflate is false
 
@@ -227,7 +296,7 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,TH1* hist,TH1* exclusion){
     vector<bool> used(N,true);
     
     double sig3=fParam[gPeakSigma]*3;
-    if(fHold->TestBit(Ultrapeak::k2Gaus))sig3*=fParam[gPeakSigmaB];
+    if(fHold->TestBit(k2Gaus))sig3*=fParam[gUltraTGWR];
     double tail=3.9*(1-fParam[gPeakSharing])*fParam[gPeakDecay];
     tail+=sig3;
     

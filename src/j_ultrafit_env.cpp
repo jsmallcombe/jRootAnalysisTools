@@ -161,7 +161,7 @@ void UltraFitEnv::BuildDialogBox(int opt){
             ticks->AddFrame(label,XX);
             
             fCombo = new TGComboBox(ticks,100);
-            fCombo->AddEntry("null",-1);
+            fCombo->AddEntry("null",Ultrapeak::cBackTypeN);
             fCombo->AddEntry("pol0",Ultrapeak::cBackType0);
             fCombo->AddEntry("pol0+step",Ultrapeak::cBackType0s);
             fCombo->AddEntry("pol1 fixed",Ultrapeak::cBackType1f);

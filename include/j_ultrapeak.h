@@ -170,18 +170,18 @@ inline double MulitPeakBackUni(double *par,int Np,double& x,double& yeta){
 
 
 inline double CombRDpeakTwo(double& x,double& sig1,double& sig2,double& TwoGausFrac,double& dec,double& eta){
-	double sigd=sig1*TwoGausFrac+sig2*(1-TwoGausFrac);
+	double sigd=(sig1*sig1*TwoGausFrac+sig2*sig2*(1-TwoGausFrac))/(sig1*TwoGausFrac+sig2*(1-TwoGausFrac));
 	return (UniGaus(x,sig1)*TwoGausFrac+UniGaus(x,sig2)*(1-TwoGausFrac))*eta+DecGaus(x,sigd,dec)*(1-eta);
 }
 
 inline double CombRDstepTwo(double& x,double& sig1,double& sig2,double& TwoGausFrac,double& dec,double& b1){
-	double sigd=sig1*TwoGausFrac+sig2*(1-TwoGausFrac);
+	double sigd=(sig1*sig1*TwoGausFrac+sig2*sig2*(1-TwoGausFrac))/(sig1*TwoGausFrac+sig2*(1-TwoGausFrac));
 	return (UniGausStep(x,sig1)*TwoGausFrac+UniGausStep(x,sig2)*(1-TwoGausFrac))*b1+DecGausStep(x,sigd,dec)*(1-b1);
 }
 
 
 inline double CombAreaTwo(double& sig1,double& sig2,double& TwoGausFrac,double& dec,double& eta){
-	double sigd=sig1*TwoGausFrac+sig2*(1-TwoGausFrac);
+	double sigd=(sig1*sig1*TwoGausFrac+sig2*sig2*(1-TwoGausFrac))/(sig1*TwoGausFrac+sig2*(1-TwoGausFrac));
 	double decX_0=DecGausMaxX(sigd,dec)*(1-eta);
 	double xeta=eta/(UniGaus(decX_0,sig1)*TwoGausFrac+UniGaus(decX_0,sig2)*(1-TwoGausFrac));
 	double zeta=(1-eta)/DecGaus(decX_0,sigd,dec);
@@ -227,38 +227,88 @@ inline double MulitPeakBackUniTwo(double *par,int Np,double& x,double& yeta){
 	return ret;
 }
 
+//////////////////////////////////////
+//        New Simplified Sums       //
+//////////////////////////////////////
+
+// This function parses the TF1 parameter list and an specfic sigma
+// to add together multiple peaks specified by relative distances
+inline double MulitPeakSigma(double *par,int& Np,double& x,double sig,bool decay){
+	double ret=0;
+	double cent=0;
+	double a;
+	for(int i=0;i<Np;i++){
+        cent+=par[gPeakNC(i)];
+		a=x-cent;
+		if(decay)ret+=par[gPeakNH(i)]*DecGaus(a,sig,par[gPeakDecay]);
+        else ret+=par[gPeakNH(i)]*UniGaus(a,sig);
+    }
+	return ret;
+}
+
+// This function parses the TF1 parameter list and an specfic sigma
+// to add together peak background specified by relative distances
+inline double MulitPeakBackSigma(double *par,int Np,double& x,double sig,bool decay){
+	double ret=0;
+	double sum=0;
+	double cent=0;
+	double a;
+
+	for(int i=0;i<Np;i++)sum+=par[gPeakNH(i)];
+	for(int i=0;i<Np;i++){
+        cent+=par[gPeakNC(i)];
+		a=x-cent;
+		if(decay)ret+=(par[gPeakNH(i)]/sum)*DecGausStep(a,sig,par[gPeakDecay]);
+        else ret+=(par[gPeakNH(i)]/sum)*UniGausStep(a,sig);
+    }
+	return ret;
+}
+
+
+
 ///////////////////////////////////////////
-//    Ultra peal class definition	 //
+//      Ultra peak class definition      //
 ///////////////////////////////////////////
 
 
 // A class to call to be parsed in a TF1
 // Create an Ultrapeak set it internal parameters and then give it to a TF1
-// const vector<short> UltraBasicParaIndex={gPeakBackA,gPeakBackB,gPeakBackC,gPeakBackD,gPeakSigma,gPeakDecay,gPeakSharing,gPeakNH(0),gPeakNC(0)};
 class  Ultrapeak{
  public:	
 	enum UBits {
 		kPeaks	= BIT(0),
 		kBack	= BIT(1),
 		kStep	= BIT(2),
-		kPol2	= BIT(3),
-		k2Gaus	= BIT(4),
-		kInflate= BIT(5),
-		kCentTrue= BIT(6)
+		kPol0	= BIT(3),
+		kPol1	= BIT(4),
+		kPol2	= BIT(5),
+		kDecOff	= BIT(6),
+		k2Gaus	= BIT(7),
+		kInflate= BIT(8),
+		kCentTrue= BIT(9)
 	};
-	static int PBits(int i) {return 0x1<<(i+7);}
+	static int PBits(int i) {return 0x1<<(i+10);}
 	
-	double para[48];
+	double para[48]; // Doesnt store parameters permanatly, used in operations
 	
 	int N;
 	TransientBitsClass<long> cBits;
 	static short gMaxPeaks;
-	
+    
+	void SetBit(int i,bool b=true){cBits.SetBit(i,b);}
+	bool TestBit(int i){return cBits.TestBit(i);}
+ 
+    ///////////////////////////////////////////////////////////////////
+    
 	static const short gUltraPol0=gPeakBackA;
 	static const short gUltraPol1=gPeakBackB;
 	static const short gUltraOffsetOrPol2=gPeakBackC;
 	static const short gUltraStep=gPeakBackD;
-	
+	static const short gUltraTGWR=gPeakSigmaB;
+	static const short gUltraTGHR=gPeakSigmaC;
+
+    //////////////////// FitHoldVals ////////////////////////////////
+    
 	static const short VN=0;
 	static const short VBI=VN+1;
 	static const short VChi=VBI+1;
@@ -270,32 +320,47 @@ class  Ultrapeak{
 	static short VPI(int i=0){return i*6+VOff+5;}
 	static short VPIe(int i=0){return i*6+VOff+6;}
 	
+	///////////////// Background Control /////////////////////////////
 	
+	static const short cBackTypeN=-2;//null
 	static const short cBackType0=0;//pol0
 	static const short cBackType0s=1;//pol0+step
 	static const short cBackType1=10;//pol1
 	static const short cBackType1s=11;//pol1 +step
-	static const short cBackType1f=12;//pol1 fixed
+	static const short cBackType1f=12;//pol1 fixed   // Note : Ultrapeak doesnt know internally if USED parameters are to be fixed
 	static const short cBackType2=20;//pol2
 	static const short cBackType2s=21;//pol2 +step
 	
-	static bool Step(int BackType){
+	static bool Step(short BackType){
         return BackType%2;
     }
-	static int PolOrder(int BackType){
+	static unsigned short PolOrder(short BackType){
         	return BackType/10;
     }
-	static bool Pol2(int BackType){
-            return PolOrder(BackType)/2;
+    // Pol0/Pol1/Pol2 Pol2
+	static bool Pol0(short BackType){
+            return (PolOrder(BackType)==0);
     }
-	
-	void SetBit(int i,bool b=true){cBits.SetBit(i,b);}
-	bool TestBit(int i){return cBits.TestBit(i);}
- 
-	Ultrapeak(int n=1,bool p=1,bool b=1,bool s=1,bool tg=0,bool c=0):N(n){
+	static bool Pol1(short BackType){
+            return (PolOrder(BackType)==1);
+    }
+	static bool Pol2(short BackType){
+            return (PolOrder(BackType)==2);
+    }
+    
+    void SetBackMode(short bm){
+        SetBit(kBack,!(cBackTypeN==bm));
+        SetBit(kStep,Step(bm));
+        SetBit(kPol0,Pol0(bm));
+        SetBit(kPol1,Pol1(bm));
+        SetBit(kPol2,Pol2(bm));
+    }
+    
+    //////////////////////// Constructors /////////////////////////////
+    
+	Ultrapeak(int n=1,bool p=1,int bm=cBackType1s,bool tg=0,bool c=0):N(n){
 		SetBit(kPeaks,p);
-		SetBit(kBack,b);
-		SetBit(kStep,s);
+		SetBackMode(bm);
 		SetBit(k2Gaus,tg);
 		SetBit(kInflate,0);
 		SetBit(kCentTrue,c);
@@ -309,16 +374,26 @@ class  Ultrapeak{
 	
 	virtual ~Ultrapeak(){};
     
+    ///////////////////////// TF1 Functions ///////////////////////////////
+    
     static TF1* PrepareTF1(double range1=0,double range2=1000,int n=1,int backmode=0,bool twogaus=0);
-    static void NameParam(TF1* t,int n=1,int b=1,bool tg=0);
-    static void FixUnusedParam(TF1* t,int n=1,int b=1,bool tg=0);
+    
+    void NameParam(TF1* t);
+    static void NameParam(TF1* t,int b,bool tg);
+    static void NameParam(TF1* t,int n,TransientBitsClass<long>& bits);
+    
+    void FixUnusedParam(TF1* t);
+    static void FixUnusedParam(TF1* t,int b,bool tg);
+    static void FixUnusedParam(TF1* t,int n,TransientBitsClass<long>& bits);
+    
+	static unsigned int NfromTF1(TF1* f){int i=0;while(f->GetNpar()>gPeakNC(i))i++;return i;}// Number of peaks if TF1 is an ultra
+	static unsigned int NparFromN(int i){return gPeakNC(i)-1;} // Total number of parameters if fn has i peaks
 	
-	static unsigned int NfromTF1(TF1* f){int i=0;while(f->GetNpar()>gPeakNC(i))i++;return i;}//Number of peaks if TF1 is an ultra
-	static unsigned int NparFromN(int i){return gPeakNC(i)-1;}//Total number of parameters if fn has i peaks
+    ///////////////////////////////////////////////////////////////////
 	
-	//Fix here means correct not restrain
+	// "Fix" here means correct not restrain
 	static void FixParameters(double* p,double* P,int Np,TransientBitsClass<long>& bits){
-		for(unsigned int i=0;i<NparFromN(Np);i++)P[i]=p[i];//copy shared shape para and first peak (well everything actually)
+		for(unsigned int i=0;i<NparFromN(Np);i++)P[i]=p[i];// copy shared shape para and first peak (well everything actually)
 		for(int i=1;i<Np;i++){
 // 			P[gPeakNC(i)]=p[gPeakNC(i)];//centroid
 			if(bits.TestBit(Ultrapeak::PBits(i))){//heights
@@ -341,77 +416,114 @@ class  Ultrapeak{
 		return ret;
 	}
 	
+    ///////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
 	
 	double operator() (double *x, double *p) {
-
-		// DecGaus is not max @ 0 and does not have height = 1
-		// User p[gPeakSharing] specifies the fraction of the height that is UniGaus
-		// From this we calculate a new sharing parameter yeta & scaling factor hach such that:
-		// y = hach * ( yeta*UniGaus + (1-yeta)*DecGaus)
-		// Will have a max height ~1
-		// Thus height parameters and sharing parameters can be given in terms of simple observable height
-		// Much easier for fitting but more complicated in the functions.
+        double ret=0;
+//             cout<<"."<<flush;
         
-        // The "centroid" that is fit is actually the Y-max
-        // A true centroid is calcuated from sharing and decay parameters.
-        // This is useful for initial fit estimations,
-        // but problematic for inputing peaks with known true centroids (energy).
-        // In such cases the decay/sharing parameters may be fixed,
-        // so that the TrueCentroid offset can be calcualted.
-		
-		// Complex sharing parameters for the decay peak are calculated here to save multiplication of effort
-
-		
-		double TwoGausFrac=p[gPeakSigmaC];
-		double sigd=p[gPeakSigma];
-		if(TestBit(k2Gaus))sigd*=(TwoGausFrac+p[gPeakSigmaB]*(1-TwoGausFrac));
-	
-		double a=DecGausMaxX(sigd,p[gPeakDecay])*(1-p[gPeakSharing]); 
-		double X=x[0]+a;  
-		double xeta;
-		if(TestBit(k2Gaus)){
-			double sB=p[gPeakSigma]*p[gPeakSigmaB];
-			xeta=p[gPeakSharing]/(UniGaus(a,p[gPeakSigma])*TwoGausFrac+UniGaus(a,sB)*(1-TwoGausFrac));
-		}else xeta=p[gPeakSharing]/UniGaus(a,p[gPeakSigma]);
-		double zeta=(1-p[gPeakSharing])/DecGaus(a,sigd,p[gPeakDecay]);
-		double yeta=xeta/(xeta+zeta);
-		double hach=xeta+zeta;
-
-		// NOTE the following line removes
-		// complex sharing parameter normalisation behaviour 
-		// Use OldCombArea and ignore "TrueCentroid"
-		//yeta=p[gPeakSharing];hach=1;X=x[0];
+        // The latter functions take arguments of peak height, but input can parameters may be ratios
+        double *P=p;
+        if(N>1){FixParameters(p,para,N,cBits);P=para;}
         
-        if(TestBit(kCentTrue)){//New flag to use "True centroid" while still keeping yeta/hach
-            X=x[0];
+        
+        if(TestBit(kDecOff)){
+            
+//             double X=x[0];
+// 
+//             yeta=p[gPeakSharing];X=x[0];
+// 
+//             if(TestBit(kPeaks)){
+//                 if(TestBit(k2Gaus))ret+=MulitPeakTwo(P,N,X,yeta);
+//                 else ret+=MulitPeak(P,N,X,yeta);
+//             }
+//             
+//             if(TestBit(kBack)){
+//                 ret+=P[gUltraPol0];
+//                 if(TestBit(kStep)){
+//                     if(TestBit(k2Gaus))ret+=P[gUltraStep]*MulitPeakBackUniTwo(P,N,X,yeta);
+//                     else ret+=P[gUltraStep]*MulitPeakBackUni(P,N,X,yeta);
+//                 }
+//                 if(TestBit(kPol2))ret+=x[0]*P[gUltraPol1]+x[0]*x[0]*P[gUltraOffsetOrPol2];
+//                 else if(TestBit(kPol1)) ret+=(x[0]-P[gUltraOffsetOrPol2])*P[gUltraPol1];
+//             }
+            
+            
+        }else{
+            
+            // DecGaus is NOT max @ 0 and does NOT have height = 1
+            // User p[gPeakSharing] specifies the fraction of the height that is UniGaus
+            // From this we calculate a scaling factors such that:
+            // y = xeta*UniGaus + zeta*DecGaus
+            // Will have a max height ~1
+            // Thus height parameters and sharing parameters can be given in terms of simple observable height
+            // Much easier for fitting but more complicated in the functions.
+            
+            // The "centroid" that is fit is actually the Y-max
+            // A true centroid is calcuated from sharing and decay parameters.
+            // This is useful for initial fit estimations,
+            // but problematic for inputing peaks with known true centroids (energy).
+            // In such cases the decay/sharing parameters may be fixed,
+            // so that the TrueCentroid offset can be calcualted.
+            
+            // Complex sharing parameters for the decay peak are calculated here to save multiplication of effort
+
+            double sigB=P[gPeakSigma]*P[gUltraTGWR];
+            double sigd=P[gPeakSigma];
+            double TwoGausFrac=1;
+            if(TestBit(k2Gaus)){
+                TwoGausFrac=P[gUltraTGHR];
+                sigd*=(TwoGausFrac+P[gUltraTGWR]*P[gUltraTGWR]*(1-TwoGausFrac));
+                sigd/=(TwoGausFrac+P[gUltraTGWR]*(1-TwoGausFrac));
+                // twogaus - Area weighted mean sigma used by the decay tail
+            }
+
+            double X_0=DecGausMaxX(sigd,P[gPeakDecay])*(1-P[gPeakSharing]); // The X value at which combined peak is maximal // A bit imprecise?
+            double X=x[0]+X_0;
+            
+            double xeta=P[gPeakSharing]*TwoGausFrac/UniGaus(X_0,P[gPeakSigma]); // 0-1 Sharing fraction / Y value at X_0
+            double yeta=P[gPeakSharing]*(1-TwoGausFrac)/UniGaus(X_0,sigB);
+            double zeta=(1-P[gPeakSharing])/DecGaus(X_0,sigd,P[gPeakDecay]);
+
+            if(TestBit(kCentTrue)){// New flag to use "True centroid" 
+                X=x[0];
+            }
+
+            if(TestBit(kPeaks)){
+                ret+=xeta*MulitPeakSigma(P,N,X,P[gPeakSigma],false);
+                if(TestBit(k2Gaus))ret+=yeta*MulitPeakSigma(P,N,X,sigB,false);
+                ret+=zeta*MulitPeakSigma(P,N,X,sigd,true);
+            }
+            
+            if(TestBit(kBack)){
+                ret+=P[gUltraPol0];
+                if(TestBit(kPol2))ret+=x[0]*P[gUltraPol1]+x[0]*x[0]*P[gUltraOffsetOrPol2];
+                else if(TestBit(kPol1)) ret+=(x[0]-P[gUltraOffsetOrPol2])*P[gUltraPol1];
+                
+                if(TestBit(kStep)){
+                    // Area weighted step
+                    double a1=UniGausArea(P[gPeakSigma])*xeta;
+                    double a2=0;
+                    double aD=0;
+                    if(TestBit(k2Gaus))a2=UniGausArea(sigB)*yeta;
+                    if(!TestBit(kDecOff))aD=DecGausArea(sigd,P[gPeakDecay])*zeta;
+                    double sm=P[gUltraStep]/(a1+a2+aD);
+   
+                    ret+=sm*a1*MulitPeakBackSigma(P,N,X,P[gPeakSigma],false);
+                    if(TestBit(k2Gaus))ret+=sm*a2*MulitPeakBackSigma(P,N,X,sigB,false);
+                    if(!TestBit(kDecOff))ret+=sm*aD*MulitPeakBackSigma(P,N,X,sigd,true);
+                }
+            }
         }
-		
-		// The latter functions take peak height but now peak height inputs may be ratio
-		// So first we convert.
-		double *P=p;
-		if(N>1){FixParameters(p,para,N,cBits);P=para;}
 
-		double ret=0;
-		if(TestBit(kPeaks)){
-			if(TestBit(k2Gaus))ret+=hach*MulitPeakTwo(P,N,X,yeta);
-			else ret+=hach*MulitPeak(P,N,X,yeta);
-		}
-		//With new function it is possible to fix par[gPeakSigmaB]==1 and use MulitPeakTwo instead of MulitPeak
-		
-			
-		if(TestBit(kBack)){
-			ret+=P[gUltraPol0];
-			if(TestBit(kStep)){
-				if(TestBit(k2Gaus))ret+=P[gUltraStep]*MulitPeakBackUniTwo(P,N,X,yeta);
-				else ret+=P[gUltraStep]*MulitPeakBackUni(P,N,X,yeta);
-			}
-			if(TestBit(kPol2))ret+=x[0]*P[gUltraPol1]+x[0]*x[0]*P[gUltraOffsetOrPol2];
-			else ret+=(x[0]-P[gUltraOffsetOrPol2])*P[gUltraPol1];
-		}
-
-		return ret;
+        return ret;
 	}
 
+    ///////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
 	
 	// Produce the visuals of an Ultra peak individually, together and background, for drawing or saving 
 	// Provide a canvas for overlay drawing
@@ -435,18 +547,21 @@ class  Ultrapeak{
 	static void PrintData(vector< FullFitHolder* > in,double binwidth=1,ostream& ofs=cout){
 		PrintTitles(ofs);for(int i=0;(unsigned)i<in.size();i++)PrintData(in[i],false,binwidth,ofs);ofs<<endl;}
 		
+    ///////////////////////////////////////////////////////////////////
+    
 	// An all singing all dancing function to fit N peaks that are in close enough proximity to assume constant peak parameters
 	// int=1 specified to attempt to use step background int=0 uses linear
 	static FullFitHolder* PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode=cBackType0,int peaktype=0,bool truecent=0,string sig="",string dec="",string sha="",TH1* fExHist=0);
 	// If the fit fails returns 0
 	
+    ///////////////////////////////////////////////////////////////////
+    
 	// Uses default values for simple single fit
 	// If the fit fails returns 0
 	
 	static FullFitHolder* QuickPeakFit(TH1* fHist,double fLeftUser,double fRightUser, bool fExtraOpt=0);
 
-    
-    //A TGraph used for the numberical solution to the decay peak
+    // A TGraph used for the numberical solution to the decay peak
 	static TGraph DecayXR10;
     
 	static int Ultra_iterator;
@@ -461,19 +576,11 @@ class  Ultrapeak{
 //       Helper class definition	 //
 ///////////////////////////////////////////
 
-
 // Made to be operated with the same parameter list as Ultrapeak as a TF1,
 // even though it has no x dependence.
 // Give it an incorrect N and it will F U up.
 class  UltrapeakArea{
  public:
- 
-	static double UltraPeakAreaFn(unsigned int& Np, double *p){return p[gPeakNH(Np)]*CombArea(p[gPeakSigma],p[gPeakDecay],p[gPeakSharing]);}
-
-	static double UltraPeakAreaFnTwo(unsigned int& Np, double *p){
-		double sB=p[gPeakSigma]*p[gPeakSigmaB];
-		return p[gPeakNH(Np)]*CombAreaTwo(p[gPeakSigma],sB,p[gPeakSigmaC],p[gPeakDecay],p[gPeakSharing]);
-	}
   
 	unsigned int N_i;//Target peak 0-(N-1), not total number
 	TransientBitsClass<long> cBits;
@@ -487,8 +594,23 @@ class  UltrapeakArea{
 	double operator() (double *x, double *p) {
 		double *P=p;
 		if(N_i>0){Ultrapeak::FixParameters(p,para,N_i+1,cBits);P=para;}
-		if(cBits.TestBit(Ultrapeak::k2Gaus))return UltraPeakAreaFnTwo(N_i,P);
-		else return UltraPeakAreaFn(N_i,P);
+
+        double sigB=P[gPeakSigma]*P[gPeakSigmaB];
+        double sigd=P[gPeakSigma];
+        double TwoGausFrac=1;
+        if(cBits.TestBit(Ultrapeak::k2Gaus)){
+            TwoGausFrac=P[gPeakSigmaC];
+            sigd*=(TwoGausFrac+P[gPeakSigmaB]*P[gPeakSigmaB]*(1-TwoGausFrac));
+            sigd/=(TwoGausFrac+P[gPeakSigmaB]*(1-TwoGausFrac));
+        }
+        
+        double X_0=DecGausMaxX(sigd,P[gPeakDecay])*(1-P[gPeakSharing]);
+
+        double xeta=P[gPeakSharing]*TwoGausFrac/UniGaus(X_0,P[gPeakSigma]); 
+        double yeta=P[gPeakSharing]*(1-TwoGausFrac)/UniGaus(X_0,sigB);
+        double zeta=(1-P[gPeakSharing])/DecGaus(X_0,sigd,P[gPeakDecay]);
+        return p[gPeakNH(N_i)]*(UniGausArea(P[gPeakSigma])*xeta + UniGausArea(sigB)*yeta + DecGausArea(sigd,P[gPeakDecay])*zeta);
+        
 	}
 };
 
