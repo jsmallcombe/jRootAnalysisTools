@@ -417,9 +417,17 @@ class  Ultrapeak{
     
 	// An all singing all dancing function to fit N peaks that are in close enough proximity to assume constant peak parameters
 	// int=1 specified to attempt to use step background int=0 uses linear
-	static FullFitHolder* PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode=cBackType0,int peaktype=0,bool truecent=0,string sig="",string dec="",string sha="",TH1* fExHist=0);
 	// If the fit fails returns 0
+	static FullFitHolder* PeakFit(TH1* fHist,TH1* fExHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode=cBackType0,int peaktype=0,bool truecent=0,string FixPar="");
 	
+	
+	
+	static FullFitHolder* PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode=cBackType0,int peaktype=0,bool truecent=0,string sig="",string dec="",string sha="",TH1* fExHist=0){
+        return PeakFit
+        (fHist,fExHist,fLeftUser,fRightUser,fInput,backmode,peaktype,truecent,sig+'/'+dec+'/'+sha);
+    }
+	
+    
     ///////////////////////////////////////////////////////////////////
     
 	// Uses default values for simple single fit

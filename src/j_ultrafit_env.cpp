@@ -177,16 +177,17 @@ void UltraFitEnv::BuildDialogBox(int opt){
             fCheckLimit = new TGCheckButton(ticks,"Limit Tail  ");// A tick box with hover text belonging to a parent frame
             fCheckLimit->SetState(kButtonUp);
             fCheckLimit->SetToolTipText("Force strict maximum values on the\nexponential tail parameters.\n Recommended for fitting gamma rays.");
+            fCheckLimit->Connect("Clicked()","UltraFitEnv",this,"HideSubShapes()");
             
             fCheckNoTail = new TGCheckButton(ticks,"No Tail    ");// A tick box with hover text belonging to a parent frame
             fCheckNoTail->SetState(kButtonUp);
             fCheckNoTail->SetToolTipText("Turn off decay tail complelty");
+            fCheckNoTail->Connect("Clicked()","UltraFitEnv",this,"HideSubShapes()");
             
             fCheckTwin = new TGCheckButton(ticks,"Twin Gaus");// A tick box with hover text belonging to a parent frame
             fCheckTwin->SetState(kButtonUp);
             fCheckTwin->SetToolTipText("Use the peak fit mode which adds a\n second Gaussians compontent with \n larger sigma.");
-// 				fCheckTwin->Connect("Clicked()","UltraFitEnv",this,"SwitchDecayLabel()");
-            
+            fCheckTwin->Connect("Clicked()","UltraFitEnv",this,"HideSubShapes()");
 
         ticks->AddFrame(fCheckLimit,XX);
         ticks->AddFrame(fCheckNoTail,XX);
@@ -238,31 +239,53 @@ void UltraFitEnv::BuildDialogBox(int opt){
     cShapePane= new TGVerticalFrame(cFrame);
         TGHorizontalFrame* shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
             cShapeTsig = new TGTextEntry(shapeelement,new TGTextBuffer(5));
-            cShapeTsig->SetDefaultSize(70,25);	
+            cShapeTsig->SetDefaultSize(60,25);	
             cShapeTsig->SetToolTipText("Sigma\n Fix or constrain peak sigma.");
             shapeelement->AddFrame(cShapeTsig,buff);
             label = new TGLabel(shapeelement, "Sigma");
             shapeelement->AddFrame(label,buff);
         cShapePane->AddFrame(shapeelement,ExpandXz);
-    
-        shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
-            cShapeTdecay = new TGTextEntry(shapeelement,new TGTextBuffer(5));
-            cShapeTdecay->SetDefaultSize(70,25);	
-            cShapeTdecay->SetToolTipText("Decay Tail\n Fix or constrain peak decay tail.");
-            shapeelement->AddFrame(cShapeTdecay,buff);
-            label = new TGLabel(shapeelement, "Decay  ");
-            decaysigmablabel=label;
-            shapeelement->AddFrame(label,buff);
-        cShapePane->AddFrame(shapeelement,ExpandXz);
         
-        shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
-            cShapeTshare = new TGTextEntry(shapeelement,new TGTextBuffer(5));
-            cShapeTshare->SetDefaultSize(70,25);	
-            cShapeTshare->SetToolTipText("Sharing Parameter\n Fix or constrain peak sharing parameter.");
-            shapeelement->AddFrame(cShapeTshare,buff);
-            label = new TGLabel(shapeelement, "Sharing");
-            shapeelement->AddFrame(label,buff);
-        cShapePane->AddFrame(shapeelement,ExpandXz);
+        cTailParPane= new TGVerticalFrame(cShapePane);
+            shapeelement = new TGHorizontalFrame(cTailParPane, 0, 0, 0);
+                cShapeTdecay = new TGTextEntry(shapeelement,new TGTextBuffer(5));
+                cShapeTdecay->SetDefaultSize(60,25);	
+                cShapeTdecay->SetToolTipText("Decay Tail\n Fix or constrain peak decay tail.");
+                shapeelement->AddFrame(cShapeTdecay,buff);
+                label = new TGLabel(shapeelement, "Decay  ");
+                decaysigmablabel=label;
+                shapeelement->AddFrame(label,buff);
+            cTailParPane->AddFrame(shapeelement,ExpandXz);
+            
+            shapeelement = new TGHorizontalFrame(cTailParPane, 0, 0, 0);
+                cShapeTshare = new TGTextEntry(shapeelement,new TGTextBuffer(5));
+                cShapeTshare->SetDefaultSize(60,25);	
+                cShapeTshare->SetToolTipText("Sharing Parameter\n Fix or constrain peak sharing parameter.");
+                shapeelement->AddFrame(cShapeTshare,buff);
+                label = new TGLabel(shapeelement, "Sharing");
+                shapeelement->AddFrame(label,buff);
+            cTailParPane->AddFrame(shapeelement,ExpandXz);
+        cShapePane->AddFrame(cTailParPane,ExpandXz);
+        
+        cTwinParPane= new TGVerticalFrame(cShapePane);
+            shapeelement = new TGHorizontalFrame(cTwinParPane, 0, 0, 0);
+                cShapeTtwinwidth = new TGTextEntry(shapeelement,new TGTextBuffer(5));
+                cShapeTtwinwidth->SetDefaultSize(60,25);	
+                cShapeTtwinwidth->SetToolTipText("Twin Gaussian Width Parameter\n Fix or constrain twin peak ratio.");
+                shapeelement->AddFrame(cShapeTtwinwidth,buff);
+                label = new TGLabel(shapeelement, "Twin Sigma");
+                shapeelement->AddFrame(label,buff);
+            cTwinParPane->AddFrame(shapeelement,ExpandXz);
+        
+            shapeelement = new TGHorizontalFrame(cTwinParPane, 0, 0, 0);
+                cShapeTtwinshare = new TGTextEntry(shapeelement,new TGTextBuffer(5));
+                cShapeTtwinshare->SetDefaultSize(60,25);	
+                cShapeTtwinshare->SetToolTipText("Twin Gaussian Height Parameter\n Fix or constrain twin peak ratio.");
+                shapeelement->AddFrame(cShapeTtwinshare,buff);
+                label = new TGLabel(shapeelement, "Twin Height");
+                shapeelement->AddFrame(label,buff);
+            cTwinParPane->AddFrame(shapeelement,ExpandXz);
+        cShapePane->AddFrame(cTwinParPane,ExpandXz);
         
          shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
             cTrueCentButton = new TGTextButton(shapeelement," YMax ");
@@ -330,14 +353,40 @@ void UltraFitEnv::ClearFitsD(){
 };
 
 
+void UltraFitEnv::HideSubShapes(){
+    
+    if(!fCheckTwin->GetState()){
+        cShapeTtwinwidth->SetText("");
+        cShapeTtwinshare->SetText("");
+        cShapePane->HideFrame(cTwinParPane);
+    }else{
+        cShapePane->ShowFrame(cTwinParPane);
+    }
+    
+    if(fCheckLimit->GetState()||fCheckNoTail->GetState()){
+        cShapeTdecay->SetText("");
+        cShapeTshare->SetText("");
+        cShapePane->HideFrame(cTailParPane);
+    }else{
+        cShapePane->ShowFrame(cTailParPane);
+    }
+    
+	ReDrawFrames();
+}
+
 void UltraFitEnv::HideShape(){
 	cShapeTsig->SetText("");
 	cShapeTdecay->SetText("");
 	cShapeTshare->SetText("");
-	if(cFrame->IsVisible(cShapePane))cFrame->HideFrame(cShapePane);
-	else cFrame->ShowFrame(cShapePane);
-	
-	ReDrawFrames();
+	cShapeTtwinwidth->SetText("");
+	cShapeTtwinshare->SetText("");
+	if(cFrame->IsVisible(cShapePane)){
+        cFrame->HideFrame(cShapePane);
+        ReDrawFrames();
+    }else{
+        cFrame->ShowFrame(cShapePane);
+        HideSubShapes(); //This Fn Calls ReDrawFrames()
+    }
 }
 
 ///////////////////////////////////////
@@ -997,16 +1046,18 @@ void  UltraFitEnv::FitGUIPeak(){
 	string fixsig=cShapeTsig->GetBuffer()->GetString();
 	string fixdec=cShapeTdecay->GetBuffer()->GetString();
 	string fixsha=cShapeTshare->GetBuffer()->GetString();
+	string fixtwiw=cShapeTtwinwidth->GetBuffer()->GetString();
+	string fixtwih=cShapeTtwinshare->GetBuffer()->GetString();
     
-    // Text input overides check boxes
-    if(fixdec.size()+fixsha.size()){
+    // Text input overides check boxes // Should be mutually exclusive in GUI, but just in case
+    if(fixdec.size()+fixsha.size()){ // Shouldnt be possible 
         fCheckLimit->SetState(kButtonUp);
         fCheckNoTail->SetState(kButtonUp);
     }
     
-	int fittype=!fCheckNoTail->GetState();
-    
+	int fittype=1;
     if(fCheckNoTail->GetState()){
+        fittype=0;
         fCheckLimit->SetState(kButtonUp); // fCheckNoTail overides fCheckLimit
     } 
     
@@ -1024,7 +1075,9 @@ void  UltraFitEnv::FitGUIPeak(){
         fixdec=decss.str();
     }
     
-	FullFitHolder* fHold=Ultrapeak::PeakFit(gHist,bound_l,bound_u,fPass,fCombo->GetSelected(),fittype,cTrueCent,fixsig,fixdec,fixsha,fExclusionHist);
+    string OptString=fixsig+'/'+fixdec+'/'+fixsha+'/'+fixtwiw+'/'+fixtwih;
+    
+	FullFitHolder* fHold=Ultrapeak::PeakFit(gHist,fExclusionHist,bound_l,bound_u,fPass,fCombo->GetSelected(),fittype,cTrueCent,OptString);
 // 	if(fExclusionHist)delete fExclusionHist;
 	
 	fFitFinished=true;

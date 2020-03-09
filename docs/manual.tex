@@ -351,13 +351,18 @@ The [Clear Saved Peaks] button will clear the current session list and redraw th
 The primary peak function consists of a pure Gaussian + an exponential convolved with a Gaussian, similar to Radware. The ratio is controlled by a sharing parameter that can take values from 0 to 1. An analytical normalisation is applied to the exponential peak such that its maximum value is always 1. After a fit the output data contains both a centroid and a "True centroid". The centroid is the maximum of the combined peak, the true centroid corresponds to the centroid of the pure Gaussian component which would correspond to the physical spectroscopic value.  
 \\
 \\
-The tool is designed for fits over small energy regions, as such, all shape parameters of degenerate peaks are shared, as these parameters are dominated by energy dependant physical effects which do not change rapidly. Background across the fit region is approximated by a polynomial + an optional step function constrained by the peak parameters. The step should be used when peak sizes are large compared to background. Pol0, pol1 and pol2 backgrounds may be selected (pol2 are poorly constrained so a wider fitting region is needed).
+The tool is designed for fits over small energy regions, as such, all shape parameters of degenerate peaks are shared, as these parameters are dominated by energy dependant physical effects which do not change rapidly. Background across the fit region is approximated by a polynomial + an optional step function constrained by the peak parameters. The step should be used when peak sizes are large compared to background (If the minimizer finds an insignificant step, the step will be disabled irrespective of selection).
+Pol0, pol1 and pol2 backgrounds may be selected (pol2 are poorly constrained so a wider fitting region is needed).
+For very low background counts in the presence of large peaks, the default Pearson Chi Squared minimisation will likely overestimate the background.
+A ``null'' option is also included which fixes all background to zero, i.e. no background fit, for cases where a complete (interpolated) subtraction has been performed.
+\\
+\\ 
+For very small numbers of counts (average per bin less than 10) the fit mode will automatically switch to Poisson Likelihood fitting rather than Pearson Chi Squared minimisation. Exclusion regions will not function for Likelihood fitting.
 \\
 \\
-For very small numbers of counts the fit mode will automatically switch to Poisson Likelihood fitting rather than Pearson Chi Squared minimisation. Exclusion regions will not function for Likelihood fitting.
-\\
-\\
-A TwinGaus fit can be used when mixed resolution detector effects (such as Doppler shift) are significant. Each peak is fit with a narrow and a wide Gaussian with identical centroid. The background step is modified accordingly and all other fitting functionality remains the same. To avoid too many degrees of freedom the sigma ratio is highly constrained, also the relative proportion of the two Gaussian is fixed (default 0.6) and only allowed to vary if the Sharing parameter of the tail component is constrained or fixed (set to 1 to remove tail). The TwinGaus should only be used in the case of relatively isolated peaks.
+A TwinGaus fit can be used when mixed resolution detector effects (such as Doppler shift) are significant. Each peak is fit with a narrow and a wide Gaussian with identical centroid. The background step is modified accordingly and all other fitting functionality remains the same. The TwinGaus should only be used in the case of relatively isolated peaks.
+If TwinGaus is used in conjuction with a tail the excess degrees of freedom may cause problems.
+To override the default parameter ranges use the sigma text input box (see below).
 \\
 \\
 Fit results will give two values for the area of each peak.
@@ -369,7 +374,7 @@ It is recommended to only take the ``Int.'' form result in the case of a single 
 The ``Int.'' results will not be calculated when exclusion regions are within the integration range.
 \\
 \\
-Because this tool supports large exponential tails, the maximum value of the peak will often differ from the true spectroscopic centroid. In the case one wishes to specify the true-centroid this option can be selected in the shape parameter controls.
+Because this tool supports large exponential tails, the maximum value of the peak will often differ from the true spectroscopic centroid. In the case one wishes to specify the true-centroid as an input, this option can be selected in the shape parameter controls.
 
 \subsection{Fit Inputs}
 For multi-peak/degenerate fits, peak separations are specified, rather than absolute centroids. This provides more accurate fitting overall as it is less sensitive to small deviations in the absolute scale i.e. poor calibration. The area ratio between peaks may also be constrained if it is in known. When inputting multiple peaks to a fit, any constrained peaks should immediately follow the peak to which they are fixed. Un-constrained peaks should be in ascending order.
@@ -395,9 +400,8 @@ Example inputs :\quad0.051\qquad0.051(2)\qquad0.051 0.002\qquad0.051+-0.002\qqua
 \label{sec:errors}
 \\
 \\
-For problematic fits the shape parameters (Sigma, Decay and Sharing) may be constrained. The bottom-most button on the panel [$\wedge$] will expose these options. As with centroid \& ratio these parameters may be fixed or given with uncertainties and should be left blank when not constrained.
-Alternately the Limit Tail check box applies preset limits on the tail parameters (Decay and Sharing) useful when fitting gamma spectra.
-One may also select if true spectroscopic centroids are to be used as inputs or observed peak maxima.
+For problematic fits the shape parameters (Sigma, Decay, etc) may be constrained. The bottom-most button on the panel [$\wedge$] will expose these options, as well as selection of peak maxima or true spectroscopic centroids. As with centroid \& ratio, shape parameters may be fixed or given with uncertainties and should be left blank when not constrained. The Limit Tail check box applies preset limits on the tail parameters (Decay and Sharing) useful when fitting gamma spectra. 
+Parameters will not be allowed to go out of range (e.g. Sharing $>$1) irrespective of user inputs. If the minimizer finds a negligible Step, Tail or TwinGaus contribution, these features will be disabled in the final iteration to avoid fitting errors.
 \begin{center}
 \begin{tabular}{ c c }
 \raisebox{-.5\height}{\includegraphics[width=0.3\textwidth]{jFitD.png}}

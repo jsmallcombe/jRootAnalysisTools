@@ -132,6 +132,7 @@ class UltraFitEnv : public TGCompositeFrame
     
     void ChangeCentMode();
 	
+	void HideSubShapes();
 	void HideShape();
 	
 	void Help();
@@ -152,7 +153,7 @@ class UltraFitEnv : public TGCompositeFrame
     
 	// Members
 	TGHorizontalFrame* mainhold;
-	TGVerticalFrame* cFrame,*cShapePane;
+	TGVerticalFrame* cFrame,*cShapePane,*cTailParPane,*cTwinParPane;
 	TRootEmbeddedCanvas *cPan; 
 	string can_name;
 	TCanvas *cCan;
@@ -169,7 +170,7 @@ class UltraFitEnv : public TGCompositeFrame
 	TGComboBox *fCombo;
 	bool fFitFinished;
 	
-	TGTextEntry* cShapeTsig,*cShapeTdecay,*cShapeTshare;
+	TGTextEntry* cShapeTsig,*cShapeTdecay,*cShapeTshare,*cShapeTtwinwidth,*cShapeTtwinshare;
 	
 	TGLabel* decaysigmablabel;
 	

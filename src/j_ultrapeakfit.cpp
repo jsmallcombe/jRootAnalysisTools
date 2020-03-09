@@ -6,8 +6,7 @@
 /////////////// Ultra peak fit //////////////////////
 //////////////////////////////////////////////////////
 
-
-FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode,int peaktype,bool truecent,string sig,string dec,string sha,TH1* fExHist){
+FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,TH1* fExHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode,int peaktype,bool truecent,string FixParStr){
     
 	// This function takes in peak positions as a series of relative positions, this creates undue correlation between centroid positions.
 	// However, this is the best way to fix the distance between pairs (or more), which is a likely desire if fitting multiple peaks.
@@ -17,32 +16,27 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	// Peak parameters are estimated from an initial fit which assumes peak zero is the furthest left peak 
     
 	cout<<endl<<"--------------------------------------------------"<<endl<<endl;
-    
+	
 	//////////////////////////////////////////////////////
 	/////////// PROCESS PEAK TYPE/SHAPE INPUTS ///////////
 	//////////////////////////////////////////////////////
-    
-    /////////// Cheat to pass 3 inputs with separators /////////
-    string TGWRstr="",TGHRstr="";
-    unsigned int dash=sig.find('/');
-    if(dash<sig.size()){
-        TGWRstr=sig.substr(dash+1,sig.size());
-        sig=sig.substr(0,dash);
-    }
-    dash=TGWRstr.find('/');
-    if(dash<TGWRstr.size()){
-        TGHRstr=TGWRstr.substr(dash+1,TGWRstr.size());
-        TGWRstr=TGWRstr.substr(0,dash);
-    }
-    //////////////////////////////////////////////////////////////
-    
-    cout<<endl<<"sig  "<<sig;
-    cout<<endl<<"TGWRstr  "<<TGWRstr;
-    cout<<endl<<"TGHRstr  "<<TGHRstr;
-    cout<<endl;
 
 	bool tailon=(peaktype%2);
-	bool twogaus=((int)(peaktype/10)%2);
+	bool twogaus=((int)(peaktype/10)%2);    
+    
+    // Parse the '/' seperated parameter limit strings
+    string sig, dec, sha,TGWRstr,TGHRstr;
+    vector<string*> dp={&sig,&dec,&sha,&TGWRstr,&TGHRstr};
+    for(unsigned int l=0;l<dp.size();l++){
+        unsigned int dash=FixParStr.find('/');
+        if(dash<FixParStr.size()){
+            *dp[l]=FixParStr.substr(0,dash);
+            FixParStr=FixParStr.substr(dash+1,FixParStr.size());
+        }else{
+            *dp[l]=FixParStr;
+            break;
+        }
+    }
     
 	// Check any shape parameter overrides
 	// If the following xFree bools are true, the values of xF xFE are never used 
