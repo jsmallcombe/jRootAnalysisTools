@@ -174,7 +174,7 @@ class UltraFitEnv : public TGCompositeFrame
 	TGLabel* decaysigmablabel;
 	
 	// Peak controls
-	TGCheckButton* fCheck0,*fCheck1,*fCheck3,*fCheck2;
+	TGCheckButton* fCheckLabels,*fCheckLimit,*fCheckNoTail,*fCheckTwin;
 	vector< TGHorizontalFrame* > cTframe;//row holder
 	vector< TGTextEntry* > cTbox;//peak separation
 	vector< TGTextEntry* > cPTbox;//peak selected/fit centroids

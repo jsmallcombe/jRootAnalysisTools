@@ -8,35 +8,75 @@
 
 
 FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,vector< jPeakDat > &fInput,int backmode,int peaktype,bool truecent,string sig,string dec,string sha,TH1* fExHist){
-	// This function takes in peak positions as a series of relative positions
-	// This creates undue correlation between centroid positions 
-	// However this is the best way to fix the distance between pairs (or more)
-	// Which is a likely desire if fitting multiple peaks anyway
+    
+	// This function takes in peak positions as a series of relative positions, this creates undue correlation between centroid positions.
+	// However, this is the best way to fix the distance between pairs (or more), which is a likely desire if fitting multiple peaks.
 	// All entries are relative to the previous one, so place them in the correct order for any linked pairs
     
-	bool limittail=(peaktype==1);
-	bool twogaus=(peaktype==2);
-	
 	// Possible problems:
 	// Peak parameters are estimated from an initial fit which assumes peak zero is the furthest left peak 
     
-	//Check any shape parameter overrides
-	bool SigFree=true,DecFree=true,ShareFree=true;
-	double SigmaF,SigmaFE,DecayF,DecayFE,ShareF,ShareFE;
-	ExtractError(sig,SigmaF,SigmaFE);if(SigmaF>0)SigFree=false;
-	ExtractError(dec,DecayF,DecayFE);if(DecayF>0)DecFree=false;
-	if(sha.size()>0){ExtractError(sha,ShareF,ShareFE);if(ShareF<=1)ShareFree=false;}
-	
-	cout<<endl;
+	cout<<endl<<"--------------------------------------------------"<<endl<<endl;
+    
+	//////////////////////////////////////////////////////
+	/////////// PROCESS PEAK TYPE/SHAPE INPUTS ///////////
+	//////////////////////////////////////////////////////
+    
+    /////////// Cheat to pass 3 inputs with separators /////////
+    string TGWRstr="",TGHRstr="";
+    unsigned int dash=sig.find('/');
+    if(dash<sig.size()){
+        TGWRstr=sig.substr(dash+1,sig.size());
+        sig=sig.substr(0,dash);
+    }
+    dash=TGWRstr.find('/');
+    if(dash<TGWRstr.size()){
+        TGHRstr=TGWRstr.substr(dash+1,TGWRstr.size());
+        TGWRstr=TGWRstr.substr(0,dash);
+    }
+    //////////////////////////////////////////////////////////////
+    
+    cout<<endl<<"sig  "<<sig;
+    cout<<endl<<"TGWRstr  "<<TGWRstr;
+    cout<<endl<<"TGHRstr  "<<TGHRstr;
+    cout<<endl;
+
+	bool tailon=(peaktype%2);
+	bool twogaus=((int)(peaktype/10)%2);
+    
+	// Check any shape parameter overrides
+	// If the following xFree bools are true, the values of xF xFE are never used 
+	double SigmaF,SigmaFE,DecayF,DecayFE,ShareF,ShareFE,TGWRF,TGWRFE,TGHRF,TGHRFE;
+	ExtractError(sig,SigmaF,SigmaFE); // Return SigmaF=0 in the case of no input. 
+    bool SigFree=!(SigmaF>0); // Safe guard against negative values!
+	ExtractError(dec,DecayF,DecayFE);
+    bool DecFree=!(DecayF>0);
+    ExtractError(sha,ShareF,ShareFE);
+    bool ShareFree=!((ShareF>=0&&ShareF<=1)&&sha.size()>0);
+    // Extra check to distinquish between an actual input of zero (which is allowed) and a zero due to no input
+    
+    ExtractError(TGWRstr,TGWRF,TGWRFE);
+    bool TGWRFree=!(TGWRF>=1);
+    ExtractError(TGHRstr,TGHRF,TGHRFE);
+    bool TGHRFree=!((TGHRF>=0&&TGHRF<=1)&&TGHRstr.size()>0);
 	
 	int fNp=fInput.size();if(fNp<1)return 0;
-	if(fNp>gMaxPeaks)fNp=gMaxPeaks;
+	if(fNp>gMaxPeaks)fNp=gMaxPeaks; // If a user tries to fit too many peaks, the latter inputs are ignored
+	
+	// Copy the peaks positions (1 absolute position and N-1 relative positions)
+	vector <double> fPeaks;
+	for(int i=0;i<fNp;i++)fPeaks.push_back(fInput[i].Centroid);
+		
+	//////////////////////////////////////////////////////
+	//////////////// GET HISTOGRAM DATA //////////////////
+	//////////////////////////////////////////////////////	
 
+	// Fine the bins of the chossen range and amend the range to reflect the limits of those bins
 	int fLeftBin=fHist->GetXaxis()->FindBin(fLeftUser),fRightBin=fHist->GetXaxis()->FindBin(fRightUser);
 	fLeftUser=fHist->GetBinCenter(fLeftBin);
 	fRightUser=fHist->GetBinCenter(fRightBin);
 	
-	//Find the absolute max minimum value in the fit range
+	// Find the absolute max minimum value in the fit range
 	bool hasdata=false;
 	double fMinY=fHist->GetBinContent(fHist->GetMaximumBin()), fMaxY=-fMinY;
 	for(int i=fLeftBin;i<=fRightBin;i++){
@@ -47,10 +87,9 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	}
 	if(!hasdata)return 0;
 	
-    
-    int smbin=3;//REDUCED FROM 5 TO 3
+    int smbin=3;// REDUCED FROM 5 TO 3
     if(backmode==cBackType1f){smbin=1;}
-	//Takes averages of histogram for the right and left, so not so sensitive.
+	// Takes a short average of histogram bins for the right and left edges of the fit range.
 	double fLeftHeight = bins_smooth(fHist,fLeftBin,smbin);
 	double fRightHeight = bins_smooth(fHist,fRightBin,smbin);
 	double fLeftVar = 2*sqrt(bins_var(fHist,fLeftBin,smbin));	
@@ -59,22 +98,15 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	double fRightError=sqrt(abs(fRightHeight));
 	if(fLeftVar>fLeftError)fLeftError=fLeftVar;
 	if(fRightVar>fRightError)fRightError=fRightVar;
-	
-	//
-	// Copy the peaks positions (1 position and a load of relative ones)
-	// Hang over from old version
-	//
-	vector <double> fPeaks;
-	for(int i=0;i<fNp;i++)fPeaks.push_back(fInput[i].Centroid);
+
+	double p0=fPeaks[0];
+	double fHH=FindLocalMax(fHist,p0); // FindLocalMax changes input p0 to local maximum bin centroid and returns bin content
 		
-	double p0=fPeaks[0];//Because FindLocalMax changes input and have decided I dont want that
-	double fHH=FindLocalMax(fHist,p0);
-		
-	////////////////////////////////////////////////////////////////
-	//////////////// CHECK HISTOGRAM STATS /////////////////////////
-	////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////
+	//////////////// CHECK HISTOGRAM STATS //////////////////
+	/////////////////////////////////////////////////////////
 	
-	int statmode=0;//chi squared
+	int statmode=0;// Chi Squared
 	double binsums=0;
 	bool nonintergerbins=false;
 	for(int i=fLeftBin;i<=fRightBin;i++){
@@ -90,151 +122,174 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 		
 		if(fExHist){
             fExHist=0;
-            cout<<endl<<"  Low stats Likelihood fitting incompatible with exclusion zones! "<<endl;
+            cout<<"  Low stats Likelihood fitting incompatible with exclusion zones! "<<endl;
         }
 	}
 	// If background is fully subtracted ~0 and large peaks are present, likelihood will not be used.
 	// If background is still being fit in this case it will likely be overestimated.
 	
-	//////////////////////////////////////////////////////////////////////////////////////
-	//////////////// PERFORM PRELIMINARY FIT FOR PEAK PARAMETERS /////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////// PERFORM PRELIMINARY FIT FOR PEAK PARAMETERS /////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	// Good Initial guesses and limits needed for good minimisation
 	
-	TF1 fLin("fLin","x*[1]+[0]");
+	TF1 fLin("fLin","x*[1]+[0]"); // Always uses pol1 for intial fit, irrespective of input
 	
-	double fParam[48]={0}; //Holder for parameters, initial guess and limits needed for good minimisation 
+	double fParam[48]={0}; // Holder for parameters
 
-	fParam[gUltraPol1] = (fRightHeight-fLeftHeight)/(fRightUser-fLeftUser); //grad
-	fParam[gUltraPol0] = fRightHeight-fRightUser*fParam[gUltraPol1]; //intercept
-// 	if(BackOff){
-//         fParam[gUltraPol1] =0;
-//         fParam[gUltraPol0] =0;
-//     }
-    
+	fParam[gUltraPol1] = (fRightHeight-fLeftHeight)/(fRightUser-fLeftUser); // Background pol1 gradient
+	fParam[gUltraPol0] = fRightHeight-fRightUser*fParam[gUltraPol1]; // Background pol1 intercept
 	fLin.SetParameters(fParam[gUltraPol0],fParam[gUltraPol1]);
+    
 	fParam[gPeakSigma] = 2.5; // Peak sigma
 	fParam[gUltraTGWR] = 1.5; // Peak sigma ratio for 2gaus
 	fParam[gUltraTGHR] = 0.6; // Peak height ratio for 2gaus
 	fParam[gPeakDecay] = 3.0; // Decay of tail (beta)
-	fParam[gPeakSharing] = 0.95; // Peak/Tail Sharing parameter (0 - 1)
-	fParam[gPeakNH(0)] = abs(fHH-fLin.Eval(fPeaks[0]));// First Peak Height
-	fParam[gPeakNC(0)] = fPeaks[0];// First Peak Centroid
+	fParam[gPeakSharing] = 0.95; // Gaus/Tail Sharing parameter (0 - 1)
+	fParam[gPeakNH(0)] = abs(fHH-fLin.Eval(fPeaks[0])); // First Peak Height (fn is height=1 normalised, not area normalised)
+	fParam[gPeakNC(0)] = fPeaks[0]; // First Peak Centroid
 	
-	
-	// This little check makes sure the initial shape fit skips any negligible shoulder peaks
+	// Ideally the first peak in the input list vector< jPeakDat > &fInput should be the large, to the left, and isolated,
+	// in order to enable the best peak shape estimates. However this is not always the case
+	// This check skips up to 2 negligible initial peaks
 	double tCC=fPeaks[0];
 	for(int i=1;i<3&&i<fNp;i++){
 		tCC+=fPeaks[i];
 		double tH=fHist->GetBinContent(fHist->GetXaxis()->FindBin(tCC));
 		tH-=fLin.Eval(tCC);
 		if(tH>fParam[gPeakNH(0)]*5){
-			cout<<endl<<"Skipping peak "<<i-1<<" for shape fit"<<endl;
+			cout<<"Skipping peak "<<i-1<<" for shape fit"<<endl;
 			fParam[gPeakNH(0)]=tH;
-			fParam[gPeakNC(0)] = tCC;
+			fParam[gPeakNC(0)]=tCC;
 		}
 	}
 	
+	// If manual inputs were given, use those
 	if(!SigFree)fParam[gPeakSigma]=SigmaF;
 	if(!DecFree)fParam[gPeakDecay]=DecayF;
 	if(!ShareFree)fParam[gPeakSharing]=ShareF;
 	
-	// Fit the first peak (peak + linear back)
+    // Define the Ultrapeak instance that will be used in the initial and final fits to control the TF1
+	// Initially the function is defined as a single peak (of the chossen type) + a pol1 background
 	Ultrapeak fPeakFunc(1,1,cBackType1,twogaus,truecent);// Control parameters (peaks #,peaks 0/1,background type,step 0/1)
+	fPeakFunc.SetBit(kDecOff,!tailon);
+    
+    // Decalare the TF1 that will perform the initial shape parameter fit
 	TF1 *fPre = new TF1("fPre",fPeakFunc,fLeftUser,fPeaks[0]+4,NparFromN(1));
 	fPre->SetParameters(fParam);
 	fPeakFunc.NameParam(fPre);
     
-	fPre->FixParameter(gUltraPol0, fParam[gUltraPol0]); //background constant
-	fPre->FixParameter(gUltraPol1, fParam[gUltraPol1]); //background grad
-
-    // If not using twogaus these parameters arent used, so no harm in fixing
-	fPre->FixParameter(gUltraTGWR,2.0);
-	fPre->FixParameter(gUltraTGHR,0.6);
+    // Do not fit the background during this intial fit
+	fPre->FixParameter(gUltraPol0, fParam[gUltraPol0]); // Background constant
+	fPre->FixParameter(gUltraPol1, fParam[gUltraPol1]); // Background grad
+	fPre->FixParameter(gUltraOffsetOrPol2, 0);          // Background offset
 	
-	if(SigFree)fPre->SetParLimits(gPeakSigma, 1.0, 6.0);  // Sigma
-	else if(SigmaFE>0){
+    // Sigma limits if left "free" or manually constrained 
+	if(SigFree){ // No constraints given, use default
+        fPre->SetParLimits(gPeakSigma, 1.0, 6.0);  
+    }else if(SigmaFE>0){ // Range given, but check must always be greater than zero.
 		if(SigmaFE>SigmaF)fPre->SetParLimits(gPeakSigma,1E-3,SigmaF+SigmaFE);
 		else fPre->SetParLimits(gPeakSigma,SigmaF-SigmaFE,SigmaF+SigmaFE);
-	}else{
+	}else{ // Fixed value specified 
 		fPre->FixParameter(gPeakSigma,SigmaF);
 	}
 	
-	if(DecFree){
-		if(limittail)fPre->SetParLimits(gPeakDecay, 1.0, 4.);  // Decay of tail (beta)
-		else fPre->SetParLimits(gPeakDecay, 1.0, 60.);  // Decay of tail (beta)
-	}else if(DecayFE>0){
-		if(DecayFE>DecayF)fPre->SetParLimits(gPeakDecay,1E-3,DecayF+DecayFE);
-		else fPre->SetParLimits(gPeakDecay,DecayF-DecayFE,DecayF+DecayFE);
-	}else fPre->FixParameter(gPeakDecay,DecayF);
-		
-	if(ShareFree){
-		if(limittail)fPre->SetParLimits(gPeakSharing, 0.93, 1.);// Sharing parameter
-		else fPre->SetParLimits(gPeakSharing, 0., 1.);    // Sharing parameter
-	}else if(ShareFE>0){
-		double l=ShareF-ShareFE,u=ShareF+ShareFE;
-		if(u>1)u=1;
-		if(l<0)l=0;
-		fPre->SetParLimits(gPeakSharing,l,u);
-	}else fPre->FixParameter(gPeakSharing,ShareF);	
-
-	fPre->SetParLimits(gPeakNH(0), fParam[gPeakNH(0)]*0.5, fParam[gPeakNH(0)]*2);  // Height
-	
-	if(fInput[0].CentConstrained){//Centroid
-		double err=fInput[0].CentError;
-		if(err>0){
-			fPre->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-err, fParam[gPeakNC(0)]+err); 
-		}else{
-			fPre->FixParameter(gPeakNC(0), fParam[gPeakNC(0)]);
-		}
-	}else{
-		fPre->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-3, fParam[gPeakNC(0)]+3); 
-	}
-	
-	//////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////// PRE FIT //////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////////
-	
-	fPeakFunc.FixUnusedParam(fPre);
-	
-	//Use the bin cancelled exclusion histogram if passed
-	if(fExHist)fExHist->Fit(fPre, "RQN"); 
-	else fHist->Fit(fPre, "RQN");
-		
-	fPre->GetParameters(fParam);
-	delete fPre;
-	
-	//////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////// CONFIGURE FULL MULTI PEAK FIT //////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////////
-	
-	// Reset these after they may have been overwritten to avoid shoulder peaks in first pre-fit
-	fParam[gPeakNH(0)] = abs(fHH-fLin.Eval(fPeaks[0]));// First Peak Height
-	fParam[gPeakNC(0)] = fPeaks[0];// First Peak Centroid
-	
-	// "pol0+step",0
-	// "pol1 fixed",1
-	// "pol1",2
-	// "pol1+step",3
-	// "pol2",4
-	// "pol2+step",5
-	
-	bool step=Step(backmode);
+	if(tailon){ // If not in use parameters will be fixed by FixUnusedParam();
+        
+        // Decay tail limits if left "free" or manually constrained 
+        if(DecFree){
+            fPre->SetParLimits(gPeakDecay, 1.0, 60.);
+        }else if(DecayFE>0){
+            if(DecayFE>DecayF)fPre->SetParLimits(gPeakDecay,1E-3,DecayF+DecayFE);
+            else fPre->SetParLimits(gPeakDecay,DecayF-DecayFE,DecayF+DecayFE);
+        }else{
+            fPre->FixParameter(gPeakDecay,DecayF);
+        }
+            
+        // Gaus/Tail Sharing parameter limits
+        if(ShareFree){
+            fPre->SetParLimits(gPeakSharing, 0., 1.);
+        }else if(ShareFE>0){
+            double l=ShareF-ShareFE,u=ShareF+ShareFE;
+            if(u>1)u=1;
+            if(l<0)l=0;
+            fPre->SetParLimits(gPeakSharing,l,u);
+        }else{
+            fPre->FixParameter(gPeakSharing,ShareF);
+        }
+        
+    }
     
-	// If the background clearly has no under-peak scattering step, then we use a simple formula
-	if(fLeftHeight<=fRightHeight)step=false;
+    if(twogaus){// If not in use parameters will be fixed by FixUnusedParam();
+        // Limits for the twin gaus parameters 
+        fPre->SetParLimits(gUltraTGWR,1.01,4);
+        fPre->SetParLimits(gUltraTGHR,0.0,1.0);
+    }
+        
+	// Peak Centroid
+	if(!fInput[0].CentConstrained){ 
+		fPre->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-3, fParam[gPeakNC(0)]+3); 
+    }else if(fInput[0].CentError>0){
+        double err=fInput[0].CentError;
+        fPre->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-err, fParam[gPeakNC(0)]+err); 
+    }else{
+        fPre->FixParameter(gPeakNC(0), fParam[gPeakNC(0)]);
+    }
 	
+    // Peak Height
+	fPre->SetParLimits(gPeakNH(0), fParam[gPeakNH(0)]*0.5, fParam[gPeakNH(0)]*2);  // Should be wide enough range unless background really weird
+    
+    
+    // Any unused parameters in the TF1 are fixed based on the option bits of Ultrapeak fPeakFunc
+	fPeakFunc.FixUnusedParam(fPre);
+    
+	/////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////// PRE FIT ///////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////
+	
+	
+	TH1* fFitHist=fHist;
+	if(fExHist)fFitHist=fExHist; // Use the bin cancelled exclusion histogram if passed
+	
+	// Use the bin cancelled exclusion histogram if passed
+    TFitResultPtr fPreResult=fFitHist->Fit(fPre, "SRQN");
+    
+    Int_t FitPreStatus = fPreResult;
+    if(FitPreStatus){
+        cout<<endl<<"  Initial shape fit failed! TFitResultPtr Status = "<<FitPreStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fPreResult)<<", Limits = "<<AnyParAtLimit(fPre)<<endl;
+        return 0;
+    }else{
+        // If the git was good, get the parameters from the fit
+        fPre->GetParameters(fParam);
+    }
+    
+	delete fPre; // Done with that TF1
+	
+	////////////////////////////////////////////////////////////////////////////////
+	///////////////////////// CONFIGURE FULL MULTI PEAK FIT ////////////////////////
+	////////////////////////////////////////////////////////////////////////////////
+	
+	// Change the settings of Ultrapeak fPeakFunc to reflect the settings for the full fit
 	fPeakFunc.N=fNp;
-	fPeakFunc.SetBackMode(backmode);
-	fPeakFunc.SetBit(k2Gaus,twogaus);
-	for(int i=1;i<fNp;i++)
-		if(fInput[i].Ratio>0)
+	for(int i=1;i<fNp;i++){
+		if(fInput[i].Ratio>0){
 			fPeakFunc.SetBit(PBits(i));
-
+        }
+    }
+	fPeakFunc.SetBackMode(backmode);
+	// Now we use the selected background mode, not the default pol0;
+	// However, if the background has no clear under-peak step, it is disabled
+	if(fLeftHeight<=fRightHeight){
+        fPeakFunc.SetBit(kStep,false);
+    }
+	
 	int Npar=NparFromN(fNp);
 	TF1 *fFit = new TF1("fFit",fPeakFunc,fLeftUser,fRightUser,Npar);
     fPeakFunc.NameParam(fFit);
 	
-	//////////////////////////////////// SET PARAMETERS ////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////
+	//////////////////////////// SET PARAMETERS /////////////////////////////
+	/////////////////////////////////////////////////////////////////////////
 	
 	///////// Background parameters	////////
 	// "pol0+step",  // pol0 fixed based on RHS and step RHS-LHS diff
@@ -244,17 +299,24 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	// "pol2",	  // Pretty free, initial inputs as pol1
 	// "pol2+step",  // Pretty free, initial inputs as pol1
 	
+    // Calculate the parameters for selected background type (not used in the prefit).
     
+	bool step=fPeakFunc.TestBit(kStep);
     int polorder=PolOrder(backmode);
-	if(polorder==0){
+	if(polorder==0){ // If only constant background (with or without step) use RHS (as step could be on left)
 		fParam[gUltraPol0]=fRightHeight;
-	}else if(polorder==1){
-        if(step)fParam[gUltraOffsetOrPol2]=fRightUser;
-		else fParam[gUltraOffsetOrPol2]=fLeftUser+(fRightUser-fLeftUser)*0.5;        
-		fParam[gUltraPol0]=fLin.Eval(fParam[gUltraOffsetOrPol2]);
+	}else if(polorder==1){ // If linear background
+        // Estimate from the linear background function made during prefit
 		fParam[gUltraPol1]=fLin.GetParameter(1);
-		if(step)fParam[gUltraPol1]=fParam[gUltraPol1]*0.5;        
-	}else{
+        if(step){ // If using a step the background offset is fixed at RHS
+            fParam[gUltraOffsetOrPol2]=fRightUser;
+            fParam[gUltraPol1]=fParam[gUltraPol1]*0.5;
+            // If instructed to include a step, set the gradient lower to allow room for step
+        }else{  // Else it is fixed in the middle of the fit range
+            fParam[gUltraOffsetOrPol2]=fLeftUser+(fRightUser-fLeftUser)*0.5;     
+        }
+		fParam[gUltraPol0]=fLin.Eval(fParam[gUltraOffsetOrPol2]);
+	}else{// Polynomial order 2
 		fParam[gUltraPol0]=fLin.GetParameter(0);
 		fParam[gUltraPol1]=fLin.GetParameter(1);
 		fParam[gUltraOffsetOrPol2]=0;
@@ -264,12 +326,10 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 		fParam[gUltraStep]=fLeftHeight-fRightHeight;
 	}
 	
-	///////// Shape parameters ////////
-	
-	if(twogaus){
-		fParam[gUltraTGWR]=2.0;
-		fParam[gUltraTGHR]=0.6;
-	}
+	///////// Peak  0 ////////
+
+	fParam[gPeakNH(0)] = abs(fHH-fLin.Eval(fPeaks[0]));// First Peak Height
+	fParam[gPeakNC(0)] = fPeaks[0];// First Peak Centroid
 	
 	///////// Additional Peaks ////////
 	
@@ -277,153 +337,178 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	for(int i=1;i<fNp;i++){
 		fParam[gPeakNC(i)]=fPeaks[i];
 		sPe+=fPeaks[i];
-		double lH=fHist->GetBinContent(fHist->GetXaxis()->FindBin(sPe));
-		double lB=fLin.Eval(sPe);
-		double pH=lH-lB;
-		if(pH<=0)pH=abs(lH);
 		
-		if(fInput[i].Ratio>0){// peak height ratio not actual height
+		if(fInput[i].Ratio>0){ // peak height ratio not actual height
 			fParam[gPeakNH(i)]=fInput[i].Ratio;
 		}else{
+            double lH=fHist->GetBinContent(fHist->GetXaxis()->FindBin(sPe));
+            double lB=fLin.Eval(sPe);
+            double pH=lH-lB;
+            if(pH<=0)pH=abs(lH);
 			fParam[gPeakNH(i)]=pH;
 		}
 	}	
 	
+	// Actually set in the TF1
 	fFit->SetParameters(fParam);
 	
-	//////////////////////////////////// SET LIMTS & FIXED ////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////
+	//////////////////////// LIMTS & FIXED PARAMETERS ///////////////////////
+	/////////////////////////////////////////////////////////////////////////
 	
-	///////// Background parameters	////////
-	// "pol0+step",  // pol0 fixed based on RHS and step RHS-LHS diff
-	// "pol1 fixed", // Grad fixed from LHS RHS and offset slightly free
-	// "pol1",       // Offset fixed at centre point, offset and grad slightly free (pol1 see-saw)
-	// "pol1 down",  // Offset free downwards (pol1 see-saw)
-	// "pol1+step",  // Offset pinned at RHS, grad set to half and step RHS-LHS diff (pol1 hinge) 
-	// "pol2",	  // Pretty free initial inputs as pol1
-	// "pol2+step",  // Pretty free initial inputs as pol1
-
-	//////////
-	double fBackError=sqrt(fLeftError*fLeftError+fRightError*fRightError);
+	///////// Limits Background ////////
+    
+    // An estimate of the background fluctuations based on the earlier averaging
+	double fBackError=sqrt(fLeftError*fLeftError+fRightError*fRightError)*1.5;
 	if(step){
-		fFit->SetParLimits(gUltraStep,0,fParam[gUltraStep]+fBackError*1.5);
+        // Step limits always set to a full range
+		fFit->SetParLimits(gUltraStep,0,fParam[gUltraStep]+fBackError);
     }
 	
     if(polorder==0){
-        fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fRightError*1.5,fParam[gUltraPol0]+fRightError*0.5);        
+        fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fBackError,fParam[gUltraPol0]+fBackError*0.5);        
     }else if(polorder==1){
 		fFit->FixParameter(gUltraOffsetOrPol2,fParam[gUltraOffsetOrPol2]);
-
-        if(backmode==cBackType1f){
-            fFit->FixParameter(gUltraPol1,fParam[gUltraPol1]);
-        }else if(step){
+        // Offset always fixed when used. It has no physical meaning, but makes estimating and constraining other parameters easier
+        
+        if(step){
             fFit->SetParLimits(gUltraPol1,0,fLin.GetParameter(1)*1.0001);
+            fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fRightError,fParam[gUltraPol0]+fRightError*0.5);// Slightly stricter 
         }else{
             double dgrad=abs(fBackError/((fRightUser-fLeftUser)*0.5));
             fFit->SetParLimits(gUltraPol1,fParam[gUltraPol1]-dgrad,fParam[gUltraPol1]+dgrad);
+            fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fBackError,fParam[gUltraPol0]+fBackError*0.5);
         }
         
-        if(step){
-            fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fRightError*1.5,fParam[gUltraPol0]+fRightError*0.5);
-        }else{
-            fFit->SetParLimits(gUltraPol0,fParam[gUltraPol0]-fBackError*1.5,fParam[gUltraPol0]+fBackError*0.5);
+        if(backmode==cBackType1f){ // This is the "pol1 fixed" option which fixed the gradient
+            fFit->FixParameter(gUltraPol1,fParam[gUltraPol1]);
         }
         
     }else{
-// 		double a=abs(fRightHeight/(fRightUser*fRightUser));
-// 		fFit->SetParLimits(gUltraOffsetOrPol2,-2*a,2*a);
+        // Pol2 constraints
     }
 
-    
-	///////// Shape parameters ////////
+	//////// Limits Shape parameters ////////
 	
-	if(twogaus){
-		fFit->SetParLimits(gUltraTGWR,1.01,4);
-		fFit->SetParLimits(gUltraTGHR,0.2,0.8);
-	}
-	
-	if(SigFree)fFit->SetParLimits(gPeakSigma, fParam[gPeakSigma]*0.5, fParam[gPeakSigma]*2);// Sigma
-	else if(SigmaFE>0){
+	if(SigFree){// Sigma
+        fFit->SetParLimits(gPeakSigma, fParam[gPeakSigma]*0.5, fParam[gPeakSigma]*2);
+    }else if(SigmaFE>0){
 		if(SigmaFE>SigmaF)fFit->SetParLimits(gPeakSigma,1E-3,SigmaF+SigmaFE);
 		else fFit->SetParLimits(gPeakSigma,SigmaF-SigmaFE,SigmaF+SigmaFE);
 	}else{
 		fFit->FixParameter(gPeakSigma,SigmaF);
-		fFit->FixParameter(gUltraTGWR,2.0);
 	}
 	
-	if(DecFree){// Decay of tail (beta) (or second gaus)
-		double nsc=5.0;
-		if(limittail)nsc=2.0;
-		if(fParam[gPeakDecay]>fParam[gPeakSigma]*nsc){
-            fParam[gPeakDecay]=fParam[gPeakSigma]*0.25;
-            fFit->SetParameter(gPeakDecay,fParam[gPeakDecay]);
+	if(tailon){
+        if(DecFree){// Decay tail 
+            double nsc=5.0;
+            if(fParam[gPeakDecay]>fParam[gPeakSigma]*nsc){ // If not manually set limit based on sigma
+                fParam[gPeakDecay]=fParam[gPeakSigma];
+                fFit->SetParameter(gPeakDecay,fParam[gPeakDecay]);
+            }
+            fFit->SetParLimits(gPeakDecay, fParam[gPeakDecay]*0.5, fParam[gPeakSigma]*nsc);
+        }else if(DecayFE>0){
+            if(DecayFE>DecayF)fFit->SetParLimits(gPeakDecay,1E-3,DecayF+DecayFE);
+            else fFit->SetParLimits(gPeakDecay,DecayF-DecayFE,DecayF+DecayFE);
+        }else{
+            fFit->FixParameter(gPeakDecay,DecayF);
         }
-		fFit->SetParLimits(gPeakDecay, fParam[gPeakDecay]*0.5, fParam[gPeakSigma]*nsc);
-	// 	if(limittail&&fParam[gPeakSigma]>2)fFit->SetParLimits(gPeakDecay, fParam[gPeakDecay]*0.5, 10.);
-	}else if(DecayFE>0){
-		if(DecayFE>DecayF)fFit->SetParLimits(gPeakDecay,1E-3,DecayF+DecayFE);
-		else fFit->SetParLimits(gPeakDecay,DecayF-DecayFE,DecayF+DecayFE);
-	}else fFit->FixParameter(gPeakDecay,DecayF);
 
-	
-	if(ShareFree){ // Sharing parameter
-		fFit->FixParameter(gUltraTGHR,fParam[gUltraTGHR]);//Cannot have both components free, too many DOF
-		if(fParam[gPeakSharing]>=0.6667)fFit->SetParLimits(gPeakSharing, fParam[gPeakSharing]*0.5, 1.0);		// Sharing (should never be >1)
-		else fFit->SetParLimits(gPeakSharing, fParam[gPeakSharing]*0.5, fParam[gPeakSharing]*1.5);		// Sharing (should never be >1)
-		if(limittail)fFit->SetParLimits(gPeakSharing,0.93,1.);
-	}else if(ShareFE>0){
-		double l=ShareF-ShareFE,u=ShareF+ShareFE;
-		if(u>1)u=1;
-		if(l<0)l=0;
-		fFit->SetParLimits(gPeakSharing,l,u);
-	}else fFit->FixParameter(gPeakSharing,ShareF);	
-
-
-	///////// Peak zero  ////////
-
-	fFit->SetParLimits(gPeakNH(0), fParam[gPeakNH(0)]*0.5, fHist->GetMaximum()*1.5);	// 0 Height
-	
-	if(fInput[0].CentConstrained){//Centroid
-		double err=fInput[0].CentError;
-		if(err>0){
-			fFit->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-err, fParam[gPeakNC(0)]+err); 
-		}else{
-			fFit->FixParameter(gPeakNC(0), fParam[gPeakNC(0)]);
-		}
-	}else{
-		fFit->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-3, fParam[gPeakNC(0)]+3); 
+        if(ShareFree){ // Sharing parameter
+            double UL=fParam[gPeakSharing]*1.5;
+            if(UL>1)UL=1.0; // Sharing (should never be >1)
+            fFit->SetParLimits(gPeakSharing, fParam[gPeakSharing]*0.5,UL);
+        }else if(ShareFE>0){
+            double l=ShareF-ShareFE,u=ShareF+ShareFE;
+            if(u>1)u=1;
+            if(l<0)l=0;
+            fFit->SetParLimits(gPeakSharing,l,u);
+        }else{
+            fFit->FixParameter(gPeakSharing,ShareF);
+        }
+    }
+    
+    	
+	if(twogaus){
+        
+        // Twin Gaus Width Ratio. Must be > 1
+        if(TGWRFree){
+            fFit->SetParLimits(gUltraTGWR,1.01,4);
+        }else if(TGWRFE>0){
+            if(TGWRFE>TGWRF-1){
+                fFit->SetParLimits(gUltraTGWR,1,TGWRF+TGWRFE);
+            }else{
+                fFit->SetParLimits(gUltraTGWR,TGWRF-TGWRFE,TGWRF+TGWRFE);
+            }
+        }else{
+            fFit->FixParameter(gUltraTGWR,TGWRF);
+        }
+        
+        // Twin Gaus Height Ratio. Must be 0-1
+        if(TGHRFree){
+            fFit->SetParLimits(gUltraTGHR,0.0,1.0);
+        }else if(TGHRFE>0){
+            double l=TGHRF-TGHRFE,u=TGHRF+TGHRFE;
+            if(u>1)u=1;
+            if(l<0)l=0;
+            fFit->SetParLimits(gUltraTGHR,l,u);
+        }else{
+            fFit->FixParameter(gUltraTGHR,TGHRF);
+        }
+             
 	}
+    
+
+	//////// Limits Peaks ////////
+	///////// Peak zero //////////
+	double fFree=0; // Count the number of free peaks to help set limits on centroids
+
+	fFit->SetParLimits(gPeakNH(0), fParam[gPeakNH(0)]*0.5, fHist->GetMaximum()*1.5); // Peak 0 Height
 	
+    // Peak 0 Centroid 
+	if(!fInput[0].CentConstrained){ // Free
+        fFree=1;
+		fFit->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-3, fParam[gPeakNC(0)]+3); 
+    }else if(fInput[0].CentError>0){ // Constrained
+        fFree=0.5;
+        double err=fInput[0].CentError;
+        fFit->SetParLimits(gPeakNC(0), fParam[gPeakNC(0)]-err, fParam[gPeakNC(0)]+err); 
+    }else{ // Fixed
+        fFit->FixParameter(gPeakNC(0), fParam[gPeakNC(0)]);
+    }
 	
-	///////// Additional Peaks ////////
+	/////// Additional Peaks ///////
 	
-	double fFree=1;
 	for(int i=1;i<fNp;i++){
 		int h=gPeakNH(i),c=gPeakNC(i);
-		if(fInput[i].Ratio>0){// Height/ratio
+        
+        // Height/ratio
+		if(fInput[i].Ratio>0){ // Ratio
 			double err=fInput[i].RatioError;
+            // Ratios never have default values as they are only used manually
 			if(err>0){
 				fFit->SetParLimits(h, fParam[h]-err, fParam[h]+err);
 			}else{
 				fFit->FixParameter(h,fParam[h]);
 			}
-		}else{
-			fFit->SetParLimits(h, fParam[h]*0.2, fParam[h]*4);	// Height
+		}else{ // Absolute height
+			fFit->SetParLimits(h, fParam[h]*0.2, fParam[h]*4); // Heights have very wide limits 
 		}
 		
-		if(fInput[i].CentConstrained){//Centroid
-			double err=fInput[i].CentError;
-			if(err>0){
-				fFit->SetParLimits(c, fParam[c]-err, fParam[c]+err);
-				fFree+=0.5;
-			}else{
-				fFit->FixParameter(c,fParam[c]);
-			}
-		}else{
+		// Centroids
+		if(!fInput[i].CentConstrained){ // Free
 			fFree+=1;
 			fFit->SetParLimits(c, fParam[c]-2*fFree, fParam[c]+2*fFree);
-		}
+        }else if(fInput[i].CentError>0){ // Constrained
+            fFree+=0.5;
+            double err=fInput[i].CentError;
+            fFit->SetParLimits(c, fParam[c]-err, fParam[c]+err);
+        }else{ // Fixed
+            fFit->FixParameter(c,fParam[c]);
+        }
 	}
 	
+    // Any unused parameters in the TF1 are fixed based on the option bits of Ultrapeak fPeakFunc
 	fPeakFunc.FixUnusedParam(fFit);
 	
 	//////////////////////////////////////////////////////////////////////////////////////
@@ -432,9 +517,6 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
 	
 // 	ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(9999);
 	ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
-
-	TH1* fFitHist=fHist;
-	if(fExHist)fFitHist=fExHist; // Use the bin cancelled exclusion histogram if passed
 
     string MasterFitOpt="RSNQ";
     // R - use Range
@@ -453,27 +535,16 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
     // FitStatus < 0 if error not connected with the minimizer
     
     if(FitStatus){
-        cout<<endl<<" BASIC FIT FAILED! TFitResultPtr Status = "<<FitStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fResult)<<", Limits = "<<AnyParAtLimit(fFit)<<flush;
+        cout<<endl<<"  BASIC FIT FAILED! TFitResultPtr Status = "<<FitStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fResult)<<", Limits = "<<AnyParAtLimit(fFit)<<endl;
         // fResult->GetCovarianceMatrix().Print();
         // fResult->Print("V");
         return 0;
     }else{
-        // cout<<endl<<"Initial fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<flush;
+        // cout<<"Initial fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<endl;
     }
     
-    // If sharing is near 1, fix sharing and decay to avoid problems
-    if(abs(fFit->GetParameter(gPeakSharing)-1)<0.001){
-        if(!IsParFixed(fFit,gPeakSharing)){cout<<endl<<"  Tail Disabled."<<flush;}
-        fFit->FixParameter(gPeakSharing,1);
-        fFit->FixParameter(gPeakDecay,1);
-    }
-    
-    // If step is near 0, turn it off
-    if(step&&fFit->GetParameter(gUltraStep)<1){
-        cout<<endl<<"  Step Disabled."<<flush;
-        step=false;
-        fFit->FixParameter(gUltraStep,0);
-    }
+    // Fix parameters for tail/twogaus/sharing if close to limits to avoid problems
+    fPeakFunc.FitLimitations(fFit,true);
     
     // L - use logliklihood not chisquared (because low stats)
     // WL - use weighted logliklihood because non-integer bings (i.e. subtraction)
@@ -485,7 +556,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
     fResult=fFitHist->Fit(fFit,(MasterFitOpt+"M").c_str());
     FitStatus = fResult;
     bool Mfit=(CovDiag(fResult)&&!FitStatus);
-    // cout<<endl<<"M fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<flush;
+    // cout<<"M fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<endl;
     
     // Set last few impovement options for a final fit 
     
@@ -509,24 +580,14 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
     // This loop will do a final fit with all options
     // If full options fit is imperfect remove options in order of least importance (right to left) and retry    
     while(MasterFitOpt.length()>3){
-        
-        if(abs(fFit->GetParameter(gPeakSharing)-1)<0.001){ // As above
-            if(!IsParFixed(fFit,gPeakSharing)){cout<<endl<<"  Tail Disabled."<<flush;}
-            fFit->FixParameter(gPeakSharing,1);
-            fFit->FixParameter(gPeakDecay,1);
-        }  
-        if(step&&fFit->GetParameter(gUltraStep)<1){ // As above
-            cout<<endl<<"  Step Disabled."<<flush;
-            step=false;
-            fFit->FixParameter(gUltraStep,0);
-        }
-
+    
         fResult=fFitHist->Fit(fFit,MasterFitOpt.c_str());
         FitStatus = fResult;
-        
+		
+        if(fPeakFunc.FitLimitations(fFit,true)){continue;}
         if(!FitStatus&&CovDiag(fResult)){break;}
         
-        cout<<endl<<MasterFitOpt<<" fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<", Failed."<<flush;
+        cout<<"  "<<MasterFitOpt<<" fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<", Failed."<<endl;
         MasterFitOpt=MasterFitOpt.substr(0,MasterFitOpt.length()-1);
     }
     // *should* now have a good fit as the above loop reduced back to the original options until a good fit
@@ -546,7 +607,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,double fLeftUser,double fRightUser,
     // Switched to a manual output due to a strange error with opt "E"
     // which caused the values of some parameters to be changed between terminal output and fit result
     
-    cout<<endl<<endl<<"     FIT STATUS : "<<gMinuit->fCstatu;
+    cout<<endl<<"     FIT STATUS : "<<gMinuit->fCstatu;
 	for(int i=0;i<Npar;i++){
         string pname=fFit->GetParName(i);
         double val=fFit->GetParameter(i);

@@ -35,7 +35,7 @@ bool ParAtLimit(TF1* func,unsigned int par,bool Upper){
     double range=abs(bl-al);
     if(Upper)al=bl;
     
-    return (abs(p-al)/range<1E-9);
+    return (abs(p-al)/range<1E-6);
 }
 
 bool ParAtLimit(TF1* func,unsigned int par){

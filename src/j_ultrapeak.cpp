@@ -52,8 +52,10 @@ void Ultrapeak::NameParam(TF1* fPeakFunc,int n,TransientBitsClass<long>& bits){
     
     if(bits.TestBit(kPeaks)||bits.TestBit(kStep)){
         fPeakFunc->SetParName(gPeakSigma,"Sigma");
-        fPeakFunc->SetParName(gPeakDecay,"Decay");
-        fPeakFunc->SetParName(gPeakSharing,"Sharing");
+        if(!bits.TestBit(kDecOff)){
+            fPeakFunc->SetParName(gPeakDecay,"Decay");
+            fPeakFunc->SetParName(gPeakSharing,"Sharing");
+        }
     }
     
     if(bits.TestBit(kBack)){
@@ -85,7 +87,6 @@ void Ultrapeak::NameParam(TF1* fPeakFunc,int n,TransientBitsClass<long>& bits){
 }
 
 
-
 // It is always advisable to fix any TF1 parameters which have no effect on the output function
 // else minimisation errors may occur.
 //
@@ -113,7 +114,6 @@ void Ultrapeak::FixUnusedParam(TF1* t,int bm,bool tg){
 void Ultrapeak::FixUnusedParam(TF1* fPeakFunc,int n,TransientBitsClass<long>& bits){
     if(!bits.TestBit(kBack)){
         fPeakFunc->FixParameter(gUltraPol0,0);
-        
     }
     if(bits.TestBit(kPol0)||!bits.TestBit(kBack)){
         fPeakFunc->FixParameter(gUltraPol1,0);
@@ -127,6 +127,10 @@ void Ultrapeak::FixUnusedParam(TF1* fPeakFunc,int n,TransientBitsClass<long>& bi
         fPeakFunc->FixParameter(gUltraTGWR,0.5);
         fPeakFunc->FixParameter(gUltraTGHR,0.5);
     }
+    if(bits.TestBit(kDecOff)){
+        fPeakFunc->FixParameter(gPeakSharing,1);
+        fPeakFunc->FixParameter(gPeakDecay,1);
+    }
     if(!(bits.TestBit(kPeaks)||bits.TestBit(kStep))){
         fPeakFunc->FixParameter(gPeakSharing,1);
         fPeakFunc->FixParameter(gPeakDecay,1);
@@ -136,6 +140,75 @@ void Ultrapeak::FixUnusedParam(TF1* fPeakFunc,int n,TransientBitsClass<long>& bi
             fPeakFunc->FixParameter(gPeakNC(i),0);
         }
     }
+}
+
+// Check if fit parameters are too close to limits and constrain them if needed before further fitting
+bool Ultrapeak::FitLimitations(TF1* fPeakFunc,const bool& Print){
+	bool Changed=false;
+
+    // If sharing is near 1, fix sharing and decay to avoid problems
+    if(abs(fPeakFunc->GetParameter(gPeakSharing)-1)<0.01||TestBit(kDecOff)){
+        if(!IsParFixed(fPeakFunc,gPeakSharing)){
+			if(Print){cout<<"  Tail Disabled."<<endl;}
+			fPeakFunc->FixParameter(gPeakSharing,1);
+			Changed=true;
+		}
+        if(!IsParFixed(fPeakFunc,gPeakDecay)){
+			fPeakFunc->FixParameter(gPeakDecay,1);
+			Changed=true;
+			// It is important any parameters not being used are fixed, else minimiser will have problems
+		}
+        SetBit(kDecOff);
+    }
+    
+    // If sharing is near 0, fix sharing to avoid problems
+    if(fPeakFunc->GetParameter(gPeakSharing)<0.01){ // If kDecOff, parameter was set to 1 above
+        if(!IsParFixed(fPeakFunc,gPeakSharing)){
+            if(Print){cout<<"  Tail Only."<<endl;}
+            fPeakFunc->FixParameter(gPeakSharing,0);
+			Changed=true;
+        }
+    }
+    
+    if(TestBit(k2Gaus)){
+        // If twingaus share at limit OR decgaus dominant, disable twingaus
+        if( fPeakFunc->GetParameter(gPeakSharing)<0.01 ||
+            fPeakFunc->GetParameter(gUltraTGHR)<0.05  ||
+            abs(fPeakFunc->GetParameter(gUltraTGHR)-1)<0.05 ||
+            abs(fPeakFunc->GetParameter(gUltraTGWR)-1)<0.05){
+            
+            if(Print){cout<<"  Twin Gaus Disabled."<<endl;}
+            
+            if(!IsParFixed(fPeakFunc,gPeakSigma)){
+                double ll,ul,LL,UL;
+                fPeakFunc->GetParLimits(gPeakSigma,ll,ul);
+                fPeakFunc->GetParLimits(gUltraTGWR,LL,UL);
+                if(LL<1)ll*=LL;
+                if(UL>1)ul*=UL;
+                fPeakFunc->SetParameter(gPeakSigma,(ll+ul)*0.5);
+                fPeakFunc->SetParLimits(gPeakSigma,ll,ul);
+            }else{
+				double s;
+				AreaMeanSigma(s,fPeakFunc->GetParameters());
+				fPeakFunc->FixParameter(gPeakSigma,s);
+			}
+            
+            fPeakFunc->FixParameter(gUltraTGHR,0.5);
+            fPeakFunc->FixParameter(gUltraTGWR,1);
+            SetBit(k2Gaus,0);
+			Changed=true;
+        }
+    }
+    
+    // If step is near 0, turn it off
+    if(TestBit(kStep)&&fPeakFunc->GetParameter(gUltraStep)<1){
+        if(Print){cout<<"  Step Disabled."<<endl;}
+        fPeakFunc->FixParameter(gUltraStep,0);
+        SetBit(kStep,0);
+		Changed=true;
+    }
+    
+    return Changed;
 }
 
 
@@ -231,31 +304,19 @@ void Ultrapeak::MakeData(FullFitHolder* fHold,double binwidth){
 // 	string fName="Bkgd Grad";
 // 	if(strcmp(fHold->GetParName(1), fName.c_str())==0)step=0;
 	
+	// Offset from decay peak tail contribution
+	fHold->CVal(VOff,TrueCentroid(0,fParam[gPeakSigma],fParam[gPeakDecay],fParam[gPeakSharing]));
+    
 	// Start calculating and adding things
 	fHold->CVal(VChi,fHold->ReducedChi());
-	
-	double sCentroid=0;// Because peaks are relative
-	double sCentError=0;
-	
-	// Dumb little offset from complex new peak thing 
-	double fCentOff=TrueCentroid(sCentroid,fParam[gPeakSigma],fParam[gPeakDecay],fParam[gPeakSharing]);
-	fHold->CVal(VOff,fCentOff);
 	
 	for(int i=0;i<N;i++){
 		
 		// Centroid and Error
-		sCentroid+=fParam[gPeakNC(i)];
-		sCentError+=fHold->GetParError(gPeakNC(i));
-// 		fHold->CVal(VPC(i),sCentroid);
-// 		fHold->CVal(VPCe(i),sCentError);
-        
 		UltrapeakCentroid fPeakCent(i,fHold->cBits);
 		TF1 fCent("fCent",fPeakCent,-1,1,fHold->GetNpar());
 		fCent.SetParameters(fParam);
 		fHold->CVal(VPC(i),fCent.Eval(0));
-        if(fHold->TestBit(kCentTrue)){
-            fHold->CVal(VPC(i),fCent.Eval(0)-fCentOff);
-        }
 		fHold->CVal(VPCe(i),SqrtRC*AnalyticalFullCovError(&fCent,fHold->GetCov()));
         // Now a full covariant centroid error
 		
@@ -426,23 +487,26 @@ void Ultrapeak::PrintData(FullFitHolder* fHold,bool titles,double binwidth,ostre
 		double sumerr=fHold->CVal(VPAe(i))+fHold->CVal(VPIe(i));
 		bool fiterr=(abs(delta_A)>sumerr);
 		
-		ofs<<endl<<setw(10)<<fHold->CVal(VChi);//chi
-		ofs<<" "<<setw(10)<<fHold->CVal(VPC(i))-fHold->CVal(VOff)<<" "<<setw(10)<<fHold->CVal(VPC(i))<<" "<<setw(10)<<fHold->CVal(VPCe(i));
-		ofs<<" "<<setw(10)<<fHold->CVal(VPA(i))<<" "<<setw(10)<<fHold->CVal(VPAe(i));
+		ofs<<endl<<setw(10)<<fHold->CVal(VChi)<<" ";//chi
+        if(fHold->TestBit(kCentTrue)){
+            ofs<<setw(10)<<" -"<<" "<<setw(10)<<fHold->CVal(VPC(i))<<" ";
+        }else{
+            ofs<<setw(10)<<fHold->CVal(VPC(i))<<" ";
+            ofs<<setw(10)<<fHold->CVal(VPC(i))+fHold->CVal(VOff)<<" ";
+        }
+        ofs<<setw(10)<<fHold->CVal(VPCe(i))<<" ";
+		ofs<<setw(10)<<fHold->CVal(VPA(i))<<" "<<setw(10)<<fHold->CVal(VPAe(i))<<" ";
 		if(fHold->CVal(VPI(i))>0){
-			ofs<<" "<<setw(10)<<fHold->CVal(VPI(i))<<" "<<setw(10)<<fHold->CVal(VPIe(i))<<flush;
+			ofs<<setw(10)<<fHold->CVal(VPI(i))<<" "<<setw(10)<<fHold->CVal(VPIe(i))<<flush;
 			if(fiterr)ofs<<" Err."<<flush;
 		}else{
-			ofs<<" "<<setw(10)<<" -"<<" "<<setw(10)<<" -"<<flush;
+			ofs<<setw(10)<<" -"<<" "<<setw(10)<<" -"<<flush;
 		}
 	}	
 }
 
 
 
-
-
-	
 Double_t _fx1[348] = {-4,-3.984,-3.968,-3.952,-3.936,-3.92,-3.904,-3.888,-3.872,-3.856,-3.84,-3.824,-3.808,-3.792,-3.776,-3.76,-3.744,-3.728,
 -3.712,-3.696,-3.68,-3.664,-3.648,-3.632,-3.616,-3.6,-3.584,-3.568,-3.552,-3.536,-3.52,-3.504,-3.488,-3.472,-3.456,-3.44,-3.424,-3.408,-3.392,
 -3.376,-3.36,-3.344,-3.328,-3.312,-3.296,-3.28,-3.264,-3.248,-3.232,-3.216,-3.2,-3.184,-3.168,-3.152,-3.136,-3.12,-3.104,-3.088,-3.072,-3.056,
@@ -485,4 +549,19 @@ TGraph Ultrapeak::DecayXR10(348,_fx1,_fy1);
 
 double DecGausMaxX(double& sig,double& dec){
   return Ultrapeak::DecayXR10.Eval(log10(sig/dec))*(sig/10.);
+}
+
+Double_t _fx2[57] = {1000,31.6228,25.1189,19.9526,15.8489,12.5893,10,7.94328,6.30957,5.01187,3.98107,3.16228,2.51189,1.99526,1.58489,1.25893,1,
+    0.794328,0.630957,0.501187,0.398107,0.316228,0.251189,0.199526,0.158489,0.125893,0.1,0.0794328,0.0630957,0.0501187,0.0398107,0.0316228,0.0251189,
+    0.0199526,0.0158489,0.0125893,0.01,0.00794328,0.00630957,0.00501187,0.00398107,0.00316228,0.00251189,0.00199526,0.00158489,0.00125893,0.001,
+    0.000794328,0.000630957,0.000501187,0.000398107,0.000316228,0.000251189,0.000199526,0.000158489,0.000125893,0.0001};
+Double_t _fy2[57] = {1,1.00158,1.00082,1.00251,1.00315,1.00397,1.00625,1.00964,1.01532,1.02443,1.03599,1.0506,1.07243,1.10047,1.13668,1.18408,
+    1.232,1.29346,1.36499,1.45029,1.53249,1.63469,1.74948,1.87906,2.0082,2.14937,2.32267,2.49094,2.67437,2.87639,3.06685,3.27634,3.47623,3.70301,
+    3.92846,4.121,4.323,4.48111,4.63748,4.84231,5.01179,5.21374,5.38461,5.5228,5.68368,5.82371,5.949,6.05754,6.1803,6.32168,6.43679,6.63297,6.81713,
+    6.94421,7.12563,7.26071,7.40667};
+
+TGraph Ultrapeak::DecayCorrPow(57,_fx2,_fy2);
+
+double DecMaxCorrPow(double& sig,double& dec){
+  return Ultrapeak::DecayCorrPow.Eval(sig/dec);
 }

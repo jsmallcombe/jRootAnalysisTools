@@ -95,11 +95,11 @@ void UltraFitEnv::BuildDialogBox(int opt){
         cFrame->AddFrame(capt,ExpandX);
     }
     
-    fCheck0 = new TGCheckButton(cFrame,"Peak Labels ");
-    fCheck0->SetState(kButtonDown);
-    fCheck0->Connect("Clicked()","UltraFitEnv",this,"DrawSaveLabels()");
-    fCheck0->SetToolTipText("Show peak labels on histogram.");
-    cFrame->AddFrame(fCheck0,XX);
+    fCheckLabels = new TGCheckButton(cFrame,"Peak Labels ");
+    fCheckLabels->SetState(kButtonDown);
+    fCheckLabels->Connect("Clicked()","UltraFitEnv",this,"DrawSaveLabels()");
+    fCheckLabels->SetToolTipText("Show peak labels on histogram.");
+    cFrame->AddFrame(fCheckLabels,XX);
     
     button = new TGTextButton(cFrame,"Re-Draw Hist");
     button->Connect("Clicked()","UltraFitEnv",this,"ReDrawgHist()");
@@ -174,23 +174,23 @@ void UltraFitEnv::BuildDialogBox(int opt){
             ticks->AddFrame(fCombo,XX);	
 
             
-            fCheck1 = new TGCheckButton(ticks,"Limit Tail  ");// A tick box with hover text belonging to a parent frame
-            fCheck1->SetState(kButtonUp);
-            fCheck1->SetToolTipText("Force strict maximum values on the\nexponential tail parameters.\n Recommended for fitting gamma rays.");
+            fCheckLimit = new TGCheckButton(ticks,"Limit Tail  ");// A tick box with hover text belonging to a parent frame
+            fCheckLimit->SetState(kButtonUp);
+            fCheckLimit->SetToolTipText("Force strict maximum values on the\nexponential tail parameters.\n Recommended for fitting gamma rays.");
             
-            fCheck3 = new TGCheckButton(ticks,"No Tail    ");// A tick box with hover text belonging to a parent frame
-            fCheck3->SetState(kButtonUp);
-            fCheck3->SetToolTipText("Turn off decay tail complelty");
+            fCheckNoTail = new TGCheckButton(ticks,"No Tail    ");// A tick box with hover text belonging to a parent frame
+            fCheckNoTail->SetState(kButtonUp);
+            fCheckNoTail->SetToolTipText("Turn off decay tail complelty");
             
-            fCheck2 = new TGCheckButton(ticks,"Twin Gaus");// A tick box with hover text belonging to a parent frame
-            fCheck2->SetState(kButtonUp);
-            fCheck2->SetToolTipText("Use the peak fit mode which adds a\n second Gaussians compontent with \n larger sigma.");
-// 				fCheck2->Connect("Clicked()","UltraFitEnv",this,"SwitchDecayLabel()");
+            fCheckTwin = new TGCheckButton(ticks,"Twin Gaus");// A tick box with hover text belonging to a parent frame
+            fCheckTwin->SetState(kButtonUp);
+            fCheckTwin->SetToolTipText("Use the peak fit mode which adds a\n second Gaussians compontent with \n larger sigma.");
+// 				fCheckTwin->Connect("Clicked()","UltraFitEnv",this,"SwitchDecayLabel()");
             
 
-        ticks->AddFrame(fCheck1,XX);
-        ticks->AddFrame(fCheck3,XX);
-        ticks->AddFrame(fCheck2,XX);
+        ticks->AddFrame(fCheckLimit,XX);
+        ticks->AddFrame(fCheckNoTail,XX);
+        ticks->AddFrame(fCheckTwin,XX);
     fHframe0->AddFrame(ticks,ExpandXz);
         
         TGVerticalFrame* fHframepm = new TGVerticalFrame(fHframe0, 0, 0, 0);
@@ -238,7 +238,7 @@ void UltraFitEnv::BuildDialogBox(int opt){
     cShapePane= new TGVerticalFrame(cFrame);
         TGHorizontalFrame* shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
             cShapeTsig = new TGTextEntry(shapeelement,new TGTextBuffer(5));
-            cShapeTsig->SetDefaultSize(50,25);	
+            cShapeTsig->SetDefaultSize(70,25);	
             cShapeTsig->SetToolTipText("Sigma\n Fix or constrain peak sigma.");
             shapeelement->AddFrame(cShapeTsig,buff);
             label = new TGLabel(shapeelement, "Sigma");
@@ -247,7 +247,7 @@ void UltraFitEnv::BuildDialogBox(int opt){
     
         shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
             cShapeTdecay = new TGTextEntry(shapeelement,new TGTextBuffer(5));
-            cShapeTdecay->SetDefaultSize(50,25);	
+            cShapeTdecay->SetDefaultSize(70,25);	
             cShapeTdecay->SetToolTipText("Decay Tail\n Fix or constrain peak decay tail.");
             shapeelement->AddFrame(cShapeTdecay,buff);
             label = new TGLabel(shapeelement, "Decay  ");
@@ -257,7 +257,7 @@ void UltraFitEnv::BuildDialogBox(int opt){
         
         shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
             cShapeTshare = new TGTextEntry(shapeelement,new TGTextBuffer(5));
-            cShapeTshare->SetDefaultSize(50,25);	
+            cShapeTshare->SetDefaultSize(70,25);	
             cShapeTshare->SetToolTipText("Sharing Parameter\n Fix or constrain peak sharing parameter.");
             shapeelement->AddFrame(cShapeTshare,buff);
             label = new TGLabel(shapeelement, "Sharing");
@@ -267,7 +267,6 @@ void UltraFitEnv::BuildDialogBox(int opt){
          shapeelement = new TGHorizontalFrame(cShapePane, 0, 0, 0);
             cTrueCentButton = new TGTextButton(shapeelement," YMax ");
             cTrueCentButton->Connect("Clicked()","UltraFitEnv",this,"ChangeCentMode()");
-            cTrueCentButton->Resize(50);
             cTrueCentButton->SetToolTipText("Centroid parameter input control.");
             shapeelement->AddFrame(cTrueCentButton,buff);
             label = new TGLabel(shapeelement, "Centroid");
@@ -477,7 +476,7 @@ void UltraFitEnv::DrawSaveLabels(){
 		fCan->cd();
 		
 		obj_removeall(TText::Class(),GetCan());
-		if(fCheck0->GetState()){
+		if(fCheckLabels->GetState()){
 			for(unsigned int i=0;i<cSaveLabels.size();i++){
 				cSaveLabels[i].Draw();
 			}
@@ -770,7 +769,7 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 
 void UltraFitEnv::RemoveLines(){
 	//cout<<endl<<"ERROR IN FN V"<<flush;
-	if(!fCheck0->GetState())obj_removeall(TText::Class(),GetCan());
+	if(!fCheckLabels->GetState())obj_removeall(TText::Class(),GetCan());
 	obj_removeall(TLine::Class(),GetCan());
 	obj_removeall(TBox::Class(),GetCan());
 	
@@ -999,26 +998,32 @@ void  UltraFitEnv::FitGUIPeak(){
 	string fixdec=cShapeTdecay->GetBuffer()->GetString();
 	string fixsha=cShapeTshare->GetBuffer()->GetString();
     
-    //Text input overides check boxes
+    // Text input overides check boxes
     if(fixdec.size()+fixsha.size()){
-        fCheck1->SetState(kButtonUp);
-        fCheck3->SetState(kButtonUp);
+        fCheckLimit->SetState(kButtonUp);
+        fCheckNoTail->SetState(kButtonUp);
     }
     
-    //fCheck3 overides check3
-    if(fCheck3->GetState()){
-        fCheck1->SetState(kButtonUp);
-        fixsha="1";
-        fixdec="1";
-    } 
-        
-	int fittype=fCheck1->GetState();
+	int fittype=!fCheckNoTail->GetState();
     
-	if(fCheck2->GetState()){
-        fittype=2;//trumps fCheck1
-        fCheck1->SetState(kButtonUp);
+    if(fCheckNoTail->GetState()){
+        fCheckLimit->SetState(kButtonUp); // fCheckNoTail overides fCheckLimit
+    } 
+    
+	if(fCheckTwin->GetState()){
+        fittype+=10;
     }
 	
+    if(fCheckLimit->GetState()){ // Will have been set false if fixsha or fixdec already given
+        fixsha="0.965+-0.035";  // 0.93 - 1.
+        double Sig,Err;
+        ExtractError(fixsig,Sig,Err);
+        if(Sig<=0){Sig=2;} // Sig=0 if fixsig empty
+        stringstream decss;
+        decss<<Sig*1.75<<"+"<<Sig*1.25; // 0.5 - 3 * sigma
+        fixdec=decss.str();
+    }
+    
 	FullFitHolder* fHold=Ultrapeak::PeakFit(gHist,bound_l,bound_u,fPass,fCombo->GetSelected(),fittype,cTrueCent,fixsig,fixdec,fixsha,fExclusionHist);
 // 	if(fExclusionHist)delete fExclusionHist;
 	
@@ -1055,7 +1060,7 @@ void UltraFitEnv::UltraFitAfter(FullFitHolder* fHold){
 			double x1=fCan->GetUxmin(),x2=fCan->GetUxmax();
 			DrawgHist();
 			if(gHistDrawn){
-				if(fCheck0->GetState())for(unsigned int i=0;i<cNfit;i++){
+				if(fCheckLabels->GetState())for(unsigned int i=0;i<cNfit;i++){
 					cPeakLabels[i].SetTextAlign(21);
 					cPeakLabels[i].SetTextFont(82);
 					cPeakLabels[i].SetTextSize(0.025);
