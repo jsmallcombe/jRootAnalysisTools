@@ -132,12 +132,12 @@ int ReadX11CopyBufferAsText(stringstream &ss, bool clip){
     return ReadCopyBufferAsText(ss,dpy,target_window,clip);
 }
 
-#else
-
-int ReadX11CopyBufferAsText(stringstream &ss, bool clip){
-    clip=false;
-    ss<<"NA";
-    return 42;
-}
+// #else
+// 
+// int ReadX11CopyBufferAsText(stringstream &ss, bool clip){
+//     clip=false;
+//     ss<<"NA";
+//     return 42;
+// }
 
 #endif

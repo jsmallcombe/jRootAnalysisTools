@@ -27,10 +27,13 @@ TARG = bin/libJanalysistools.so
 # OBJECTS+= bin/build/yield.o
 # OBJECTSEX+= bin/build/yield.o
 
-main: $(TARG)
+main: $(TARG) bin/BuildInfo
 
 date:
 	bash bin/build/date.sh $(HEAD)
+
+bin/BuildInfo:
+	bash bin/build/buildinfo.sh
 	
 $(TARG): $(OBJECTS) bin/DictOutput.cxx
 	$(CC) $(CFLAGS) -o $@ -shared bin/DictOutput.cxx $(OBJECTS) -I. -I$(J_INCLUDE) $(ROOT_LIBS) $(ROOT_LIBSEXTRA)
@@ -51,6 +54,7 @@ clean:
 	rm -f $(J_LIB)/bin/build/*.o
 	rm -f $(J_LIB)/bin/build/Linkdef.h
 	rm -f $(J_LIB)/bin/*.*
+	rm -f $(J_LIB)/bin/BuildInfo
 	rm -f $(MINI)
 	rm -f $(TARG)
 	rm -f $(TARGB)

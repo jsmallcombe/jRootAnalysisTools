@@ -173,7 +173,7 @@ TH1* ExtreemRebin(TH1* target,TH1* data){
 
 
 void ReMargin(TVirtualPad* pad){
-	pad->SetMargin(0.15,0.05,0.15,0.05);
+	pad->SetMargin(0.15,0.04,0.15,0.04);
 }
 
 static unsigned int global_canvas_iterator=0;
@@ -181,17 +181,20 @@ TCanvas* preapre_canvas(unsigned int n,bool heightset){
 	TCanvas *canv = new TCanvas(("AutoCan"+to_string(global_canvas_iterator)).c_str(), "AutoCan",100,100,900,600);
 	global_canvas_iterator++;
 	canv->Divide(n);
-	double height=(1-0.05-0.15)/n;
+	double tp=0.04/n;
+	double bm=0.15/(n-1);
+	
+	double height=(1-tp-bm)/n;
 	for(unsigned int i=0;i<n;i++){
 		TVirtualPad* p=canv->cd(i+1);
 		p->SetPad(0,0,1,1);
 		p->SetFrameBorderMode(0);
 		p->SetFillStyle(4000);
-		p->SetFrameLineWidth(2);
+		p->SetFrameLineWidth(1);
 		ReMargin(p);
 		if(heightset){
-			p->SetBottomMargin(0.15+i*height);
-			p->SetTopMargin(0.05+(n-i-1)*height);
+			p->SetBottomMargin(bm+i*height);
+			p->SetTopMargin(tp+(n-i-1)*height);
 		}
 	}
 	return canv;
