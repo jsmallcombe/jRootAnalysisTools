@@ -386,3 +386,101 @@ TH1* ReadFirstHist(TFile* File){
 TH1* ReadFirstHist(string File){
 	return (TH1*) ReadFirstObject(File,TH1::Class());
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////  Modified Popup Class   ////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ClassImp(jRootMultiPurposePopup);
+
+#include <TGIcon.h>
+jRootMultiPurposePopup::jRootMultiPurposePopup(vector<string> lines):
+TGTransientFrame(gClient->GetRoot(), gClient->GetRoot(), 400, 200, kHorizontalFrame){
+	TGTransientFrame *popup=this;
+    popup->SetWindowName("LOADING");
+	
+//    fClient->GetPicture("mb_exclamation_s.xpm");
+//    fClient->GetPicture("mb_asterisk_s.xpm");
+    fL1 = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 5, 20, 0, 0);
+
+    TGIcon *fIcon = new TGIcon(popup, fClient->GetPicture("mb_stop_s.xpm"),100, 100);
+    popup->AddFrame(fIcon,new TGLayoutHints(kLHintsCenterY, 20, 15, 20, 20));
+
+    fLabelFrame = new TGVerticalFrame(popup, 60, 20);
+    popup->AddFrame(fLabelFrame,fL1);
+	
+	DefaultLine="";
+	for(unsigned short c=0;c<WC;c++){DefaultLine+=DefaultChar;}
+	
+	for(unsigned int l=0;l<lines.size();l++){
+		if(lines[l].size()){
+			// Calling ExpandLines manually to avoid UpdateLine calling ReMap multiple times
+			ExpandLines(l+1+DefaultPaddingRules*2); 
+			UpdateLine(lines[l],l+DefaultPaddingRules);
+		}
+	}
+	
+	ReMap();
+	SmallWait();
+        
+// 	popup->Connect("CloseWindow()","TGTransientFrame",popup,"DontCallClose()");
+    popup->DontCallClose();
+//  CenterOnParent();// position relative to the parent's window
+	
+    SetCleanup(kDeepCleanup); // On deletion delete all subframes automatically
+}
+
+bool jRootMultiPurposePopup::ExpandLines(unsigned short lines){
+	bool NOLChanged=false;
+	while(fLabelLines.size()<lines){
+		TGLabel *label = new TGLabel(fLabelFrame,DefaultLine.c_str());
+		fLabelLines.push_back(label);
+//        label->SetTextJustify(text_align);
+		fLabelFrame->AddFrame(label, fL1);
+		NOLChanged=true;
+	}
+	return NOLChanged;
+}
+
+void jRootMultiPurposePopup::SmallWait(unsigned short reps){
+    int waitc=0;
+    while(waitc<reps){
+        gSystem->ProcessEvents();//gSystem->InnerLoop();
+        gSystem->Sleep(5); // 5 milisecond
+        waitc++;
+		// Little loop to buy Xsystem time to perform draw actionsbox before code moves on
+    }
+}
+
+void jRootMultiPurposePopup::ReMap(){
+    MapSubwindows();
+    Resize(GetDefaultSize());
+    MapWindow();
+    gClient->NeedRedraw(this,kTRUE);
+}
+
+void jRootMultiPurposePopup::UpdateLine(string input,unsigned int line){
+	if(input.size()>WC){
+		input=input.substr(0,WC-1);
+	}else if(input.size()+4<WC && DefaultPaddingRules){
+		input=' '+input+' ';
+		while(input.size()<WC){
+			input=DefaultChar+input;
+			if(input.size()<WC)input+=DefaultChar;
+		}
+	}
+	
+	bool NOLChanged=ExpandLines(line+1);
+	fLabelLines[line]->SetText(input.c_str());
+	if(NOLChanged){ReMap();}
+	SmallWait(1);
+}
+
+void jRootMultiPurposePopup::UpdatePercentage(double percent,unsigned int line){
+	stringstream ss;
+	ss<<setw(4)<<std::setprecision(3) << percent << " %."; 
+	UpdateLine(ss.str(),line);
+};
+

@@ -30,5 +30,11 @@
 	gROOT->cd();
 	G2=(TGraph*)MyFile->Get("RelGammaError")->Clone("RelGammaErrorClone");
 	MyFile->Close();  
+	
+	TH1* dedx;
+	MyFile= new TFile("Test/data/dedx.root","READ");
+	gROOT->cd();
+	dedx=(TH1*)MyFile->Get("red0Z_copy")->Clone("dedx");
+	MyFile->Close();  
     
 }

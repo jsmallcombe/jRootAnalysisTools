@@ -32,6 +32,11 @@
 #include <TGraphErrors.h>
 #include <TFitResult.h>
 #include <TROOT.h>
+#include <TSystem.h> 
+#include <TRootEmbeddedCanvas.h>
+#include <TGLabel.h>
+#include <TStopwatch.h>
+
 
 using namespace std;
 
@@ -382,5 +387,35 @@ TObject* ReadFirstObject(string File,TClass* Class);
 TH1* ReadFirstHist(TFile* File);
 TH1* ReadFirstHist(string File);
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////  Modified Popup Class   ////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+class jRootMultiPurposePopup : public TGTransientFrame{
+private:
+	const unsigned short WC=50;
+	string DefaultLine;
+    TGLayoutHints *fL1;
+    TGVerticalFrame *fLabelFrame;
+    vector<TGLabel*> fLabelLines;
+	const char DefaultChar='=';
+	const bool DefaultPaddingRules=true;
+	
+    bool ExpandLines(unsigned short lines=1);
+    void SmallWait(unsigned short reps=20);
+	void ReMap();
+	
+public:	
+	jRootMultiPurposePopup(vector<string> lines);
+	jRootMultiPurposePopup(string line1="",string line2="",string line3=""):jRootMultiPurposePopup(vector<string>{line1,line2,line3}){};
+	~jRootMultiPurposePopup(){};
+	
+	void UpdatePercentage(double input,unsigned int line=1);
+	void UpdateLine(string input,unsigned int line=1);
+	
+	ClassDef(jRootMultiPurposePopup, 1)	
+};
 
 #endif

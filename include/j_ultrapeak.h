@@ -49,8 +49,6 @@ const short gPeakSharing=8;
 inline short gPeakNH(unsigned short i){return i*2+9;}
 inline short gPeakNC(unsigned short i){return i*2+10;}
 
-const short gPeakNlimit=10;
-
 
 // The following peak functions are written in parts to make the maths transparent
 /////////////////////////////////////////////////////
@@ -124,7 +122,7 @@ class  Ultrapeak{
 	
 	int N;
 	TransientBitsClass<long> cBits;
-	static short gMaxPeaks;
+	static unsigned short gMaxPeaks;
     
 	void SetBit(int i,bool b=true){cBits.SetBit(i,b);}
 	bool TestBit(int i){return cBits.TestBit(i);}
@@ -195,7 +193,7 @@ class  Ultrapeak{
 		SetBit(k2Gaus,tg);
 		SetBit(kInflate,0);
 		SetBit(kCentTrue,c);
-		if(N>gPeakNlimit)N=gPeakNlimit;
+		if(N>gMaxPeaks)N=gMaxPeaks;
 	}
 	Ultrapeak(int n,TransientBitsClass<long> b):N(n),cBits(b){}
 	Ultrapeak(int n,long b):N(n),cBits(b){}	
@@ -460,7 +458,7 @@ class  UltrapeakArea{
 	TransientBitsClass<long> cBits;
 	double para[48];
 	
-	UltrapeakArea(int n,TransientBitsClass<long> bits):N_i(n),cBits(bits){if(N_i>gPeakNlimit)N_i=gPeakNlimit;}
+	UltrapeakArea(int n,TransientBitsClass<long> bits):N_i(n),cBits(bits){if(N_i>Ultrapeak::gMaxPeaks)N_i=Ultrapeak::gMaxPeaks;}
 	UltrapeakArea(int n,long bits):UltrapeakArea(n,TransientBitsClass<long>(bits)){}
 	UltrapeakArea(int n=0):UltrapeakArea(n,3){}
 	~UltrapeakArea(){};
@@ -508,7 +506,7 @@ class  UltrapeakFrac{
 	TransientBitsClass<long> cBits;
 	double para[48];
 	
-	UltrapeakFrac(vector<int> s,int n,int i,TransientBitsClass<long> bits):S(s),N(n),N_i(i),cBits(bits){if(N>gPeakNlimit)N=gPeakNlimit;}
+	UltrapeakFrac(vector<int> s,int n,int i,TransientBitsClass<long> bits):S(s),N(n),N_i(i),cBits(bits){if(N>Ultrapeak::gMaxPeaks)N=Ultrapeak::gMaxPeaks;}
 	UltrapeakFrac(vector<int> s,int n,int i,long bits):UltrapeakFrac(s,n,i,TransientBitsClass<long>(bits)){}
 	UltrapeakFrac(){};
 	~UltrapeakFrac(){};
@@ -537,7 +535,7 @@ class  UltrapeakCentroid{
 	TransientBitsClass<long> cBits;
 	double para[48];
 	
-	UltrapeakCentroid(int n,TransientBitsClass<long> bits):N_i(n),cBits(bits){if(N_i>gPeakNlimit)N_i=gPeakNlimit;}
+	UltrapeakCentroid(int n,TransientBitsClass<long> bits):N_i(n),cBits(bits){if(N_i>Ultrapeak::gMaxPeaks)N_i=Ultrapeak::gMaxPeaks;}
 	UltrapeakCentroid(int n,long bits):UltrapeakCentroid(n,TransientBitsClass<long>(bits)){}
 	UltrapeakCentroid(int n=0):UltrapeakCentroid(n,3){}
 	~UltrapeakCentroid(){};
