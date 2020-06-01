@@ -201,6 +201,7 @@ class UltraFitEnv : public TGCompositeFrame
 	void ReDrawFrames();
 	void LoadSession(TFile* file);
 	void ImportPeaks(TFile* file);
+	void ImportParam(TFile* file);
     
     void ExportSession(TString FileName="peakinfo.root");
 	

@@ -77,7 +77,7 @@ TVirtualPad* hold=gPad;
 	
 		fCheck2 = new TGCheckButton(fHframe0);// A tick box with hover text belonging to a parent frame
 		fCheck2->SetState(kButtonDown);
-		fCheck2->Connect("Clicked()","j_gating_frame",this,"UpdateCanvas()");//Link it signal to its slot
+		fCheck2->Connect("Clicked()","j_gating_frame",this,"TickClick()");//Link it signal to its slot
 		fCheck2->SetToolTipText("Show Fit Centroid\n Hide/Show the centroid of the Gaussian\n fit used to calculate background fraction.");
 		fHframe0->AddFrame(fCheck2, fBfly2);
 
@@ -280,6 +280,11 @@ j_gating_frame::~j_gating_frame()
 // 	delete this;
 // }
 
+
+void j_gating_frame::TickClick(){
+	proj->GetXaxis()->SetRange(1,-1);
+	UpdateCanvas();
+}
 
 //______________________________________________________________________________
 

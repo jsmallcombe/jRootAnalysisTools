@@ -133,6 +133,7 @@ public:
    void OutputReady(){};  
    void InputChange(){}; 
    
+   void TickClick();
    
    int GetGateBinDown(){return gate_down;}
    int GetGateBinUp(){return gate_up;}

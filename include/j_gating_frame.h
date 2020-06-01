@@ -143,6 +143,7 @@ public:
    void ShowFullProj();
    void HideFullProj();
    void DoHistogram();
+   void TickClick();
       
    TH1 *output_hist_point;
    TH1 *gate_hist,*full,*free_hist;

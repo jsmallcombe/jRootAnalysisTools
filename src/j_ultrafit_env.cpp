@@ -686,7 +686,8 @@ void  UltraFitEnv::AddTextBox(){
 		cTframe.push_back(fHframe0);
 		cFrame->AddFrame(fHframe0,new TGLayoutHints(kLHintsExpandX,5,5,3,2));
 		if(!cFrame->IsVisible(cShapePane)){cFrame->MapSubwindows();HideShape();}
-		else cFrame->MapSubwindows();
+		else{cFrame->MapSubwindows(); HideSubShapes();}
+		// MapSubwindows required when adding new frames for first time but causes all hidden frames to become visible
 	}else{
 		fHframe0=cTframe[cNfit-1];
 		cFrame->ShowFrame(fHframe0);
@@ -1198,7 +1199,7 @@ void UltraFitEnv::ExportFitsMan(string name){
         }
         name+=".dat";
         ofstream outFile(name);
-        if(gHist)Ultrapeak::PrintData(cFitList,gHist,outFile);//Extra inputs shouldn't be needed as cVal already calculated
+        if(gHist)Ultrapeak::PrintData(cFitList,gHist,outFile);// Extra inputs shouldn't be needed as cVal already calculated
         else Ultrapeak::PrintData(cFitList,1,outFile);
         outFile.close();
     }
@@ -1207,7 +1208,31 @@ void UltraFitEnv::ExportFitsMan(string name){
 
 void UltraFitEnv::ExportSession(TString FileName){
     
-	if(cFitList.size()==0)return;
+// 	if(cFitList.size()==0)return;
+	
+	// Collect Parameters
+	
+	vector<string> ParamSave(11,"");
+	for(int i=0;i<fCombo->GetSelected();i++)ParamSave[0]+="b";
+	
+	if(fCheckLimit->GetState())ParamSave[1]="t";
+	if(fCheckNoTail->GetState())ParamSave[2]="t";
+	if(fCheckTwin->GetState())ParamSave[3]="t";
+	
+	ParamSave[4]=cShapeTsig->GetBuffer()->GetString();
+	ParamSave[5]=cShapeTdecay->GetBuffer()->GetString();
+	ParamSave[6]=cShapeTshare->GetBuffer()->GetString();
+	ParamSave[7]=cShapeTtwinwidth->GetBuffer()->GetString();
+	ParamSave[8]=cShapeTtwinshare->GetBuffer()->GetString();
+	if(cTrueCent)ParamSave[9]="t";
+	ParamSave[10]=fZERO->GetBuffer()->GetString();
+
+	for(unsigned int i=0;i<cNfit-1;i++){
+		ParamSave.push_back(cTbox[i]->GetBuffer()->GetString());
+		ParamSave.push_back(cRTbox[i]->GetBuffer()->GetString());
+	}
+	
+	// Save Data
 
     TFile outFileR(FileName,"RECREATE");
 	outFileR.cd();
@@ -1217,7 +1242,9 @@ void UltraFitEnv::ExportSession(TString FileName){
 		ss<<"FIT_"<<i;
 		cFitList[i]->Write(ss.str().c_str());
 	}
+	outFileR.WriteObject(&ParamSave, "ParamSave");
 	outFileR.Close();
+
 }
 
 void UltraFitEnv::LoadSession(){
@@ -1257,6 +1284,8 @@ void UltraFitEnv::LoadSession(TFile* file){
 		}
 	}
 	
+	ImportParam(file);
+	
 	if(hist){
         CaptureHistogram(0,hist,1);//This takes care of disconnecting any canvas 
 // 		SetNewHist(hist);
@@ -1287,11 +1316,62 @@ void UltraFitEnv::ImportPeaks(TFile* file){
 			FullFitHolder* fit=(FullFitHolder*)key->ReadObj()->Clone();
 			fit->Refresh(Ultrapeak(Ultrapeak::NfromTF1(fit),fit->cBits));
 			cFitList.push_back(fit);
-			if(gHist)Ultrapeak::DrawPeak(fit,0,gHist);
+			if(gHist)Ultrapeak::DrawPeak(fit,0,gHist); // Passing histogram says to addtolist. 0 for pad skips actual drawing
 		}
 	}
 	cGoodFit=false;
 	DrawgHist();
+}
+
+
+void UltraFitEnv::ImportParam(TFile* file){
+	
+	vector<string> *ParamSave=0;
+	file->GetObject("ParamSave", ParamSave);
+	if(ParamSave){
+		vector<string> ParamLoad= *ParamSave;
+		
+// 		for(auto s:ParamLoad) {
+// 			cout << s << '\n';
+// 		};
+
+		fCombo->Select(ParamLoad[0].size());
+		
+		fCheckLimit->SetState(kButtonUp);
+		fCheckNoTail->SetState(kButtonUp);
+		fCheckTwin->SetState(kButtonUp);
+		if(ParamLoad[1].size())fCheckLimit->SetState(kButtonDown);
+		if(ParamLoad[2].size())fCheckNoTail->SetState(kButtonDown);
+		if(ParamLoad[3].size())fCheckTwin->SetState(kButtonDown);
+
+		string ap=ParamLoad[4]+ParamLoad[5]+ParamLoad[6]+ParamLoad[7]+ParamLoad[8];
+
+		if(cFrame->IsVisible(cShapePane)!=((bool)ap.size())){
+			HideShape();// Flips visible state and calls HideSubShapes() when showing;
+		}else{
+			HideSubShapes();
+		}
+		
+		cShapeTsig->SetText(ParamLoad[4].c_str());
+		cShapeTdecay->SetText(ParamLoad[5].c_str());
+		cShapeTshare->SetText(ParamLoad[6].c_str());
+		cShapeTtwinwidth->SetText(ParamLoad[7].c_str());
+		cShapeTtwinshare->SetText(ParamLoad[8].c_str());
+		
+		if(cTrueCent!=((bool)ParamLoad[9].size()))ChangeCentMode();
+
+		fZERO->SetText(ParamLoad[10].c_str());
+			
+		for(unsigned int i=11;(i+1)<ParamLoad.size();i+=2){
+			unsigned int np=(i-7)/2;
+			if(ParamLoad[i].size()||ParamLoad[i+1].size()){
+				while(cNfit<np)this->AddTextBox();
+				
+				cTbox[np-2]->SetText(ParamLoad[i].c_str());
+				cRTbox[np-2]->SetText(ParamLoad[i+1].c_str());
+			}
+		}
+   }
 }
 
 void UltraFitEnv::PrintFits(){

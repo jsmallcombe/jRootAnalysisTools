@@ -122,6 +122,23 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,TH1* fExHist,double fLeftUser,doubl
 	// If background is fully subtracted ~0 and large peaks are present, likelihood will not be used.
 	// If background is still being fit in this case it will likely be overestimated.
 	
+
+	//// log likelihood (particularly weighted) fitting hasnt been working very well
+	//// In the case bin errors have been inflated over poisson then using chi should fine/best
+	if(fHist->GetSumw2N()){
+		for(int i=fLeftBin;i<=fRightBin;i++){
+			double n=fHist->GetBinContent(i);
+			double e=fHist->GetBinError(i);
+			if(abs(e)-sqrt(abs(n))>1E-6){
+				statmode=0;
+			}
+			
+			if(n<0&&e<abs(n))fHist->SetBinError(i,abs(n));
+			// Error inflating for over subtraction issues.
+			// Not totally justified
+		}
+	}
+	
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////// PERFORM PRELIMINARY FIT FOR PEAK PARAMETERS /////////////////
 	//////////////////////////////////////////////////////////////////////////////

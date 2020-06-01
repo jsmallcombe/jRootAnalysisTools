@@ -245,7 +245,12 @@ void Ultrapeak::DrawPeak(FullFitHolder* fFit,TCanvas* pad,TH1* fHist){
 	fBack->SetLineColor(gStyle->GetLineColor());
 	fBack->SetLineStyle(7);	
 	if(pad)fBack->DrawCopy("same");
-	if(fHist)fHist->GetListOfFunctions()->Add(fBack->Clone());//NOT A TRUE CLONE, IS EMPTY OF COMPUTATION
+	if(fHist){
+		TF1* ff=(TF1*)fBack->Clone();//NOT A TRUE CLONE, IS EMPTY OF COMPUTATION
+		ff->AddToGlobalList(false);
+		fHist->GetListOfFunctions()->Add(ff);
+		ff->SetParent(fHist);
+	}
 	
 	fDraw->SetLineColor(36);
 // 	fDraw->SetLineColorAlpha(gStyle->GetLineColor(),0.5);
@@ -263,7 +268,12 @@ void Ultrapeak::DrawPeak(FullFitHolder* fFit,TCanvas* pad,TH1* fHist){
 			fDraw->SetParameter(gPeakNH(i),fParam[gPeakNH(i)]);//turn one peak on
 			if(fPeakFunc.TestBit(kStep))fDraw->SetParameter(gUltraStep,fParam[gPeakNH(i)]*fStepSum);//adjust background step
 			if(pad)fDraw->DrawCopy("same");
-			if(fHist)fHist->GetListOfFunctions()->Add(fDraw->Clone());//NOT A TRUE CLONE, IS EMPTY OF COMPUTATION
+			if(fHist){
+				TF1* ff=(TF1*)fDraw->Clone();//NOT A TRUE CLONE, IS EMPTY OF COMPUTATION
+				ff->AddToGlobalList(false);
+				fHist->GetListOfFunctions()->Add(ff);
+				ff->SetParent(fHist);
+			}
 			fDraw->SetParameter(gPeakNH(i),0);//turn it back off
 		}
 	}
@@ -273,8 +283,12 @@ void Ultrapeak::DrawPeak(FullFitHolder* fFit,TCanvas* pad,TH1* fHist){
 	fDraw->SetLineColor(gStyle->GetFuncColor());
 	fDraw->SetLineStyle(1);
 	if(pad)fDraw->DrawCopy("same");
-	if(fHist)fHist->GetListOfFunctions()->Add(fDraw->Clone());//NOT A TRUE CLONE, IS EMPTY OF COMPUTATION
-	
+	if(fHist){
+		TF1* ff=(TF1*)fDraw->Clone();//NOT A TRUE CLONE, IS EMPTY OF COMPUTATION
+		ff->AddToGlobalList(false);
+		fHist->GetListOfFunctions()->Add(ff);
+		ff->SetParent(fHist);
+	}
 	delete fDraw;
 	delete fBack;	
 	

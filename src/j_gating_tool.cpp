@@ -10,6 +10,11 @@
 #include "j_gpad_tools.h"
 #include "j_filecustodian.h"
 
+bool gGlobalAskWindowName=false;
+void SetGlobalAskWindowName(bool set){
+	gGlobalAskWindowName=set;
+}
+
 ClassImp(jgating_tool);
 
 int jgating_tool::jgating_tool_iterator = 0;
@@ -37,9 +42,16 @@ TVirtualPad* hold=gPad;
         PopUp=MakeTH3Popup();
 		cout<<endl<<endl<<" ============== Beginning Loading of TH3 ============ "<<endl<<" ====== Please be patient until window appears ====== "<<endl<<endl;
 	}
+		
+	char* FrameReNamChar=new char[128];
+	if(gGlobalAskWindowName)new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",input->GetName(),FrameReNamChar);
+	string FrameReNamStr=FrameReNamChar;
+	if(FrameReNamStr.size()){
+		SetWindowName(FrameReNamStr.c_str());	
+	}else{
+		SetWindowName(input->GetName());	
+	}
 	
-
-    SetWindowName(input->GetName());		
     TH1* pass=(TH1*)input;
     TDirectory* hdir=pass->GetDirectory();
     if(hdir){

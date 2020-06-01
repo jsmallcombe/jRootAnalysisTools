@@ -26,6 +26,7 @@
 #include "THashList.h"
 #include "TStyle.h"
 #include "TGSplitter.h"
+#include "TGInputDialog.h"
 
 #include <iostream>
 #include <iomanip> 
@@ -42,6 +43,9 @@ using namespace std;
 
 #include "j_ultrafit_env.h"
 #include "j_gating_frame.h"
+
+extern bool gGlobalAskWindowName;
+void SetGlobalAskWindowName(bool set=true);
 
 class jgating_tool : public TGMainFrame {
 

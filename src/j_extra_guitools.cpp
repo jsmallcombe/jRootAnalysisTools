@@ -260,7 +260,6 @@ TVirtualPad* hold=gPad;
 	MapWindow();
 	
 	SetNewHist(fH);
-	DoLines();
 	
 	lock=false;
 	sliderpos=-1;
@@ -282,7 +281,8 @@ void jAngleAngel::SetNewHist(TH1 *fH){
 	fCanvas1->GetCanvas()->cd();
 	fHist->DrawCopy("col");
 	hformat(fHist);
-	gPad->Update();	
+	gPad->Update();
+	DoLines();	
 }
 
 void jAngleAngel::SetCapture(){

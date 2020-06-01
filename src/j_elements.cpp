@@ -69,14 +69,14 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,bool Trust){
 		
 		//Drawing Options
 			if(HType(fH)){
-                if(HType(fH)==3){
+                if(HType(fH)==3 || (HType(fH)==2&&(((TH1*)fH)->GetNbinsX()>1024||((TH1*)fH)->GetNbinsY()>1024))){
                     this->GetCanvas()->Clear();
                     TText t;
                     t.SetTextAlign(22);
-                    t.SetTextSize(.6);
-                    t.DrawTextNDC(.5,.5,"TH3");
+                    t.SetTextSize(.45);
+                    t.DrawTextNDC(.5,.5,fH->ClassName());
                     string s=fH->GetName();
-                    t.SetTextSize(1.8/(s.size()+1));
+                    t.SetTextSize(1.5/(s.size()+1));
                     t.DrawTextNDC(.5,0.12,fH->GetName());
                 }else{
                     TH1* H=DrawCopyHistOpt((TH1*)fH);
