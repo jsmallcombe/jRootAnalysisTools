@@ -188,23 +188,55 @@ TH1* TryCBV2Hist(ClipboardBufferVectors &clip){
         N=round((r2-r1)/binsep);        
     }
 
-    stringstream ss;
-    ss<<"COPYBUFFHIST"<<clipbuff_hist_iterator;
-    TH1D* ret=new TH1D(ss.str().c_str(),"COPYBUFFHIST",N,r1,r2);
+	stringstream ss;
+	ss<<"COPYBUFFHIST"<<clipbuff_hist_iterator;
+	clipbuff_hist_iterator++;
     
-    // Finally load all values and errors if there is a third columb
-    for(int i=0;i<H;i++){
-        if(W==1){
-            ret->SetBinContent(i,clip.Db[i][0]);
-        }else{
-            int b=ret->GetXaxis()->FindBin(clip.Db[i][0]);
-            ret->SetBinContent(b,clip.Db[i][1]);
-            if(W>2){
-                ret->SetBinError(b,clip.Db[i][2]);
-            }
+    if(W>1||clipbuff_hist_iterator%2){
+		TH1D* ret=new TH1D(ss.str().c_str(),"COPYBUFFHIST",N,r1,r2);
+		
+		// Finally load all values and errors if there is a third columb
+		for(int i=0;i<H;i++){
+			if(W==1){
+				ret->SetBinContent(i,clip.Db[i][0]);
+			}else{
+				int b=ret->GetXaxis()->FindBin(clip.Db[i][0]);
+				ret->SetBinContent(b,clip.Db[i][1]);
+				if(W>2){
+					ret->SetBinError(b,clip.Db[i][2]);
+				}
+			}
+		}
+		return ret;
+	}else{
+		// If only 1 column given alternate between assuming it is bin content or raw events
+		
+		r2=0;
+		for(int i=0;i<H;i++){
+            double g=clip.Db[i][0];
+            if(g>r2)r2=g;;
         }
-    }
-    return ret;
+		r1=r2;
+		for(int i=0;i<H;i++){
+            double g=clip.Db[i][0];
+            if(g<r1)r1=g;
+        }
+        if(abs(r2)>10){
+			r2=ceil(r2);
+			r1=floor(r1);
+		}
+		
+		if(H>5000)N=1000;
+		else N=100;
+
+		TH1D* ret=new TH1D(ss.str().c_str(),"COPYBUFFHIST",N,r1,r2);
+		
+		for(int i=0;i<H;i++){
+			ret->Fill(clip.Db[i][0]);
+		}
+		return ret;
+	}
+	return 0;
 }
 
 

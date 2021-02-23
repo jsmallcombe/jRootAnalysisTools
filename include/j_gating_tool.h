@@ -89,7 +89,7 @@ private:
     bool RangeUpdateHold;
     
 	void ClearSaved();
-    std::chrono::time_point<std::chrono::high_resolution_clock> clicktime;
+    std::chrono::time_point<std::chrono::system_clock> clicktime;
    
 public:
 	jgating_tool(const char *);
