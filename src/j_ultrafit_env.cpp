@@ -747,37 +747,37 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 // 	if(kKeyPress == event)cout<<endl<<px<<" "<<py<<endl;
 	
 	//+- key adds remove a peak
-	if(kKeyPress == event &&py==43 ){AddTextBox();return;}
-	if(kKeyPress == event &&py==45 ){RemoveTextBox();return;}
+	if(kKeyPress == event &&py==kKey_Plus ){AddTextBox();return;}
+	if(kKeyPress == event &&py==kKey_Minus ){RemoveTextBox();return;}
 	
 	//  . s S Del
-	if(kKeyPress == event && (py==46||py==83||py==115||py==4103) ){SaveFit();return;}
+	if(kKeyPress == event && (py==kKey_Period||py==kKey_s||py==kKey_S||py==kKey_Delete) ){SaveFit();return;}
 	
 	//Number keys set the number of peaks
-	if(kKeyPress == event && py-48>0 &&  py-48<10){
-		unsigned int N=py-48;
+	unsigned int N=py-kKey_0;
+	if(kKeyPress == event && N>0 &&  N<10){
 		while(cNfit<N)AddTextBox();
 		while(cNfit>N)RemoveTextBox();
 		return;
 	}
 	
 	//Enter key to fit
-	if(kKeyPress == event && (py==4100 ||  py==4101)){
+	if(kKeyPress == event && (py==4100 ||  py==kKey_Enter)){
 		FitGUIPeak();
 		return;
 	}
 
 	//pressing shift turns on background specification
-	if(kKeyPress == event &&py==4128 ){cShift=!cShift;return;}
+	if(kKeyPress == event &&py==kKey_Shift ){cShift=!cShift;return;}
 	
 	//pressing ctrl turns on off maxima peak specification
-	if(kKeyPress == event &&py==4129 ){cCtrl=!cCtrl;return;}
+	if(kKeyPress == event &&py==kKey_Control ){cCtrl=!cCtrl;return;}
 	
 	//pressing alt turns on off exclusion range specification
-	if(kKeyPress == event &&py==4131 ){cAlt=!cAlt;return;}
+	if(kKeyPress == event &&py==kKey_Alt ){cAlt=!cAlt;return;}
 	
 	//  C c  key clears exclusion regions
-	if(kKeyPress == event && (py==99||py==67) ){ClearExclusion();return;}
+	if(kKeyPress == event && (py==kKey_c||py==kKey_C) ){ClearExclusion();return;}
 	
 	if(Y>y2||Y<y1||X<x1||X>x2){
 		fCan->SetCrosshair(0);

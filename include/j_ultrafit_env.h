@@ -50,6 +50,8 @@
 #include <TGComboBox.h>
 #include <TStopwatch.h>
 
+#include <KeySymbols.h>
+
 // #include "Math/GSLIntegrator.h"
 // #include "Math/WrappedTF1.h"
 
