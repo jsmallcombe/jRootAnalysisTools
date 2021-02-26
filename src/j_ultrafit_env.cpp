@@ -754,34 +754,8 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 		return;
 	}
 
-#ifdef __APPLE__
+#ifdef __linux__
 
-	
-	//+- key adds remove a peak
-	if(kKeyPress == event && (py==0x45 || py==0x18 ) ){AddTextBox();return;}
-	if(kKeyPress == event && (py==0x4E || py==0x1B ) ){RemoveTextBox();return;}
-	
-	//  . s S Del
-	if(kKeyPress == event && (py==kKey_Period||py==kKey_s||py==kKey_S||py==0x33) ){SaveFit();return;}
-
-	//Enter key to fit
-	if(kKeyPress == event && (py==0x4C ||  py==0x24)){
-		FitGUIPeak();
-		return;
-	}
-
-	//pressing shift turns on background specification
-	if(kKeyPress == event &&py==0x38 ){cShift=!cShift;return;}
-	
-	//pressing ctrl turns on off maxima peak specification
-	if(kKeyPress == event &&py==0x3B ){cCtrl=!cCtrl;return;}
-	
-	//pressing alt turns on off exclusion range specification
-	if(kKeyPress == event &&py==0x3A ){cAlt=!cAlt;return;}
-
-#else
-
-	
 	//+- key adds remove a peak
 	if(kKeyPress == event &&py==kKey_Plus ){AddTextBox();return;}
 	if(kKeyPress == event &&py==kKey_Minus ){RemoveTextBox();return;}
@@ -803,6 +777,30 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 	
 	//pressing alt turns on off exclusion range specification
 	if(kKeyPress == event &&py==kKey_Alt ){cAlt=!cAlt;return;}
+
+#else
+
+	//+- key adds remove a peak
+	if(kKeyPress == event && (py==0x45 || py==0x18 ) ){AddTextBox();return;}
+	if(kKeyPress == event && (py==0x4E || py==0x1B ) ){RemoveTextBox();return;}
+	
+	//  . s S Del
+	if(kKeyPress == event && (py==kKey_Period||py==kKey_s||py==kKey_S||py==0x33) ){SaveFit();return;}
+
+	//Enter key to fit
+	if(kKeyPress == event && (py==0x4C ||  py==0x24)){
+		FitGUIPeak();
+		return;
+	}
+
+	//pressing shift turns on background specification
+	if(kKeyPress == event &&py==0x38 ){cShift=!cShift;return;}
+	
+	//pressing ctrl turns on off maxima peak specification
+	if(kKeyPress == event &&py==0x3B ){cCtrl=!cCtrl;return;}
+	
+	//pressing alt turns on off exclusion range specification
+	if(kKeyPress == event &&py==0x3A ){cAlt=!cAlt;return;}
 
 #endif
 	
