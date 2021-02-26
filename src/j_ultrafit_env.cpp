@@ -766,6 +766,22 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 		FitGUIPeak();
 		return;
 	}
+	
+
+#ifdef __APPLE__
+
+#include <Carbon.h>
+
+	//pressing shift turns on background specification
+	if(kKeyPress == event &&py==kVK_Shift ){cShift=!cShift;return;}
+	
+	//pressing ctrl turns on off maxima peak specification
+	if(kKeyPress == event &&py==kVK_Control ){cCtrl=!cCtrl;return;}
+	
+	//pressing alt turns on off exclusion range specification
+	if(kKeyPress == event &&py==kVK_Option ){cAlt=!cAlt;return;}
+
+#else
 
 	//pressing shift turns on background specification
 	if(kKeyPress == event &&py==kKey_Shift ){cShift=!cShift;return;}
@@ -775,6 +791,8 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 	
 	//pressing alt turns on off exclusion range specification
 	if(kKeyPress == event &&py==kKey_Alt ){cAlt=!cAlt;return;}
+
+#endif
 	
 	//  C c  key clears exclusion regions
 	if(kKeyPress == event && (py==kKey_c||py==kKey_C) ){ClearExclusion();return;}
