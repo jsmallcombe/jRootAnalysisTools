@@ -770,7 +770,7 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 
 #ifdef __APPLE__
 
-#include <Carbon.h>
+#include <Carbon/Carbon.h>
 
 	//pressing shift turns on background specification
 	if(kKeyPress == event &&py==kVK_Shift ){cShift=!cShift;return;}
