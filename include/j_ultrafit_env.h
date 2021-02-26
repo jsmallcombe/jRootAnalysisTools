@@ -70,6 +70,10 @@
 #include <string>
 #include <sstream>
 
+#ifdef __APPLE__
+	#include <Carbon/Carbon.h>
+#endif
+
 using namespace std;
 
 class UltraFitEnv : public TGCompositeFrame
