@@ -754,11 +754,20 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 		return;
 	}
 
-#ifdef __linux__
+// #ifdef __linux__
+#ifdef __APPLE__
 
-	//+- key adds remove a peak
-	if(kKeyPress == event &&py==kKey_Plus ){AddTextBox();return;}
-	if(kKeyPress == event &&py==kKey_Minus ){RemoveTextBox();return;}
+	//pressing shift turns on background specification
+	if(kKeyPress == event && (py==kKey_f||py==kKey_F) ){cShift=!cShift;return;}
+	
+	//pressing ctrl turns on off maxima peak specification
+	if(kKeyPress == event && (py==kKey_p||py==kKey_P) ){cCtrl=!cCtrl;return;}
+	
+	//pressing alt turns on off exclusion range specification
+	if(kKeyPress == event && (py==kKey_e||py==kKey_E) ){cAlt=!cAlt;return;}
+
+#endif
+// #else
 	
 	//  . s S Del
 	if(kKeyPress == event && (py==kKey_Period||py==kKey_s||py==kKey_S||py==kKey_Delete) ){SaveFit();return;}
@@ -778,31 +787,10 @@ void UltraFitEnv::ClickedCanvas(Int_t event, Int_t px, Int_t py, TObject *select
 	//pressing alt turns on off exclusion range specification
 	if(kKeyPress == event &&py==kKey_Alt ){cAlt=!cAlt;return;}
 
-#else
-
+	
 	//+- key adds remove a peak
-	if(kKeyPress == event && (py==0x45 || py==0x18 ) ){AddTextBox();return;}
-	if(kKeyPress == event && (py==0x4E || py==0x1B ) ){RemoveTextBox();return;}
-	
-	//  . s S Del
-	if(kKeyPress == event && (py==kKey_Period||py==kKey_s||py==kKey_S||py==0x33) ){SaveFit();return;}
-
-	//Enter key to fit
-	if(kKeyPress == event && (py==0x4C ||  py==0x24)){
-		FitGUIPeak();
-		return;
-	}
-
-	//pressing shift turns on background specification
-	if(kKeyPress == event &&py==0x38 ){cShift=!cShift;return;}
-	
-	//pressing ctrl turns on off maxima peak specification
-	if(kKeyPress == event &&py==0x3B ){cCtrl=!cCtrl;return;}
-	
-	//pressing alt turns on off exclusion range specification
-	if(kKeyPress == event &&py==0x3A ){cAlt=!cAlt;return;}
-
-#endif
+	if(kKeyPress == event &&py==kKey_Plus ){AddTextBox();return;}
+	if(kKeyPress == event &&py==kKey_Minus ){RemoveTextBox();return;}
 	
 	//  C c  key clears exclusion regions
 	if(kKeyPress == event && (py==kKey_c||py==kKey_C) ){ClearExclusion();return;}
@@ -1458,9 +1446,17 @@ const char gHelpCanvas[] = "\n\
   The bottom most button on the panel [^] will expose these options.\n\
 \n\
   Please read the full pdf manual for more details.\n\
+\n\
+  On Mac, use [F] to set fit region, \n\
+			[P] for manual peak-bin selection \n\
+			[E] to set exclusion region \n\
 \n\n\n\
 ";
 
+
+	
+	
+	
 void UltraFitEnv::Help(){
 	TRootHelpDialog *hd;
 	hd = new TRootHelpDialog(0, "Fitting tool help", 600, 400);
