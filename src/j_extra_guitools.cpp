@@ -235,6 +235,8 @@ TVirtualPad* hold=gPad;
 
 	fCanvas1 = new TRootEmbeddedCanvas("anglecan1",this,600,400);
     AddFrame(fCanvas1,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 1, 1, 1, 1));
+    
+    fCanvas1->GetCanvas()->Connect("RangeChanged()", "jAngleAngel", this, "NewRange()");
 	
 	fHslider = new TGHSlider(this, 360, kSlider2);
 	fHslider->Connect("PositionChanged(Int_t)", "jAngleAngel", this, "SliderChange()");
@@ -252,6 +254,7 @@ TVirtualPad* hold=gPad;
 		buttons->AddFrame(MakeButton);
 	AddFrame(buttons,new TGLayoutHints(kLHintsCenterX, 1, 1, 1, 1));
 	
+    
 	fLine.SetLineColor(2);
 	Nl=20;
     
@@ -264,7 +267,7 @@ TVirtualPad* hold=gPad;
 	lock=false;
 	sliderpos=-1;
     
-gPad=hold;
+    gPad=hold;
 }
 
 jAngleAngel::~jAngleAngel(){
@@ -274,16 +277,33 @@ void jAngleAngel::SetNewHist(TH1 *fH){
 	if(!fH)return;
 	if(!fH->InheritsFrom("TH2"))return;
 	
+    if(fHistLow&&fHistHigh!=fHistLow){delete fHistLow;fHistLow=0;}
+    if(fHistHigh){delete fHistLow;fHistLow=0;}
+    
 	fHistHigh=(TH2*)fH->Clone("fHistHigh");
-	fHistLow=fHistHigh->Rebin2D(floor(fHistHigh->GetNbinsX()/50.),floor(fHistHigh->GetNbinsY()/50.),"fHistLow");
-	fHist=fHistHigh;
+	hformat(fHistHigh);
+    
+    if(fHistHigh->GetNcells()>1048584){//1024^2 + 8 overflows
+        fHistLow=fHistHigh->Rebin2D(floor(fHistHigh->GetNbinsX()/500.),floor(fHistHigh->GetNbinsY()/500.),"fHistLow");
+    }else{
+        fHistLow=fHistHigh;
+    }
+    
+    fHist=fHistHigh;
 	
 	fCanvas1->GetCanvas()->cd();
-	fHist->DrawCopy("col");
-	hformat(fHist);
+	fHist->Draw("col");
+// 	hformat(fHist);
 	gPad->Update();
 	DoLines();	
 }
+
+
+void jAngleAngel::NewRange(){
+	if(!fHist||lock)return;
+	DoLines();
+}
+
 
 void jAngleAngel::SetCapture(){
 	TQObject::Disconnect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", 0, "CaptureHistogram(TPad*,TObject*,Int_t)");
@@ -301,7 +321,10 @@ void jAngleAngel::CaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 			else fH=hist_capture(pad);
 			
 			if(fH){
-				SetNewHist(fH);return;
+                lock=true;
+				SetNewHist(fH);
+                lock=false;
+                return;
 			}
 		}
 		cout<<endl<<endl<<"Capture Failed"<<endl;
@@ -312,6 +335,7 @@ void jAngleAngel::CaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 
 // Lots of checks to try and slow the thing down
 void jAngleAngel::SliderChange(){
+
 	if(!fHist||sliderpos==fHslider->GetPosition()||lock)return;
 	if(Stop.RealTime()<0.2){
 		Stop.Start(kFALSE);	
@@ -320,10 +344,18 @@ void jAngleAngel::SliderChange(){
 	Stop.Start();
 	lock=true;
 	
-	if(fHist==fHistHigh){
+	if(fHist==fHistHigh&&fHistLow!=fHistHigh){
+        TAxis *X=fHist->GetXaxis();
+        TAxis *Y=fHist->GetYaxis();
 		fHist=fHistLow;
+        TAxis *x=fHist->GetXaxis();
+        TAxis *y=fHist->GetYaxis();
+    
+        x->SetRange(x->FindBin(X->GetBinCenter(X->GetFirst())),x->FindBin(X->GetBinCenter(X->GetLast())));
+        y->SetRange(y->FindBin(Y->GetBinCenter(Y->GetFirst())),y->FindBin(Y->GetBinCenter(Y->GetLast())));         
+        
 		fCanvas1->GetCanvas()->cd();
-		fHist->DrawCopy("col");
+		fHist->Draw("col");
 	}
 	DoLines();
 
@@ -331,10 +363,12 @@ void jAngleAngel::SliderChange(){
 };
 
 void jAngleAngel::SliderRelease(){
-	if(fHist==fHistLow){
+	if(fHist==fHistLow&&fHistLow!=fHistHigh){
 		fHist=fHistHigh;
 		fCanvas1->GetCanvas()->cd();
-		fHist->DrawCopy("col");
+        lock=true;
+		fHist->Draw("col");
+        lock=false;
 	}
 	DoLines();
 };
@@ -429,11 +463,13 @@ void jAngleAngel::DoLines(){
 
 // No checks just do
 void jAngleAngel::MakeHist(double offset){
+    if(!fHistHigh)return;
+    
 	double Angle=TMath::Pi()*fHslider->GetPosition()/360.0;
 	Angle+=offset;
 	
-	TAxis *X=fHist->GetXaxis();
-	TAxis *Y=fHist->GetYaxis();
+	TAxis *X=fHistHigh->GetXaxis();
+	TAxis *Y=fHistHigh->GetYaxis();
 	
 	// The currently drawn limits 
 	double y0=Y->GetBinLowEdge(Y->GetFirst());
@@ -488,20 +524,20 @@ void jAngleAngel::MakeHist(double offset){
 	double smwdth=sax->GetBinWidth(1);
 	
 	
-	TH1D ret("jAngleAngelRet","jAngleAngelRet",fHist->GetNbinsX()*2,xlow,xhigh);
+	TH1D ret("jAngleAngelRet","jAngleAngelRet",fHistHigh->GetNbinsX()*2,xlow,xhigh);
 	TAxis *ax=ret.GetXaxis();
 	
 	int brange=ceil(range/ret.GetBinWidth(1));
 
-	for(int x=1;x<=fHist->GetNbinsX();x++){
-		for(int y=1;y<=fHist->GetNbinsY();y++){
+	for(int x=1;x<=fHistHigh->GetNbinsX();x++){
+		for(int y=1;y<=fHistHigh->GetNbinsY();y++){
 			
 			double XX=X->GetBinCenter(x);
 			double YY=Y->GetBinCenter(y);
 			double A=XX+(YY-y0)/(g*tn);
-// 			ret.Fill(A,fHist->GetBinContent(x,y));	
+// 			ret.Fill(A,fHistHigh->GetBinContent(x,y));	
 			
-			double C=fHist->GetBinContent(x,y);
+			double C=fHistHigh->GetBinContent(x,y);
 			int B=ax->FindBin(A);
 			for(int b=B-brange;b<=B+brange;b++){
 				double smin=ax->GetBinLowEdge(b)-A;				

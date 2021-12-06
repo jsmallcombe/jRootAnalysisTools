@@ -116,11 +116,12 @@ public:
 	void CaptureHistogram(TPad* pad,TObject* obj,Int_t event);
 	void SliderChange();
 	void SliderRelease();
+	void NewRange();
 	
 	void MakeHist(double=0);
 	void MakeHist90(){MakeHist(TMath::Pi()*0.5);};
-
-	ClassDef(jAngleAngel, 1)
+    
+	ClassDef(jAngleAngel, 2)
 };
 
 
