@@ -16,6 +16,7 @@
 #include <sstream>
 #include <vector>
 
+#include <TVirtualX.h>
 #include <TBrowser.h>
 #include <TCanvas.h>
 #include <TText.h>

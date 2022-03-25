@@ -85,10 +85,11 @@ class UltraFitEnv : public TGCompositeFrame
 	virtual ~UltraFitEnv();
 	
 	//These need to be implemented properly, what with all the pointers etc
-	UltraFitEnv( const UltraFitEnv &obj)= default;//copy constructor
-	UltraFitEnv& operator=(const UltraFitEnv&)= default;//assignment operator
-	UltraFitEnv(UltraFitEnv&&) = default;                    // Move constructor
-	UltraFitEnv& operator=(UltraFitEnv&&) & = default;       // Move assignment operator
+    //Actually it turns out they should be delete because of inheriting from TGCompositeFrame
+	UltraFitEnv( const UltraFitEnv &obj)= delete;//copy constructor
+	UltraFitEnv& operator=(const UltraFitEnv&)= delete;//assignment operator
+	UltraFitEnv(UltraFitEnv&&) = delete;                    // Move constructor
+	UltraFitEnv& operator=(UltraFitEnv&&) & = delete;       // Move assignment operator
 
 	
 	///////////////////////////////////////////////////////////////////////////

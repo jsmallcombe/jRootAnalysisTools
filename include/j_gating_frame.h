@@ -94,7 +94,7 @@ private:
 	int gate_range;
 	int fit_down,fit_up;
 	int m_back_down,m_back_up;
-	int target_bin;
+	Long64_t target_bin;
 	double backfrack;
 	double backfrackfrac;
 	bool action_hold; 
