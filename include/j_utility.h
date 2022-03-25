@@ -11,6 +11,7 @@
 #define JUtility
 
 #include <sstream>
+#include <iomanip>
 
 #include <TMatrixD.h>
 #include <TMatrixDSym.h>
