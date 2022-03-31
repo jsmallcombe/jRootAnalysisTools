@@ -29,6 +29,7 @@
 #include <TStopwatch.h>
 #include <TApplication.h>
 #include <TGTab.h>
+#include <TF2.h>
 
 #include "j_utility.h"
 #include "j_ultrafit_env.h"
@@ -111,9 +112,8 @@ public:
 	jAngleAngel(TH1* fH=0);
 	virtual ~jAngleAngel();
     
-	void SetCapture();
+	void SetCapture(TH1 *fH);
 	void SetNewHist(TH1 *fH);
-	void CaptureHistogram(TPad* pad,TObject* obj,Int_t event);
 	void SliderChange();
 	void SliderRelease();
 	void NewRange();
@@ -125,5 +125,35 @@ public:
 };
 
 
+
+class j2DPeakFit : public TGMainFrame {
+
+private:
+	TRootEmbeddedCanvas *fCanvas1;
+	TH2* fHist;
+    double X,Y;
+    vector<double> saveX,saveY;
+    TF2 *g2;
+    TF1 *lincal;
+public:
+	j2DPeakFit(TH1* fH=0,double sig=11);
+	virtual ~j2DPeakFit();
+    
+	void SetNewHist(TH1 *fH);
+    void Fit2DPeak(Int_t,Int_t,Int_t,TObject*);
+    void SaveXY(){
+        saveX.push_back(X);
+        saveY.push_back(Y);
+    };
+    void Reset(){
+        saveX.clear();
+        saveY.clear();
+    }
+    void CalibrateAlpha();
+
+    double sigma;
+    
+	ClassDef(j2DPeakFit, 0)
+};
 
 #endif

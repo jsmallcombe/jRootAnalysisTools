@@ -229,8 +229,8 @@ TVirtualPad* hold=gPad;
     SetCleanup(kDeepCleanup);
 	Stop.Start();
 
-	TGTextButton *CaptureButton = new TGTextButton(this," Capture Hist ");
-	CaptureButton->Connect("Clicked()","jAngleAngel",this,"SetCapture()");	
+	jHistCapButton *CaptureButton = new jHistCapButton(this," Capture Hist ");
+	CaptureButton->Connect("NewHist(TH1*)","jAngleAngel",this,"SetCapture(TH1*)");	
 	AddFrame(CaptureButton,new TGLayoutHints(kLHintsCenterX, 1, 1, 1, 1));
 
 	fCanvas1 = new TRootEmbeddedCanvas("anglecan1",this,600,400);
@@ -305,33 +305,11 @@ void jAngleAngel::NewRange(){
 }
 
 
-void jAngleAngel::SetCapture(){
-	TQObject::Disconnect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", 0, "CaptureHistogram(TPad*,TObject*,Int_t)");
-	TQObject::Connect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", "jAngleAngel", this, "CaptureHistogram(TPad*,TObject*,Int_t)");
+void jAngleAngel::SetCapture(TH1* fH){
+    lock=true;
+    SetNewHist(fH);
+    lock=false;
 };
-
-void jAngleAngel::CaptureHistogram(TPad* pad,TObject* obj,Int_t event){
-	if(1 == event){
-		
-		TQObject::Disconnect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", 0, "CaptureHistogram(TPad*,TObject*,Int_t)");
-		
-		if(obj){
-			TH1* fH=0;
-			if(obj->InheritsFrom("TH1"))fH=(TH1*)obj;
-			else fH=hist_capture(pad);
-			
-			if(fH){
-                lock=true;
-				SetNewHist(fH);
-                lock=false;
-                return;
-			}
-		}
-		cout<<endl<<endl<<"Capture Failed"<<endl;
-	}
-}
-
-
 
 // Lots of checks to try and slow the thing down
 void jAngleAngel::SliderChange(){
@@ -559,3 +537,113 @@ void jAngleAngel::MakeHist(double offset){
 	gPad->Update();
 	ret.DrawCopy("hist");
 }
+
+
+
+////////////////////////////////////////////////////////////////
+
+j2DPeakFit::j2DPeakFit(TH1* fH,double sig) : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),fHist(0),sigma(sig){
+// TVirtualPad* hold=gPad;
+    SetWindowName("j2DPeakFit");
+    SetCleanup(kDeepCleanup);
+
+
+	fCanvas1 = new TRootEmbeddedCanvas("fit2can1",this,600,400);
+    AddFrame(fCanvas1,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 1, 1, 1, 1));
+    
+    fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "j2DPeakFit", this,"Fit2DPeak(Int_t,Int_t,Int_t,TObject*)");
+
+    
+    TGHorizontalFrame* buttons = new TGHorizontalFrame(this);       
+    
+        jHistCapButton *CaptureButton = new jHistCapButton(buttons,"    Capture Hist    ");
+        CaptureButton->Connect("NewHist(TH1*)","j2DPeakFit",this,"SetNewHist(TH1*)");	
+        buttons->AddFrame(CaptureButton);
+
+        TGTextButton *MakeButton = new TGTextButton(buttons,"       SaveXY       ");
+        MakeButton->Connect("Clicked()","j2DPeakFit",this,"SaveXY()");	
+        buttons->AddFrame(MakeButton);
+
+        MakeButton = new TGTextButton(buttons,"   CalibrateAlpha   ");
+        MakeButton->Connect("Clicked()","j2DPeakFit",this,"CalibrateAlpha()");	
+        buttons->AddFrame(MakeButton);
+        
+        MakeButton = new TGTextButton(buttons,"   Reset   ");
+        MakeButton->Connect("Clicked()","j2DPeakFit",this,"Reset()");	
+        buttons->AddFrame(MakeButton);
+    
+    AddFrame(buttons,new TGLayoutHints(kLHintsCenterX, 1, 1, 1, 1));
+    
+    g2 = new TF2("g2","[0]*exp(-0.5*pow((x-[1])/[3],2))*exp(-0.5*pow((y-[2])/[4],2))");
+    g2->SetParNames("Height","X0","Y0","Xsig","Ysig");
+    g2->SetContour(10);
+    
+    lincal = new TF1("lincal","(5485.56-x*[0])/[1]");
+    lincal->SetParNames("CalX","CalY");
+    lincal->SetParameters(4,4);
+    
+	MapSubwindows();
+	Resize(GetDefaultSize());
+	MapWindow();
+    
+	SetNewHist(fH);
+}
+// 
+j2DPeakFit::~j2DPeakFit(){
+    TQObject::Disconnect(this);
+}
+
+void j2DPeakFit::SetNewHist(TH1 *fH){
+	if(!fH)return;
+	if(!fH->InheritsFrom("TH2"))return;
+    
+    if(fHist)delete fHist;
+	fHist=(TH2*)fH->Clone("fHist2Dfit");
+	hformat(fHist);
+
+    
+	fCanvas1->GetCanvas()->cd();
+	fHist->Draw("col");
+	gPad->Update();
+}
+
+void j2DPeakFit::Fit2DPeak(Int_t event, Int_t px, Int_t py, TObject *selected_ob){
+
+	if(!fHist){return;}
+	if(event == kMouseLeave){return;}
+	TCanvas* Can=(TCanvas*)fCanvas1->GetCanvas();
+	
+	//Click is given in pixel coordinates
+	double x =Can->AbsPixeltoX(px);
+	double y =Can->AbsPixeltoY(py);
+
+	if (event == kButton1Double){
+//         cout<<endl<<x<<" "<<y<<endl;
+// 		TH1* fHist=hist_capture(Can);
+		if(!fHist) return;
+        if(HType(fHist)!=2) return;
+		
+        double h=fHist->GetBinContent(fHist->GetXaxis()->FindBin(x),fHist->GetXaxis()->FindBin(y));
+        g2->SetRange(x-sigma*2,y-sigma*2,x+sigma*2,y+sigma*2);
+        g2->SetParameters(h,x,y,sigma,sigma);
+		g2->SetParLimits(0,h*0.5,h*1.5);
+		g2->SetParLimits(1,x-sigma,x+sigma);
+		g2->SetParLimits(2,y-sigma,y+sigma);
+		g2->SetParLimits(3,sigma*0.5,sigma*2);
+		g2->SetParLimits(4,sigma*0.5,sigma*2);
+
+        fHist->Fit(g2,"RQ");
+        
+		X=g2->GetParameter(1);
+		Y=g2->GetParameter(2);
+		
+// 		Can->GetCanvas()->Modified();
+// 		Can->GetCanvas()->Update();
+	}
+}
+
+void j2DPeakFit::CalibrateAlpha(){
+    TGraph tmp(saveX.size(),&saveX[0],&saveY[0]);
+    ((TGraph*)tmp.DrawClone("al"))->Fit(lincal);
+//     tmp.Fit(lincal);
+};

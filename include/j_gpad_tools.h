@@ -46,12 +46,20 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Return a TObject if there is one drawn in the pad
 TObject* obj_capture(TClass*,TVirtualPad* =gPad);
+
+// Remove objects drawn on a paf¥d
 void obj_removeall(TClass*,TVirtualPad* =gPad);
 void obj_remove(TClass*,TVirtualPad* =gPad,bool=0);
+
+// Return a histogram if there is one drawn in the pad
 TH1* hist_capture(TVirtualPad* =gPad);
 
+// Basic quick peak fitter for pad click
 void ClickPeakDrawConnect(Int_t,Int_t,Int_t,TObject*);
+
+// Connect any canvas to the above quick fitter function "ClickPeakDrawConnect"
 inline void ConnectPeakClickerCanvas(TCanvas* Can){
     if(Can){
         TQObject::Connect(Can, "ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0,0,"ClickPeakDrawConnect(Int_t,Int_t,Int_t,TObject*)");
@@ -63,7 +71,8 @@ void ToolTipHide();
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+// Will draw a histogram and then allow root to continue processing while waiting for a click, I think.
+// Unsure what this was used for
 
 class HistClickStop{ 
    private:
@@ -111,6 +120,8 @@ double GetHistClickVal(TH1* hist,string title="",bool y=true);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// A Window that will display a histogram and a series of text buttons to ClickedCanvas
+// Used for human interfacing a list of of histograms i.e. good/bad, type A/B etc
 
 class jhistquestion : public TGMainFrame {
 private:

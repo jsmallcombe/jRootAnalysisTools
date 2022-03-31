@@ -82,6 +82,36 @@ class CCframe : public TRootEmbeddedCanvas {
 	ClassDef(CCframe, 2)
 };
 
+////////////////////////////////////////////////////////////////
+
+class jHistCapButton : public TGTextButton {
+
+public:
+	jHistCapButton(const TGWindow *p, const char *s, const char *cmd, Int_t id=-1, GContext_t norm=GetDefaultGC()(), FontStruct_t font=GetDefaultFontStruct(), UInt_t option=kRaisedFrame|kDoubleBorder):
+	TGTextButton(p,s,cmd,id,norm,font,option){};
+ 
+ 	jHistCapButton(const TGWindow *p, TGHotString *s, Int_t id=-1, GContext_t norm=GetDefaultGC()(), FontStruct_t font=GetDefaultFontStruct(), UInt_t option=kRaisedFrame|kDoubleBorder):
+	TGTextButton(p,s,id,norm,font,option){};
+
+ 	jHistCapButton(const TGWindow *p=0, const char *s=0, Int_t id=-1, GContext_t norm=GetDefaultGC()(), FontStruct_t font=GetDefaultFontStruct(), UInt_t option=kRaisedFrame|kDoubleBorder):
+	TGTextButton(p,s,id,norm,font,option){};
+    
+    ~jHistCapButton(){TQObject::Disconnect(this);};
+    
+public:
+    
+    void Clicked();
+    void CaptureHistogram(TPad* pad,TObject* obj,Int_t event);
+    void NewHist(TH1* h){
+            Emit("NewHist(TH1*)", (Long_t)h);
+    }
+    
+	ClassDef(jHistCapButton, 0)
+};
+
+
+////////////////////////////////////////////////////////////////
+
 //My little add sub tool
 class jAddSubTool : public TGCompositeFrame {
 	private:

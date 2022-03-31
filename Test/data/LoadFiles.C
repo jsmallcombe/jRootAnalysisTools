@@ -37,4 +37,9 @@
 	dedx=(TH1*)MyFile->Get("red0Z_copy")->Clone("dedx");
 	MyFile->Close();  
     
+	TH1* ydots;
+	MyFile= new TFile("Test/data/ydots.root","READ");
+	gROOT->cd();
+	ydots=(TH1*)MyFile->Get("YpairVs0_copy")->Clone("ydots");
+	MyFile->Close();  
 }

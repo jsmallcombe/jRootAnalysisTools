@@ -162,6 +162,36 @@ int CCframe::Type(){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+ClassImp(jHistCapButton);
+
+void jHistCapButton::Clicked(){//SetCapture()
+	TQObject::Disconnect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", 0, "CaptureHistogram(TPad*,TObject*,Int_t)");
+	TQObject::Connect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", "jHistCapButton", this, "CaptureHistogram(TPad*,TObject*,Int_t)");
+};
+void jHistCapButton::CaptureHistogram(TPad* pad,TObject* obj,Int_t event){
+	if(1 == event){
+		
+		TQObject::Disconnect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", 0, "CaptureHistogram(TPad*,TObject*,Int_t)");
+		
+		if(obj){
+			TH1* fH=0;
+			if(obj->InheritsFrom("TH1"))fH=(TH1*)obj;
+			else fH=hist_capture(pad);
+			
+			if(fH){
+				NewHist(fH);
+                return;
+			}
+		}
+		cout<<endl<<endl<<"Capture Failed"<<endl;
+	}
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int jAddSubTool::SumNameItt = 0;
 
 jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p, UInt_t w, UInt_t h, UInt_t options):TGCompositeFrame(p,w,h,options),A(0),B(0),result(0),AHist(0),BHist(0),BSet(0),SumHist(0),TempB(0),fGrabFrame(Frame){
