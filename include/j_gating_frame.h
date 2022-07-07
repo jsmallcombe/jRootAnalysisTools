@@ -72,13 +72,14 @@ private:
 	TGTextEntry         *fTeh1, *fTeh2, *fTeh3;
 	TGTextBuffer        *fTbh1, *fTbh2, *fTbh3;
 	TGCheckButton       *fCheck2,*fCheck1,*fCheck0;
-	TGButtonGroup	*fBgroup1,*fBgroup2;
+	TGButtonGroup	*fBgroup1,*fBgroup2,*fBgroup3;
 	TGRadioButton	*fRButton1,*fRButton2,*fRButton3,*fRButton4,*fRButton5,*fRButton6,*fRButton7,*fRButton8,*fRButton9,*fRButtonz;
 	TGTextButton		*fTButton1;
 	TGComboBox *BackModeDrop;
 	
 	TH1 *raw_input; 
 	TH1 *proj,*proj_flow,*selected,*b_man,*specback;
+	TH1 *projraw,*proj_flowraw;
 	
 	TText* peaknumremove;
 	
@@ -99,6 +100,7 @@ private:
 	double backfrackfrac;
 	bool action_hold; 
 	bool set_for_3D;
+    int RebinFactor;
 
 	double storef1,storef2;
 	
@@ -118,6 +120,7 @@ private:
 	
 	string suffix;
 
+    
 public:
    j_gating_frame();
    j_gating_frame(TGWindow*,TH1*,string="");
@@ -152,13 +155,17 @@ public:
    
    void UpdateInput(TH1*);
    void UpdateInput();
+   void UpdateProj(bool=true);
+   
+   void RebinPlus();
+   void RebinMinus();
 
 
    //signals has to be public
    void OutputReady(){};  
    void InputChange(){};  
    
-   ClassDef(j_gating_frame, 2)
+   ClassDef(j_gating_frame, 3)
 };
 
 #endif

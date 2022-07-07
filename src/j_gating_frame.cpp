@@ -31,6 +31,7 @@ TVirtualPad* hold=gPad;
 	storef1=1;storef2=1;
 	axis_down=0;axis_up=-1;
 	m_back_down=1;m_back_up=20;
+    RebinFactor=1;
 	
 	action_hold=false;
 	
@@ -42,6 +43,8 @@ TVirtualPad* hold=gPad;
     fFitFcn->SetLineColor(1);
     if(gGlobalNegativeDraw)fFitFcn->SetLineColor(3);
  
+	projraw=new TH1F();
+	proj_flowraw=new TH1F();
 	proj=new TH1F();
 	proj_flow=new TH1F();
 	selected=new TH1F();
@@ -110,6 +113,14 @@ TVirtualPad* hold=gPad;
 		fBgroup2->Connect(" Clicked(Int_t)", "j_gating_frame", this,"ChangeBackMode(Int_t)");
 		fHframe0->AddFrame(fBgroup2, fBfly1);
 		
+		fBgroup3 = new TGButtonGroup(fHframe0,"Rebin",kChildFrame);// Another button group
+            TGTextButton *RebinPlusButton=new TGTextButton(fBgroup3,"+");
+            RebinPlusButton->Connect("Clicked()","j_gating_frame",this,"RebinPlus()");
+            TGTextButton *RebinMinusButton=new TGTextButton(fBgroup3,"-");
+            RebinMinusButton->Connect("Clicked()","j_gating_frame",this,"RebinMinus()");
+		fBgroup3->Show();
+		fHframe0->AddFrame(fBgroup3, fBfly1); 
+        
 	this->AddFrame(fHframe0, fBfly4);	
 	
 	// Create an embedded canvas and add to the main frame, centered in x and y
@@ -258,6 +269,8 @@ j_gating_frame::~j_gating_frame()
 	
 	delete proj;
 	delete proj_flow;
+	delete projraw;
+	delete proj_flowraw;
 	delete selected;
 	delete specback;
 	delete fFitFcn;
@@ -548,34 +561,19 @@ void j_gating_frame::UpdateInput()
 TVirtualPad* hold=gPad;
 
 //cout<<"UpdateInput "<<flush;
+    RebinFactor=1;
 
-	axis_down=0;axis_up=-1;
-	
-	delete proj;
-	delete proj_flow;
+	delete projraw;
+	delete proj_flowraw;
 
-	proj=hist_proj(raw_input,xyz,"proj"+suffix,true);
-	proj_flow=hist_proj(raw_input,xyz,"proj_flow"+suffix);
+	projraw=hist_proj(raw_input,xyz,"projraw"+suffix,true);
+	proj_flowraw=hist_proj(raw_input,xyz,"proj_flowraw"+suffix);
     
-    axis_down=1;
-	axis_up=proj->GetNbinsX();
-	
-	proj->SetStats(0);
-	proj->SetTitle("");
-	proj->SetLineColor(1);
-
-	proj_flow->SetStats(0);
-	proj_flow->SetTitle("");
-
-	delete selected;
-	selected=(TH1*)proj->Clone(("selected"+suffix).c_str());
-	selected->SetLineWidth(3);
-	selected->SetLineColor(2);
-	
-	delete b_man;
-	b_man=(TH1*)proj->Clone(("b_man"+suffix).c_str());
-	b_man->SetLineWidth(3);
-	b_man->SetLineColor(1);
+	projraw->SetStats(0);
+	projraw->SetTitle("");
+	projraw->SetLineColor(1);
+	proj_flowraw->SetStats(0);
+	proj_flowraw->SetTitle("");
 
 	delete full;
 	full=hist_gater_bin(1,raw_input,xyz,"full"+suffix);
@@ -592,11 +590,7 @@ TVirtualPad* hold=gPad;
 	free_hist=(TH1*)full->Clone(("free_hist"+suffix).c_str());
 	free_hist->SetLineColor(kRed+1);
 	
-
-	UpdateSpecBack();
-	DoAutoFit();
-	UpdateDraw();
-	DoHistogram();
+    UpdateProj();
 	
 // 	fCanvas1->GetCanvas()->cd();
 // 	if(hidebinerrors)proj->Draw("hist");else proj->Draw("");
@@ -609,6 +603,43 @@ TVirtualPad* hold=gPad;
 // 	DoHistogram();
 
 	
+gPad=hold;
+}
+
+void j_gating_frame::UpdateProj(bool DoHist){
+TVirtualPad* hold=gPad;
+
+	axis_down=0;axis_up=-1;
+
+	delete proj;
+	delete proj_flow;
+
+    proj=(TH1*)projraw->Clone(("proj"+suffix).c_str());
+    proj_flow=(TH1*)proj_flowraw->Clone(("proj_flow"+suffix).c_str());
+    
+    if(RebinFactor>1){
+        proj->Rebin(RebinFactor);
+        proj_flow->Rebin(RebinFactor);
+    }
+    
+    axis_down=1;
+	axis_up=proj->GetNbinsX();
+
+	delete selected;
+	selected=(TH1*)proj->Clone(("selected"+suffix).c_str());
+	selected->SetLineWidth(3);
+	selected->SetLineColor(2);
+
+	delete b_man;
+	b_man=(TH1*)proj->Clone(("b_man"+suffix).c_str());
+	b_man->SetLineWidth(3);
+	b_man->SetLineColor(1);
+    
+	UpdateSpecBack();
+	DoAutoFit();
+	UpdateDraw();
+	if(DoHist)DoHistogram();
+    
 gPad=hold;
 }
 
@@ -874,9 +905,9 @@ void j_gating_frame::DoHistogram(){
 	if(set_for_3D){
 		//this is needed because the 3D->2D projection method doesnt nicely fill the named histogram, instead creating a new one, where as the 2D->1D one does
 		delete gate_hist; 
-	
 	}
-	gate_hist=hist_gater_bin(gate_down,gate_up,raw_input,xyz,"gate_hist"+suffix);
+// 	gate_hist=hist_gater_bin(gate_down,gate_up,raw_input,xyz,"gate_hist"+suffix);
+	gate_hist=hist_gater_bin((gate_down-1)*RebinFactor+1,gate_up*RebinFactor,raw_input,xyz,"gate_hist"+suffix);
 	gate_hist->SetLineColor(1);
 	gate_hist->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
 	
@@ -897,6 +928,8 @@ void j_gating_frame::DoHistogram(){
 				}
 				if(compton_offset>proj->GetNbinsX())compton_offset=proj->GetNbinsX();
 				
+                compton_offset=(compton_offset-1)*RebinFactor+1;
+                
 				TH1* compton_hist=hist_gater_bin(compton_offset,raw_input,xyz,"c_gate");
 				scaled_back_subtract(gate_hist,compton_hist,backfrack,output_hist_point,backfrackfrac);
 				delete compton_hist;
@@ -923,7 +956,8 @@ void j_gating_frame::DoHistogram(){
 		default://manual
 			{				
 				
-				TH1* manb_hist=hist_gater_bin(m_back_down,m_back_up,raw_input,xyz,"m_gate_2d");
+// 				TH1* manb_hist=hist_gater_bin(m_back_down,m_back_up,raw_input,xyz,"m_gate_2d");
+				TH1* manb_hist=hist_gater_bin((m_back_down-1)*RebinFactor+1,m_back_up*RebinFactor,raw_input,xyz,"m_gate_2d");
 				if(gate_down>m_back_down&&gate_up<m_back_up)manb_hist->Add(gate_hist,-1);//In special case remove the gated part
 				manb_hist->Sumw2(kFALSE);
 				scaled_back_subtract(gate_hist,manb_hist,backfrack,output_hist_point,backfrackfrac);
@@ -981,3 +1015,15 @@ void j_gating_frame::UpdateDraw(bool overlay){
 	gPad=hold;
 }
 
+
+void j_gating_frame::RebinPlus(){
+    RebinFactor++;
+    UpdateProj(!set_for_3D);
+}
+
+void j_gating_frame::RebinMinus(){
+    if(RebinFactor>1){
+        RebinFactor--;
+        UpdateProj(!set_for_3D);
+    }
+}

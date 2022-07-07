@@ -754,7 +754,7 @@ void j_gating_select_frame::DoHistogram(){
 	
 	SubtractGateFromBack=false;
 
-    // Note thw "Full" projection used to make full and anti includes the overflow but excludes the underflow bin
+    // Note the "Full" projection used to make full and anti includes the overflow but excludes the underflow bin
     // This is an intentional choice as often intentionally zeroed data may be sorted into the underflow bin
     // The underflow bin can be selected with manual sliders
 	switch (background_mode) {
