@@ -102,19 +102,16 @@ TVirtualPad* hold=gPad;
     spbutton->SetToolTipText("Show Save Panel\n Open side-panel for holding gating results\n  in memory to enable on-the-fly summing.");
     
     saveframe= new TGVerticalFrame(this, 0, 0, 0); 
-    TGButtonGroup* savecontrolbut = new TGButtonGroup(saveframe,"",kHorizontalFrame);
 // 		TGButtonGroup* savecontrolbut = new TGButtonGroup(saveframe,1,2);
-    TGTextButton* plushist = new TGTextButton(savecontrolbut,"+");
-    plushist->Connect("Clicked()","jgating_tool",this,"AddStoreHistogram()");
-    plushist->SetToolTipText("Add an additional saved\n histogram slot.");
-    plushist = new TGTextButton(savecontrolbut,"DrawSum");
+    TGTextButton* plushist = new TGTextButton(saveframe,"DrawSum");
     plushist->Connect("Clicked()","jgating_tool",this,"DrawSaved()");
     plushist->SetToolTipText("Draw a sum of currently\n selected saved Histograms.");
-    savecontrolbut->Show();
+    saveframe->AddFrame(plushist,ffSpeBuf);//
     
     plushist = new TGTextButton(saveframe,"DeleteAll");
     plushist->Connect("Clicked()","jgating_tool",this,"CSaveButton()");
     plushist->SetToolTipText("Clear all locally saved\n gated histograms.");
+    saveframe->AddFrame(plushist,ffSpeBuf);//
     
     TGLabel *label = new TGLabel(saveframe, "Saved Gated\n Histograms.\n Check box\n   to sum.");
 // 		TGHorizontalFrame* inbetw= new TGHorizontalFrame(saveframe, 0, 0, 0);
@@ -122,10 +119,7 @@ TVirtualPad* hold=gPad;
     savebuttons = new TGButtonGroup(saveframe,15,2);
     savebuttons->Connect(" Clicked(Int_t)", "jgating_tool", this,"StoreHistograms(Int_t)");//Link test signal to its	
     AddStoreHistogram();
-    AddStoreHistogram();
     
-    saveframe->AddFrame(savecontrolbut,ffSpeBuf);
-    saveframe->AddFrame(plushist,ffSpeBuf);//
     saveframe->AddFrame(label,ffSpeBuf);//
     saveframe->AddFrame(savebuttons,ffCenTop);//
     
@@ -554,7 +548,7 @@ void jgating_tool::jSaveAs(){
 
 void jgating_tool::AddStoreHistogram(){
 	if(savehists.size()<15){
-		savebutton.push_back(new TGTextButton(savebuttons,"[empty]"));
+		savebutton.push_back(new TGTextButton(savebuttons,"  [save]  "));
 		
 		savebutton[savebutton.size()-1]->SetToolTipText("Save current gating\n result histogram.");
 		savechecks.push_back(new TGCheckButton(savebuttons,""));
@@ -590,6 +584,8 @@ void jgating_tool::StoreHistograms(Int_t i){
 			if(fCheck0)if(fCheck0->GetState()){ss.clear(); ss.str("");ss<<" "<<gJframe1->GateCentre<<" ";}
 			
 			savebutton[select]->SetText(ss.str().c_str());
+            
+            if(select==savebutton.size()-1)AddStoreHistogram();
 		}
 	}
 }

@@ -1,6 +1,7 @@
 #include "j_X11paste.h"
 
-#ifdef __linux__
+#if defined __APPLE__
+#elif defined __linux__
 
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>

@@ -270,7 +270,7 @@ TH2* jRootTreeCube::PerformGate(unsigned short GateAxis,int GateDown,int GateUp)
 	double Zeroz=Hist[(GateAxis+2)%3]->GetBinLowEdge(1);
 	double Widthz=Hist[(GateAxis+2)%3]->GetBinWidth(1);
 
-	TH2F* FillHist=new TH2F(FillHistNum(),"FillHist",Ny,Zeroy,Zeroy+Ny*Widthy,Nz,Zeroz,Zeroz+Nz*Widthz);
+	TH2F* FillHist=new TH2F(FillHistNum().c_str(),"FillHist",Ny,Zeroy,Zeroy+Ny*Widthy,Nz,Zeroz,Zeroz+Nz*Widthz);
 /*	
 	unsigned int GBd=Hist[GateAxis%3]->GetXaxis()->FindBin(GateDown);
 	unsigned int GBu=Hist[GateAxis%3]->GetXaxis()->FindBin(GateUp);*/

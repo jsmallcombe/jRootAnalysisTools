@@ -17,11 +17,11 @@ gROOT->ProcessLine((dir+"/data/LoadFiles.C").c_str());
 
 //Pick a script by commenting
 // dir+="/scripts/EfficiencyCurves.C";
-// dir+="/scripts/GateTest.C";
+dir+="/scripts/GateTest.C";
 // dir+="/scripts/UltraFitTest.C";
 //  dir+="/scripts/Massage.C";
 //  dir+="/scripts/gPadTest.C";
- dir+="/scripts/jEnvTest.C";    
+//  dir+="/scripts/jEnvTest.C";    
 //  dir+="/scripts/GatingSelectTest.C";  
 //  dir+="/scripts/jAngleTest.C";  
 //  dir+="/scripts/j2DPeakFitTest.C";  

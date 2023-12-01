@@ -18,10 +18,10 @@ FontStruct_t jEnv::GetFont(){
 }
 
 
-jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
+jEnv::jEnv() : TGMainFrame(gClient->GetRoot(), 1, 1,kHorizontalFrame),
     fFitPanel(0),fSpecTool(0),addsub(0),DirList(0),SameSave(0),gDrawSame(false),fTabs(0),
     fPixOffX(1),fPixOffY(33),
-    fDefaultDirWidth(200),fDefaultDirHeight(400),
+    fDefaultDirWidth(280),fDefaultDirHeight(400),
     fDefaultTabsWidth(1000),fDefaultTabsHeight(650),
     fDefaultGrabSize(140),Alternator(0)
 {
@@ -148,16 +148,20 @@ TVirtualPad* hold=gPad;
 	HideTabs();
 	HideDir();
     
-    Move(70+fDefaultDirWidth,70);
-    SetWMPosition(70+fDefaultDirWidth, 70);	
+////////  Not sure why this was needed, seems to be working without it
+//     Move(70+fDefaultDirWidth,70);
+//     SetWMPosition(70+fDefaultDirWidth, 70);	
     
-#if __linux__
-    // An extra small offset due to window bar
-    // There is probably a more sophisticated way of dealing with this 
-    Window_t wdummy;
-    gVirtualX->TranslateCoordinates(GetId(),GetParent()->GetId(),0,0,fPixOffX,fPixOffY,wdummy);
-    if(!fPixOffY)fPixOffY=33;
-#endif
+// #if __APPLE__
+// #elif __linux__
+//     ////////  Not sure why this was needed, seems to be working without it
+//     ///////
+//     // An extra small offset due to window bar
+//     // There is probably a more sophisticated way of dealing with this 
+// //     Window_t wdummy;
+// //     gVirtualX->TranslateCoordinates(GetId(),GetParent()->GetId(),0,0,fPixOffX,fPixOffY,wdummy);
+// //     if(!fPixOffY)fPixOffY=33;
+// #endif
 
     //// Connect the various TObject grabbing systems
     //// If the jDirList has a new selection this is passed to the CCframe to update it's graphics and reference
@@ -329,14 +333,14 @@ void jEnv::ShowHideTabs(){if(!fTabs)return;
 
 void jEnv::ShowTabs(){
 	ShowFrame(fTabs);
-	fTabs->Resize(fDefaultTabsWidth, fDefaultTabsHeight);
+	fTabs->Resize(fDefaultTabsWidth, fDefaultTabsHeight);//Needed as the actual space occupied by the elements of fTabs is smaller than we want
 	Resize(this->GetDefaultSize());
 	gClient->NeedRedraw(this);
 }
 
 void jEnv::HideTabs(){
 	HideFrame(fTabs);
-	DirList->Resize(fDefaultDirWidth,fDefaultDirHeight);
+	DirList->Resize(fDefaultDirWidth,fDefaultDirHeight);//Not actually needed because who cares if it stays a bit big
 	Resize(this->GetDefaultSize());
 	gClient->NeedRedraw(this);
 }
@@ -389,19 +393,20 @@ void jEnv::ShowHideDir(){if(!DirList)return;
 
 void jEnv::ShowDir(){
     int tW=fTabs->GetWidth(),tH=fTabs->GetHeight();
-	DirList->Resize(fDefaultDirWidth,fDefaultDirHeight);
 	ShowFrame(DirList);
+	DirList->Resize(fDefaultDirWidth,fDefaultDirHeight);
 	fTabs->Resize(tW, tH);
 	Resize(this->GetDefaultSize());
 	gClient->NeedRedraw(this);
 
-#if __linux__
-    int x,y;
-    Window_t wdummy;
-    gVirtualX->TranslateCoordinates(GetId(),GetParent()->GetId(),0,0,x,y,wdummy);
-    Move(x-fDefaultDirWidth-8-fPixOffX,y-fPixOffY);
-    SetWMPosition(x-fDefaultDirWidth-8-fPixOffX,y-fPixOffY);
-#endif
+///// This moved the left edge so DirList open to the side but it wasnt needed
+// #if __linux__
+//     int x,y;
+//     Window_t wdummy;
+//     gVirtualX->TranslateCoordinates(GetId(),GetParent()->GetId(),0,0,x,y,wdummy);
+//     Move(x-fDefaultDirWidth-8-fPixOffX,y-fPixOffY);
+//     SetWMPosition(x-fDefaultDirWidth-8-fPixOffX,y-fPixOffY);
+// #endif
 }
 
 void jEnv::HideDir(){
@@ -411,13 +416,14 @@ void jEnv::HideDir(){
 	Resize(this->GetDefaultSize());
 	gClient->NeedRedraw(this);
     
-#if __linux__
-    int x,y;
-    Window_t wdummy;
-    gVirtualX->TranslateCoordinates(GetId(),GetParent()->GetId(),0,0,x,y,wdummy);
-    Move(x+fDefaultDirWidth+8-fPixOffX,y-fPixOffY);
-    SetWMPosition(x+fDefaultDirWidth+8-fPixOffX,y-fPixOffY);
-#endif
+///// This moved the left edge so DirList open to the side but it wasnt needed
+// #if __linux__
+//     int x,y;
+//     Window_t wdummy;
+//     gVirtualX->TranslateCoordinates(GetId(),GetParent()->GetId(),0,0,x,y,wdummy);
+//     Move(x+fDefaultDirWidth+8-fPixOffX,y-fPixOffY);
+//     SetWMPosition(x+fDefaultDirWidth+8-fPixOffX,y-fPixOffY);
+// #endif
 }
 
 void jEnv::NewDirObject(TObject* obj){

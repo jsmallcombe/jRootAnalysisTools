@@ -63,11 +63,11 @@ private:
 
 	EDataType GetEDataType(string typestring);
 	
-	const char* FillHistNum(){
+	string FillHistNum(){
 		stringstream ss;
 		ss<<"FillHist"<<jRootTreeCube_iterator;
 		jRootTreeCube_iterator++;
-		return ss.str().c_str();
+		return ss.str();
 	}
 	
 public:	
