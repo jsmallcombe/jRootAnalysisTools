@@ -44,8 +44,12 @@ TVirtualPad* hold=gPad;
 	}
 		
 	char* FrameReNamChar=new char[128];
-	if(gGlobalAskWindowName)new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",input->GetName(),FrameReNamChar);
-	string FrameReNamStr=FrameReNamChar;
+    string FrameReNamStr;
+	if(gGlobalAskWindowName){
+        new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",input->GetName(),FrameReNamChar);
+        FrameReNamStr=FrameReNamChar;
+    }
+    
 	if(FrameReNamStr.size()){
 		SetWindowName(FrameReNamStr.c_str());	
 	}else{
