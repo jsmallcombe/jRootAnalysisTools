@@ -81,9 +81,6 @@ private:
 	
 	TH1* fInputStore;
     
-    TFile* fOriginFile;
-    bool fFileOwner;
-    
     double x1,x2,y1,y2;
     
     bool RangeUpdateHold;
@@ -114,9 +111,6 @@ public:
     
 	void ResetRange();
     void ButtonGroupDoUpdate(Int_t i);
-    
-    TFile* GetOriginFile(){return fOriginFile;}
-    void SetFileOwner();
     
     void Closed(TObject* obj){
         Emit("Closed(TObject*)", (Long_t)obj);

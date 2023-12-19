@@ -200,6 +200,7 @@ private:
     TObject* GetObject(TGListTreeItem*);
     void AddTDir(TGListTreeItem* item, TDirectory* dir);
     void ProcessRootFileObject(TGListTreeItem* item);
+    vector<std::shared_ptr<TFile>>FileOwnership;
 
 public:
 	ClassDef(jDirList, 1)

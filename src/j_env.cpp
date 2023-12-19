@@ -1,5 +1,4 @@
 #include "j_env.h"
-#include "j_filecustodian.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,7 +180,7 @@ gPad=hold;
 void jEnv::Terminate(){
     FreeObjects.SetOwner();//Will delete list objects irrespective of kCanDelete
     delete this;
-    delete gChiefCustodian;//Closes any open files
+//     delete gChiefCustodian;// For simplicity got rig of custodian class, files no longer closed manually, meh.
     gApplication->Terminate(0);
 }
 
@@ -201,10 +200,14 @@ void jEnv::ClearFreeObjects(){
 }
 
 void jEnv::AddFreeObject(TObject* obj,bool CanDelete){
-    
-    // See j_filecustodian.cpp for more details of cast options
+
+    //The dynamic cast is crucial here apparently 
     dynamic_cast<TQObject*>(obj)->Connect("Closed(TObject*)","jEnv", this,"ClosedObject(TObject*)");
-   
+    //TQObject::Connect(dynamic_cast<TQObject*>(obj)->Connect("Closed(TObject*)","jEnv", this,"ClosedObject(TObject*)");
+    
+    // This would link ALL of the class
+    // TQObject::Connect(obj->ClassName(),"Closed(TObject*)","jEnv", this,"ClosedObject(TObject*)");
+    
     // Sets if it is allowed to be deleted by TLists it is added to
     if(CanDelete)obj->SetBit(kCanDelete,kTRUE);
     else obj->SetBit(kCanDelete,kFALSE);

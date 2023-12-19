@@ -8,7 +8,6 @@
 
 #include "j_gating_tool.h"
 #include "j_gpad_tools.h"
-#include "j_filecustodian.h"
 
 bool gGlobalAskWindowName=false;
 void SetGlobalAskWindowName(bool set){
@@ -22,7 +21,7 @@ int jgating_tool::jgating_tool_iterator = 0;
 
 jgating_tool::jgating_tool(const char * input) : jgating_tool(gROOT->FindObject(input)){}
 
-jgating_tool::jgating_tool(TObject* input,bool Owner) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame) ,gJframe1(0),fCheck0(0),fCheck1(0),fFitFcn(0),peaknumremove(0),fTip(0),fFitPanel(0),fInputStore(0),fOriginFile(0),fFileOwner(0),x1(1),x2(-1),y1(1),y2(-1),RangeUpdateHold(1){
+jgating_tool::jgating_tool(TObject* input,bool Owner) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame) ,gJframe1(0),fCheck0(0),fCheck1(0),fFitFcn(0),peaknumremove(0),fTip(0),fFitPanel(0),fInputStore(0),x1(1),x2(-1),y1(1),y2(-1),RangeUpdateHold(1){
 TVirtualPad* hold=gPad;
     ResetRange();
 
@@ -57,15 +56,9 @@ TVirtualPad* hold=gPad;
 	}
 	
     TH1* pass=(TH1*)input;
-    TDirectory* hdir=pass->GetDirectory();
-    if(hdir){
-                fOriginFile=hdir->GetFile();
-                if(fOriginFile&&Owner){
-                    SetFileOwner();
-                }
-    }
-    if(!Bthree&&!fFileOwner){
-        // If no (owned) TFile make a local copy of TH2
+
+    if(!Bthree){
+        // Make a local copy of TH2
         // Still too intensive to do it for TH3 though.
         stringstream ss;
         ss<<"GateStoreCopy"<<make_iterator();
@@ -278,14 +271,6 @@ jgating_tool::~jgating_tool()
     
    // Clean up
     Cleanup();
-}
-
-
-void jgating_tool::SetFileOwner(){
-    fFileOwner=true;
-    if(fOriginFile){
-        gChiefCustodian->Add(this,fOriginFile);
-    }
 }
 
 //______________________________________________________________________________

@@ -1,6 +1,4 @@
 #include "j_elements.h"
-#include "j_filecustodian.h"
-
 
 CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t options,Pixel_t back):TRootEmbeddedCanvas(name,p,w,h,options,back),current(0),currentpad(0),currentcan(0),currenttrust(0){TVirtualPad* hold=gPad;
 	this->GetCanvas()->SetMargin(0,0,0,0);
@@ -585,6 +583,9 @@ jDirList::~jDirList()
    gClient->FreePicture(fIconTF);
    
     RootFileList.Clear("nodelete");
+    // Leave the files in memory in case they are being used by other objects.
+    // Got rid of complex "File custodians", TFiles can just be left open till end of runtime
+    
     Closed(this);
  
    delete fContents;
@@ -696,7 +697,6 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
         if(!Rfile->IsOpen())return;
         
         Rfile->SetBit(kCanDelete,kFALSE);
-        gChiefCustodian->Add(this,Rfile);
         
         RootFileList.Add(Rfile);
         AddTDir(item,Rfile);
