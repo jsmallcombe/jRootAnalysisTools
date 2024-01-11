@@ -110,8 +110,8 @@ TCanvas* DrawPeakClickerCanvas(TH1* hist,bool HideErrors=true,bool copy=false);
 TH1* DrawHistOpt(TH1* hist,bool HideErrors=false,bool Copy=false,bool Same=false);
 TH1* DrawCopyHistOpt(TH1* hist,bool HideErrors=true);
 
-TGraph* DrawGraphOpt(TGraph* hist,bool Copy=false,bool Same=false);
-TGraph* DrawCopyGraphOpt(TGraph* hist);
+TGraph* DrawGraphOpt(TGraph* hist,bool Copy=false,bool Same=false,bool Point=false);
+TGraph* DrawCopyGraphOpt(TGraph* hist,bool point=false);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

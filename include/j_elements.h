@@ -172,6 +172,7 @@ protected:
    const TGPicture  *fIconGr;
    const TGPicture  *fIconMGr;
    const TGPicture  *fIconTF;
+   const TGPicture  *fIconCan;
    TList RootFileList;
    
    TString DirName(TGListTreeItem* item);
@@ -189,6 +190,8 @@ public:
         Emit("Closed(TObject*)", (Long_t)obj);
     }
    
+    bool FindAndOpen(TString fname);
+    
 private:
     void OpenClose(TGListTreeItem* item);
     void UseItem(TGListTreeItem* item);
@@ -200,8 +203,7 @@ private:
     TObject* GetObject(TGListTreeItem*);
     void AddTDir(TGListTreeItem* item, TDirectory* dir);
     void ProcessRootFileObject(TGListTreeItem* item);
-    vector<std::shared_ptr<TFile>>FileOwnership;
-
+    
 public:
 	ClassDef(jDirList, 1)
     

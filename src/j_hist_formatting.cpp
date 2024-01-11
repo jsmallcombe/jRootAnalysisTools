@@ -548,11 +548,11 @@ TH1* DrawCopyHistOpt(TH1* hist,bool HideErrors){
 
 ///////
 
-TGraph* DrawGraphOpt(TGraph* graph,bool Copy,bool Same){
+TGraph* DrawGraphOpt(TGraph* graph,bool Copy,bool Same,bool Point){
 	if(!graph)return 0;
     
     string opt="l";
-    if(graph->IsA()->InheritsFrom(TGraphErrors::Class())){
+    if(Point||graph->IsA()->InheritsFrom(TGraphErrors::Class())){
         opt="p";
     }else{
         graph->Sort();
@@ -574,13 +574,13 @@ TGraph* DrawGraphOpt(TGraph* graph,bool Copy,bool Same){
         g=(TGraph*)graph->DrawClone(opt.c_str());
     }
     
-    if(!Same)hformat(g->GetHistogram());
+    if(!Same)hformat(g->GetHistogram(),false);
         
     return g;
 }
 
-TGraph* DrawCopyGraphOpt(TGraph* graph){
-    return DrawGraphOpt(graph,true,false);
+TGraph* DrawCopyGraphOpt(TGraph* graph,bool point){
+    return DrawGraphOpt(graph,true,false,point);
 }
 
 

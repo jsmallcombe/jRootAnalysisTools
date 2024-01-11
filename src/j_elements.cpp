@@ -67,7 +67,7 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,bool Trust){
 		
 		//Drawing Options
 			if(HType(fH)){
-                if(HType(fH)==3 || (HType(fH)==2&&(((TH1*)fH)->GetNbinsX()>1024||((TH1*)fH)->GetNbinsY()>1024))){
+                if(HType(fH)==3 || (HType(fH)==2&&(((TH1*)fH)->GetNbinsX()*((TH1*)fH)->GetNbinsY()>1000000))){
                     this->GetCanvas()->Clear();
                     TText t;
                     t.SetTextAlign(22);
@@ -536,6 +536,8 @@ jDirList::jDirList(const TGWindow* p, UInt_t w, UInt_t h, UInt_t options):TGComp
 // fIconGr = gClient->GetPicture("profile_t.xpm");
    fIconMGr = gClient->GetPicture("selection_t.xpm");
    fIconTF = gClient->GetPicture("f1_t.xpm");
+   fIconCan = gClient->GetPicture("newcanvas.xpm");
+
 
    // use hierarchical cleaning
    SetCleanup(kDeepCleanup);
@@ -581,6 +583,7 @@ jDirList::~jDirList()
    gClient->FreePicture(fIconGr);
    gClient->FreePicture(fIconMGr);
    gClient->FreePicture(fIconTF);
+   gClient->FreePicture(fIconCan);
    
     RootFileList.Clear("nodelete");
     // Leave the files in memory in case they are being used by other objects.
@@ -679,11 +682,11 @@ void jDirList::ProcessSystemDir(TList *files,TGListTreeItem* item){
 }
    
 void jDirList::ProcessRootFileObject(TGListTreeItem* item){
-    //Either TFile, TDirectory or TObject
+    // Either TFile, TDirectory or TObject
    
     TString TSitem(item->GetText());
 
-    //If its a root file 
+    // If its a root file 
     if(TSitem.EndsWith(".root")){
         if((Bool_t)item->GetUserData()){
             OpenClose(item);
@@ -759,6 +762,10 @@ void jDirList::AddTDir(TGListTreeItem* item, TDirectory* dir){
 				continue;
 			default :
 				break;
+		}
+		
+		if(gROOT->GetClass(key->GetClassName())->InheritsFrom(TCanvas::Class())){
+			fContents->AddItem(item,key->GetName(),fIconGr,fIconCan);
 		}
             
 		if(gROOT->GetClass(key->GetClassName())->InheritsFrom(TGraph::Class())){
@@ -861,4 +868,53 @@ void jDirList::NewObject(TObject *obj)
     Emit("NewObject(TObject*)", (Long_t)obj);
  }
 
+ 
+ 
+bool jDirList::FindAndOpen(TString fname){
+    // Lots of manual parsing based on linux, not made windows compatible :(
+    
+        if(fname.BeginsWith(".."))return false; //Our directories dont support upward refence.
+        
+        TGListTreeItem* TopItem=fContents->GetFirstItem(); // This is always system directory, as set in jDirList::jDirList()
+        if(!fname.BeginsWith("/")){TopItem=TopItem->GetNextSibling();} // Always current directory
+        else{
+            UseItem(TopItem);//Load the system home directory, as it is not loaded by default
+            fname=fname(1,fname.Length());
+        }
+        
+        
+    
+        TString searchname;
+        if(fname.First('/')>0){ //Need to go down a level 
+            searchname=fname(0,fname.First('/'));
+            fname=fname(fname.First('/')+1,fname.Length());
+        }else{
+            searchname=fname;fname="";
+        }
+        
+        TGListTreeItem* item=TopItem->GetFirstChild();
+        while(item){
+            TString TSitem(item->GetText());
+            if(TSitem==searchname){//Correct item name
+                UseItem(item);//Load if not loaded
+                if(fname.Length()<1){ //At final piece, success! 
+                    return true;
+                }else{ // Go down one more level
+                    item=item->GetFirstChild();
+                    
+                    if(fname.First('/')>0){ //Need to go down a level 
+                        searchname=fname(0,fname.First('/'));
+                        fname=fname(fname.First('/')+1,fname.Length());
+                    }else{
+                        searchname=fname;fname="";
+                    }
+                }
+            }else{
+                item=item->GetNextSibling();
+            }
+        }
+            
+    fContents->CloseItem(fContents->GetFirstItem());//If we opend the top dir, but failed, close the top dir
+    return false;  
+}
 

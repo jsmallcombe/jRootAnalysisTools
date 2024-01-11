@@ -173,6 +173,10 @@ TVirtualPad* hold=gPad;
 // 	Connect("CloseWindow()","jEnv",this,"~jEnv()");
 	Connect("CloseWindow()","jEnv",this,"DontCallClose()");
 
+    if(gFile){
+        if(((jDirList*)DirList)->FindAndOpen(gFile->GetName()))ShowDir();
+    }
+    
 gPad=hold;
 }
 
@@ -436,7 +440,8 @@ void jEnv::NewDirObject(TObject* obj){
         TCanvas* Can=AddCanvasTab(obj->GetName());
         Can->cd();
 		gPad->Update();
-        DrawCopyGraphOpt((TGraph*)obj);
+        DrawCopyGraphOpt((TGraph*)obj,Alternator);
+        Alternator=!Alternator;
 	}	
 	    
 	if(obj->IsA()==TMultiGraph::Class()){
@@ -455,6 +460,9 @@ void jEnv::NewDirObject(TObject* obj){
         ((TF1*)obj)->DrawCopy();
 	}		
 	
+	if(obj->IsA()->InheritsFrom(TCanvas::Class())){
+        ((TCanvas*)obj)->Draw();
+	}		
 }
 
 void jEnv::NewCanvasObject(TObject* obj){
