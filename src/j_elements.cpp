@@ -537,6 +537,7 @@ jDirList::jDirList(const TGWindow* p, UInt_t w, UInt_t h, UInt_t options):TGComp
    fIconMGr = gClient->GetPicture("selection_t.xpm");
    fIconTF = gClient->GetPicture("f1_t.xpm");
    fIconCan = gClient->GetPicture("newcanvas.xpm");
+   fIconTree = gClient->GetPicture("tree_t.xpm");
 
 
    // use hierarchical cleaning
@@ -584,6 +585,7 @@ jDirList::~jDirList()
    gClient->FreePicture(fIconMGr);
    gClient->FreePicture(fIconTF);
    gClient->FreePicture(fIconCan);
+   gClient->FreePicture(fIconTree);
    
     RootFileList.Clear("nodelete");
     // Leave the files in memory in case they are being used by other objects.
@@ -711,7 +713,14 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
     TKey *key=GetKey(item);
     
     if(key){
-        if (key->IsFolder()) {
+        
+        bool IsTree=false;
+		TClass* tCl=gROOT->GetClass(key->GetClassName());
+        if(tCl!=nullptr){
+            if(tCl->InheritsFrom(TTree::Class())){IsTree=true;}
+        }
+        
+		if (key->IsFolder()&&!IsTree) { //Because TTrees are technically folders (but we dont want to interact with that way
             if((Bool_t)item->GetUserData()){
                 OpenClose(item);
                 return;
@@ -729,7 +738,7 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
             //GetRootFile(item)->ls("-m");
             //gROOT->ls("-m");
             //GetRootFile(item)->ls("-d");
-            NewObject((TObject*)item->GetUserData());
+            NewObject((TObject*)item->GetUserData()); // Method for broadcasting an "item" has been selected
         }
     }   
 }
@@ -741,7 +750,13 @@ void jDirList::AddTDir(TGListTreeItem* item, TDirectory* dir){
     TKey *key;
     while ((key = (TKey*)next())) {
         
-		if (key->IsFolder()) {
+        bool IsTree=false;
+		TClass* tCl=gROOT->GetClass(key->GetClassName());
+        if(tCl!=nullptr){
+            if(tCl->InheritsFrom(TTree::Class())){IsTree=true;}
+        }
+        
+		if (key->IsFolder()&&!IsTree) { //Because TTrees are technically folders (but we dont want to interact with that way
             fContents->AddItem(item,key->GetName());
 			continue;
 		}
@@ -749,37 +764,38 @@ void jDirList::AddTDir(TGListTreeItem* item, TDirectory* dir){
 		////////////////////////////////////////////////////////////////////////////////////////////
 		// This section determines which TObjects will be allowed to be viewed and hence accessed //
 		////////////////////////////////////////////////////////////////////////////////////////////
-
-		switch(HistoClassDetect(gROOT->GetClass(key->GetClassName()))) {
-			case 1 :
-				fContents->AddItem(item,key->GetName(),fIconH1,fIconH1);
-				continue;
-			case 2 :
-				fContents->AddItem(item,key->GetName(),fIconH2,fIconH2);
-				continue;
-			case 3 :
-				fContents->AddItem(item,key->GetName(),fIconH3,fIconH3);
-				continue;
-			default :
-				break;
-		}
-		
-		if(gROOT->GetClass(key->GetClassName())->InheritsFrom(TCanvas::Class())){
-			fContents->AddItem(item,key->GetName(),fIconGr,fIconCan);
-		}
+        
+        if(tCl!=nullptr){//Added to handle root files containing root-inhereted objects from other libraries not presentntly loaded 
             
-		if(gROOT->GetClass(key->GetClassName())->InheritsFrom(TGraph::Class())){
-			fContents->AddItem(item,key->GetName(),fIconGr,fIconGr);
-		}
-		
-		if(gROOT->GetClass(key->GetClassName())==TMultiGraph::Class()){
-			fContents->AddItem(item,key->GetName(),fIconMGr,fIconMGr);
-		}
-
-		if(gROOT->GetClass(key->GetClassName())->InheritsFrom(TF1::Class())){
-			fContents->AddItem(item,key->GetName(),fIconTF,fIconTF);
-		}
-		
+//             cout<<endl<<"NAME IS "<<key->GetClassName()<<endl;
+//             cout<<"NAME IS "<<tCl->Class_Name()<<endl;
+            
+            switch(HistoClassDetect(tCl)) {
+                case 1 :
+                    fContents->AddItem(item,key->GetName(),fIconH1,fIconH1);
+                    continue;
+                case 2 :
+                    fContents->AddItem(item,key->GetName(),fIconH2,fIconH2);
+                    continue;
+                case 3 :
+                    fContents->AddItem(item,key->GetName(),fIconH3,fIconH3);
+                    continue;
+                default :
+                    break;
+            }
+            
+            if(IsTree){
+                fContents->AddItem(item,key->GetName(),fIconTree,fIconTree);
+            }if(tCl->InheritsFrom(TCanvas::Class())){
+                fContents->AddItem(item,key->GetName(),fIconCan,fIconCan);
+            }else if(tCl->InheritsFrom(TGraph::Class())){
+                fContents->AddItem(item,key->GetName(),fIconGr,fIconGr);
+            }else if(tCl==TMultiGraph::Class()){
+                fContents->AddItem(item,key->GetName(),fIconMGr,fIconMGr);
+            }else if(tCl->InheritsFrom(TF1::Class())){
+                fContents->AddItem(item,key->GetName(),fIconTF,fIconTF);
+            }
+        }
     }
         
     // Use *UserData* to indicate that item was already browsed

@@ -30,6 +30,7 @@
 #include <TStopwatch.h>
 #include <TApplication.h>
 #include <TGTab.h>
+#include <TTreeViewer.h>
 
 #include "j_utility.h"
 #include "j_ultrafit_env.h"

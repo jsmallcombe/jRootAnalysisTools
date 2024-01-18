@@ -8,7 +8,8 @@
 
 ROOT_LIBS = $(shell root-config --glibs)
 ROOT_GCC_FLAGS = $(shell root-config --cflags)
-ROOT_LIBSEXTRA = -lSpectrum -lMinuit
+ROOT_LIBSEXTRA = -lSpectrum -lMinuit -lTreeViewer -lROOTTreeViewer
+### library will compile an work 99.9% without TreeViewer ROOTTreeViewer
 # -lX11
 
 J_LIB = $(shell pwd)

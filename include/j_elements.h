@@ -173,6 +173,7 @@ protected:
    const TGPicture  *fIconMGr;
    const TGPicture  *fIconTF;
    const TGPicture  *fIconCan;
+   const TGPicture  *fIconTree;
    TList RootFileList;
    
    TString DirName(TGListTreeItem* item);

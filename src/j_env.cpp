@@ -1,6 +1,5 @@
 #include "j_env.h"
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 FontStruct_t jEnv::GetFont(){
@@ -442,6 +441,7 @@ void jEnv::NewDirObject(TObject* obj){
 		gPad->Update();
         DrawCopyGraphOpt((TGraph*)obj,Alternator);
         Alternator=!Alternator;
+        return;
 	}	
 	    
 	if(obj->IsA()==TMultiGraph::Class()){
@@ -451,6 +451,7 @@ void jEnv::NewDirObject(TObject* obj){
         if(Alternator)((TMultiGraph*)obj)->DrawClone("al");
         else ((TMultiGraph*)obj)->DrawClone("ap");
         Alternator=!Alternator;
+        return;
 	}	
 	
 	if(obj->IsA()->InheritsFrom(TF1::Class())){
@@ -458,10 +459,17 @@ void jEnv::NewDirObject(TObject* obj){
         Can->cd();
 		gPad->Update();
         ((TF1*)obj)->DrawCopy();
+        return;
 	}		
 	
 	if(obj->IsA()->InheritsFrom(TCanvas::Class())){
         ((TCanvas*)obj)->Draw();
+        return;
+	}
+	
+	if(obj->IsA()->InheritsFrom(TTree::Class())){
+        new TTreeViewer((TTree*)obj);
+        return;
 	}		
 }
 

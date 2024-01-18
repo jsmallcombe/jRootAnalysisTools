@@ -445,11 +445,11 @@ int jRootTreeCube::UnsignedTypedTTreeSortBranchLoop(TH2* FillHist,
 			// Histogram are defined X-axis == (GateAxis+1)%3, Y-axis == (GateAxis+2)%3
 			// Filling here they are NOT symetric
 			if(val[0]>=GateDown && val[0]<=GateUp){
-				cout<<","<<flush;
+// 				cout<<","<<flush;
 				FillHist->AddBinContent(val[1]+NBX*val[2]);
 			}
 			if(SymBools[1])if(val[1]>=GateDown && val[1]<=GateUp){
-				cout<<"."<<flush;
+// 				cout<<"."<<flush;
 				if(val[0]>OvX)val[0]=OvX;
 				FillHist->AddBinContent(val[0]+NBX*val[2]);
 			}
