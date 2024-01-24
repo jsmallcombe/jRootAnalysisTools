@@ -1,5 +1,96 @@
 #include "j_hist_formatting.h"
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Font_t gGlobalMainFont=42; //Text font code = 10*fontnumber + precision   4 = Helvetica 
+// Font_t gGlobalMainFont=22; //Text font code = 10*fontnumber + precision   2 = Times-Bold 
+///// bold-type carries over to pdf_latex
+Font_t gGlobalMainFont=132; //Text font code = 10*fontnumber + precision   2 = Times
+
+// Prepare Canvases for export as svg and subsequent conversion to pdf_latex
+// The axis labes/titles alignments tend to be off if left to TAxis
+
+void QuickReTexAxis(TH1* h,double x ,double y){
+	ReTexAxisLab(h,x);
+	ReTexAxisLab(h,y,true);
+	ReTexAxisTitle(h);
+	ReTexAxisTitle(h,"",true);
+}
+
+void ReTexAxisLab(TH1* h,double step,bool y){
+    
+    // 	double min=h->GetMinimum();
+// 	double max=h->GetMaximum();
+	gPad->Update();
+    double min=gPad->GetFrame()->GetY1();
+	double max=gPad->GetFrame()->GetY2();
+
+	
+	TAxis* X=h->GetXaxis();
+	if(y)h->GetYaxis()->SetLabelSize(0);
+	else X->SetLabelSize(0);
+	
+	double minx=X->GetBinLowEdge(X->GetFirst());
+	double maxx=X->GetBinUpEdge(X->GetLast());
+	
+	double xx=ceil(minx/step)*step;
+	if(y)xx=ceil(min/step)*step;
+	
+	TText *text= new TText();
+	text->SetTextFont(gGlobalMainFont);
+	text->SetTextAlign(23);
+	if(y)text->SetTextAlign(32);
+	   
+	double last=maxx;
+	if(y)last=max;
+	
+	while(xx<=last){
+		
+        if(xx==0)xx=0;//Looks dumb but had issues with "-0"
+		stringstream ss;
+		ss<<xx;
+		if(y) text->DrawText(minx-(maxx-minx)*0.02,xx,ss.str().c_str());
+		else text->DrawText(xx,min-(max-min)*0.03,ss.str().c_str());
+		
+		xx+=step;
+	}
+}
+
+void ReTexAxisTitle(TH1* h,string title,bool y,double offset){
+
+	double	a=gPad->GetLeftMargin();
+	double	b=gPad->GetRightMargin();
+	if(y){
+		a=gPad->GetBottomMargin();
+		b=gPad->GetTopMargin();
+	}
+
+	TAxis* X=h->GetXaxis();
+	if(y)h->GetYaxis()->SetTitleSize(0);
+	else X->SetTitleSize(0);
+	
+
+	TText *text= new TText();
+	text->SetTextFont(gGlobalMainFont);
+	
+	text->SetTextAlign(21);
+	if(y){text->SetTextAngle(90);text->SetTextAlign(23);}
+
+	if(title.size()<1){
+		title=X->GetTitle();
+		if(y) title=h->GetYaxis()->GetTitle();
+	}
+	
+	if(y) text->DrawTextNDC(offset,a+(1-b-a)*0.5,title.c_str());
+	else text->DrawTextNDC(a+(1-b-a)*0.5,offset,title.c_str());
+
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 void invert(TH1* h){
    TH1* tmpclone=(TH1*)h->Clone("tmpclone");
    h->Reset();
@@ -81,9 +172,9 @@ void hformat(TH1* HH,bool setminzero){if(!HH)return;
 	axislab(HH,ax[0]->GetTitle(),ax[1]->GetTitle(),ax[2]->GetTitle());//slightly redundant
 	for(int i=0;i<3;i++){
 		ax[i]->SetTicks("+-");
-		ax[i]->SetLabelFont(22);
+		ax[i]->SetLabelFont(gGlobalMainFont);
 		ax[i]->SetLabelSize(0.045);
-		ax[i]->SetTitleFont(22);
+		ax[i]->SetTitleFont(gGlobalMainFont);
 		ax[i]->SetTitleSize(0.06);
 		ax[i]->SetTitleOffset(1.1);
 		ax[i]->SetTickLength(0.015);
@@ -207,7 +298,7 @@ void draw_corrected_titles(TH1* hist){
 	
 	TLatex *latex= new TLatex();
 	latex->SetTextSize(0.06);
-	latex->SetTextFont(22);
+	latex->SetTextFont(gGlobalMainFont);
 	latex->SetTextAlign(22);
 	latex->SetTextAngle(90);
 	latex->DrawLatexNDC(0.04,0.55,hist->GetYaxis()->GetTitle());
@@ -327,7 +418,7 @@ TCanvas* draw_electron_gamma(TH1* electron,TH1* gamma){
 	
 	TLatex *latex= new TLatex();
 	latex->SetTextSize(0.05);
-	latex->SetTextFont(22);
+	latex->SetTextFont(gGlobalMainFont);
 	latex->SetTextAngle(0);
 	latex->SetTextAlign(32);
 	latex->DrawLatexNDC(0.93,0.9,"#gamma rays");
@@ -446,7 +537,7 @@ void AddPeakLabel(double E,bool exact,string text,TVirtualPad* pad,TH1* hist,TVi
 	
 	TLatex* latex=new TLatex();
 	latex->SetTextSize(0.045);
-	latex->SetTextFont(22);
+	latex->SetTextFont(gGlobalMainFont);
 	latex->SetTextAlign(12);
 
 	TMarker mark;

@@ -31,12 +31,27 @@
 #include <TRootEmbeddedCanvas.h>
 #include <TSystem.h>
 #include <TFrame.h>
+#include <RtypesCore.h>
 
 #include "j_gpad_tools.h"
 #include "j_fitting.h"
 
 
 using namespace std;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Prepare Canvases for export as svg and subsequent conversion to pdf_latex
+// The axis labes/titles alignments tend to be off if left to TAxis
+
+void QuickReTexAxis(TH1* h,double stepx,double stepy);
+
+void ReTexAxisLab(TH1* h,double step,bool y=false);
+
+void ReTexAxisTitle(TH1* h,string title="",bool y=false,double offset=0.01);
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Invert a histogram about its central bin, useful for certain fitting functions
 void invert(TH1*);
@@ -130,5 +145,6 @@ extern bool gGlobalNegativeDraw;
 extern Color_t gGlobalBackColor;
 extern Color_t gGlobalForeColor;
 
+extern Font_t gGlobalMainFont;
 
 #endif // #ifdef jameshistfor_h
