@@ -43,13 +43,15 @@ using namespace std;
 
 // Prepare Canvases for export as svg and subsequent conversion to pdf_latex
 // The axis labes/titles alignments tend to be off if left to TAxis
+// Should already be in the pad with a drawn histrogram to run these
 
-void QuickReTexAxis(TH1* h,double stepx,double stepy);
+void QuickReTexAxis(TH1* h,double stepx=0,double stepy=0);
 
-void ReTexAxisLab(TH1* h,double step,bool y=false);
+void ReTexAxisLab(TH1* h,double step=0,bool y=false,bool flipY=false,bool noExpt=false);
 
 void ReTexAxisTitle(TH1* h,string title="",bool y=false,double offset=0.01);
 
+void DrawSharedTitle(string title,bool y=false,double offset=0.01);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -81,7 +83,7 @@ void ReMargin(TVirtualPad*);
 //Can create multiple layered transparent pads
 TCanvas* preapre_canvas(unsigned int n=1,bool heightset=false);
 
-//Title of hist are replaced with formatted text boxes drawn in current pad
+//Title of hist are replaced with formatted text boxes drawn in current canvas
 void draw_corrected_titles(TH1* hist);
 
 //Apply hformat  & preapre_canvas

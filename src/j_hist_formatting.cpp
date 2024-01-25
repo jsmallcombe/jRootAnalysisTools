@@ -18,42 +18,108 @@ void QuickReTexAxis(TH1* h,double x ,double y){
 	ReTexAxisTitle(h,"",true);
 }
 
-void ReTexAxisLab(TH1* h,double step,bool y){
-    
-    // 	double min=h->GetMinimum();
-// 	double max=h->GetMaximum();
-	gPad->Update();
-    double min=gPad->GetFrame()->GetY1();
-	double max=gPad->GetFrame()->GetY2();
 
+void ReTexAxisLab(TH1* h,double step,bool y,bool flipY,bool noExpt){
 	
-	TAxis* X=h->GetXaxis();
+	gPad->Update();
+	
+	bool lx=gPad->GetLogx();
+	bool ly=gPad->GetLogy();
+	bool IsLog=((lx&&!y)||(ly&&y));
+	if(IsLog){step=1;}
+	
+	double xrange=abs(gPad->GetX2()-gPad->GetX1()); //Canvas/window NOT AXIS
+	double yrange=abs(gPad->GetY2()-gPad->GetY1());
+    double Ymin=gPad->GetFrame()->GetY1();
+	double Ymax=gPad->GetFrame()->GetY2();
+    double Xmin=gPad->GetFrame()->GetX1();
+	double Xmax=gPad->GetFrame()->GetX2();
+	
+	// If no step input (and not log) default to 5 ish divisions rounded to nearest 10
+	if(step<=0){
+		double range=(Xmax-Xmin)*0.4;
+		if(y)range=(Ymax-Ymin)*0.4;
+		double mag=pow(10,floor(log10(range)));
+		step=floor(range/mag)*mag*0.5;
+	}
+	
+	// Determine if an exponanty should be used
+	bool Expt=(step>=5000)&&!noExpt&&!IsLog;
+	int Expt10 =floor(log10(step)/3)*3;
+	int Div=1;
+	if(Expt){
+		Div =pow(10,Expt10);
+	}
+
+	// Note:: Using GetY1 etc on Frame OR on gPad-directly, give range in user coords of axis-area OR entire-canvas respectively.
+	// Note:: Also, GetFrame()->GetY2() == GetUymax()
+
+	double xx=ceil(Xmin/step)*step;
+	if(y)xx=ceil(Ymin/step)*step;
+
 	if(y)h->GetYaxis()->SetLabelSize(0);
-	else X->SetLabelSize(0);
-	
-	double minx=X->GetBinLowEdge(X->GetFirst());
-	double maxx=X->GetBinUpEdge(X->GetLast());
-	
-	double xx=ceil(minx/step)*step;
-	if(y)xx=ceil(min/step)*step;
+	else h->GetXaxis()->SetLabelSize(0);
 	
 	TText *text= new TText();
 	text->SetTextFont(gGlobalMainFont);
 	text->SetTextAlign(23);
-	if(y)text->SetTextAlign(32);
-	   
-	double last=maxx;
-	if(y)last=max;
+	if(y){
+		text->SetTextAlign(32);
+		if(flipY)text->SetTextAlign(12);
+	}
+
+	double last=Xmax;
+	if(y)last=Ymax;
 	
 	while(xx<=last){
-		
         if(xx==0)xx=0;//Looks dumb but had issues with "-0"
 		stringstream ss;
-		ss<<xx;
-		if(y) text->DrawText(minx-(maxx-minx)*0.02,xx,ss.str().c_str());
-		else text->DrawText(xx,min-(max-min)*0.03,ss.str().c_str());
+		if(IsLog){
+			ss<<"10$^{"<<xx<<"}$";
+		}else{
+			ss<<xx/Div;
+		}
 		
+		double px=xx;
+		double py=Ymin-yrange*0.02;
+		
+		if(y){
+			py=xx;
+			px=Xmin-xrange*0.015;
+			if(flipY){
+				px=Xmax+xrange*0.015;
+			}
+		}
+		
+		// While the GetY1 etc return "value is in decades" the Draw command requires absolute value
+		if(lx)px=pow(10,px);
+		if(ly)py=pow(10,py);
+		
+		text->DrawText(px,py,ss.str().c_str());
+
 		xx+=step;
+	}
+	
+	if(Expt){
+		stringstream ss;
+		ss<<"$\\times$10$^{"<<Expt10<<"}$";
+		
+		text->SetTextAlign(11);
+		double px=Xmax+xrange*0.01;
+		double py=Ymin;
+		if(y){
+			px=Xmin;
+			py=Ymax+yrange*0.01;
+			if(flipY){
+				text->SetTextAlign(31);
+				px=Xmax;
+			}
+		}
+		
+		if(lx)px=pow(10,px);
+		if(ly)py=pow(10,py);
+		
+		text->DrawText(Xmin,Ymax+yrange*0.01,ss.str().c_str());
 	}
 }
 
@@ -87,6 +153,61 @@ void ReTexAxisTitle(TH1* h,string title,bool y,double offset){
 
 }
 
+void DrawSharedTitle(string title,bool y,double offset){
+	
+	TCanvas* canvas = dynamic_cast<TCanvas*>(gPad->GetCanvas());
+
+    if (!canvas) {
+        std::cerr << "No TCanvas found." << std::endl;
+        return;
+    }
+	
+	double	a=1;
+	double	b=1;
+	if(y){
+		a=gPad->GetBottomMargin();
+		b=gPad->GetTopMargin();
+	}
+
+	
+	// Iterate through all the pads of the canvas
+    TList* pads = canvas->GetListOfPrimitives();
+    TIter next(pads);
+    TObject* obj;
+	
+	while ((obj = next())) {
+        if (obj->InheritsFrom("TPad")) {
+            TPad* pad = dynamic_cast<TPad*>(obj);
+
+			if(y){
+				Float_t bottomMargin = pad->GetBottomMargin();
+				Float_t topMargin = pad->GetTopMargin();
+				if(a>bottomMargin){a=bottomMargin;}
+				if(b>topMargin){b=topMargin;}
+			}else{
+				Float_t leftMargin = pad->GetLeftMargin();
+				Float_t rightMargin = pad->GetRightMargin();
+				if(a>leftMargin){a=leftMargin;}
+				if(b>rightMargin){b=rightMargin;}
+				
+			}
+        }
+    }
+	
+	TText *text= new TText();
+	text->SetTextFont(gGlobalMainFont);
+	
+	if(y){
+		text->SetTextAngle(90);
+		text->SetTextAlign(23);
+		text->DrawTextNDC(offset,a+(1-b-a)*0.5,title.c_str());
+		
+	}else{
+		text->SetTextAlign(21);
+		text->DrawTextNDC(a+(1-b-a)*0.5,offset,title.c_str());
+	}
+
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -292,21 +413,12 @@ TCanvas* preapre_canvas(unsigned int n,bool heightset){
 }
 
 void draw_corrected_titles(TH1* hist){
-	
 	hist->GetXaxis()->SetTitleSize(0);
 	hist->GetYaxis()->SetTitleSize(0);	
 	
-	TLatex *latex= new TLatex();
-	latex->SetTextSize(0.06);
-	latex->SetTextFont(gGlobalMainFont);
-	latex->SetTextAlign(22);
-	latex->SetTextAngle(90);
-	latex->DrawLatexNDC(0.04,0.55,hist->GetYaxis()->GetTitle());
-	latex->SetTextAngle(0);
-	latex->DrawLatexNDC(0.55,0.05,hist->GetXaxis()->GetTitle());
-	delete latex;
+	DrawSharedTitle(hist->GetXaxis()->GetTitle());
+	DrawSharedTitle(hist->GetYaxis()->GetTitle(),true);
 }
-
 
 TCanvas* preapre_canvas_bisect(){
 	TCanvas *canv = preapre_canvas(2,true);
