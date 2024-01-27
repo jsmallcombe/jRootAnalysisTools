@@ -156,4 +156,23 @@ public:
 	ClassDef(j2DPeakFit, 0)
 };
 
+class jIntegrator : public TGMainFrame {
+
+private:
+	TRootEmbeddedCanvas *fCanvas1;
+	TH1* fHist;
+    int X1,X2;
+    double x1,x2;
+	bool first;
+public:
+	jIntegrator(TH1* fH=0);
+	virtual ~jIntegrator();
+    
+	void SetNewHist(TH1 *fH);
+    void Integrate(Int_t,Int_t,Int_t,TObject*);
+
+	ClassDef(jIntegrator,1)
+};
+
+
 #endif

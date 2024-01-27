@@ -538,8 +538,6 @@ void jAngleAngel::MakeHist(double offset){
 	ret.DrawCopy("hist");
 }
 
-
-
 ////////////////////////////////////////////////////////////////
 
 j2DPeakFit::j2DPeakFit(TH1* fH,double sig) : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),fHist(0),sigma(sig){
@@ -647,3 +645,71 @@ void j2DPeakFit::CalibrateAlpha(){
     ((TGraph*)tmp.DrawClone("al"))->Fit(lincal);
 //     tmp.Fit(lincal);
 };
+
+////////////////////////////////////////////////////////////////
+
+jIntegrator::jIntegrator(TH1* fH) : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),fHist(0),first(true){
+// TVirtualPad* hold=gPad;
+    SetWindowName("jIntegrator");
+    SetCleanup(kDeepCleanup);
+
+	fCanvas1 = new TRootEmbeddedCanvas("fit2can1",this,600,400);
+    AddFrame(fCanvas1,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 1, 1, 1, 1));
+    
+    fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jIntegrator", this,"Integrate(Int_t,Int_t,Int_t,TObject*)");
+
+	jHistCapButton *CaptureButton = new jHistCapButton(this,"    Capture Hist    ");
+	CaptureButton->Connect("NewHist(TH1*)","jIntegrator",this,"SetNewHist(TH1*)");	
+	AddFrame(CaptureButton);
+
+	MapSubwindows();
+	Resize(GetDefaultSize());
+	MapWindow();
+    
+	SetNewHist(fH);
+}
+// 
+jIntegrator::~jIntegrator(){
+    TQObject::Disconnect(this);
+}
+
+void jIntegrator::SetNewHist(TH1 *fH){
+	if(!fH)return;
+	if(!fH->InheritsFrom("TH1"))return;
+    
+    if(fHist)delete fHist;
+	fHist=(TH1*)fH->Clone("fHistInt");
+	hformat(fHist);
+
+	fCanvas1->GetCanvas()->cd();
+	fHist->Draw("col");
+	gPad->Update();
+}
+
+
+void jIntegrator::Integrate(Int_t event, Int_t px, Int_t py, TObject *selected_ob){
+
+	if(!fHist){return;}
+	if(event == kMouseLeave){return;}
+	TCanvas* Can=(TCanvas*)fCanvas1->GetCanvas();
+	
+	//Click is given in pixel coordinates
+	double x =Can->AbsPixeltoX(px);
+
+	if (event == 1){// Left click
+		if(!fHist) return;
+        if(HType(fHist)!=1) return;
+		
+		if(first){
+			X1=fHist->GetXaxis()->FindBin(x);
+			x1=x;
+			first=false;
+			return;
+		}else{
+			X2=fHist->GetXaxis()->FindBin(x);
+			x2=x;
+			first=true;
+			cout<<"Integral from "<<x1<<" ("<<X1<<") to "<<x2<<" ("<<X2<<") = "<<fHist->Integral(X1,X2)<<endl;
+		}
+	}
+}
