@@ -39,6 +39,13 @@
 
 using namespace std;
 
+extern bool gGlobalNegativeDraw;
+extern Color_t gGlobalBackColor;
+extern Color_t gGlobalForeColor;
+
+extern Font_t gGlobalMainFont;
+extern bool gGlobalDrawMenuBars;
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Prepare Canvases for export as svg and subsequent conversion to pdf_latex
@@ -81,7 +88,7 @@ void ReMargin(TVirtualPad*);
 
 //Make a Canvas with desired formatting
 //Can create multiple layered transparent pads
-TCanvas* preapre_canvas(unsigned int n=1,bool heightset=false);
+TCanvas* preapre_canvas(unsigned int n=1,bool heightset=false,bool nobar=(!gGlobalDrawMenuBars));
 
 //Title of hist are replaced with formatted text boxes drawn in current canvas
 void draw_corrected_titles(TH1* hist);
@@ -143,10 +150,6 @@ void HistogramNegative(TH1* Hist);
 void GraphNegative(TGraph* Graph);
 
 void SetGlobalNegative(bool negative=true);
-extern bool gGlobalNegativeDraw;
-extern Color_t gGlobalBackColor;
-extern Color_t gGlobalForeColor;
 
-extern Font_t gGlobalMainFont;
 
 #endif // #ifdef jameshistfor_h

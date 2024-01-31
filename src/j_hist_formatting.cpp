@@ -3,10 +3,21 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+bool gGlobalNegativeDraw=false;
+Color_t gGlobalBackColor=kWhite;
+Color_t gGlobalForeColor=kBlack;
+bool gGlobalDrawMenuBars=true;
+
+
+
+
 // Font_t gGlobalMainFont=42; //Text font code = 10*fontnumber + precision   4 = Helvetica 
 // Font_t gGlobalMainFont=22; //Text font code = 10*fontnumber + precision   2 = Times-Bold 
 ///// bold-type carries over to pdf_latex
 Font_t gGlobalMainFont=132; //Text font code = 10*fontnumber + precision   2 = Times
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Prepare Canvases for export as svg and subsequent conversion to pdf_latex
 // The axis labes/titles alignments tend to be off if left to TAxis
@@ -389,8 +400,10 @@ void ReMargin(TVirtualPad* pad){
 }
 
 static unsigned int global_canvas_iterator=0;
-TCanvas* preapre_canvas(unsigned int n,bool heightset){
-	TCanvas *canv = new TCanvas(("AutoCan"+to_string(global_canvas_iterator)).c_str(), "AutoCan",100,100,900,600);
+TCanvas* preapre_canvas(unsigned int n,bool heightset,bool nobar){
+	int dx=100;
+	if(nobar)dx=-100;
+	TCanvas *canv = new TCanvas(("AutoCan"+to_string(global_canvas_iterator)).c_str(), "AutoCan",dx,100,900,600);
 	global_canvas_iterator++;
 	canv->Divide(n);
 	double tp=0.04/n;
@@ -991,10 +1004,6 @@ void GraphNegative(TGraph* Graph){
     if(Graph->GetLineColor()==gGlobalBackColor)Graph->SetLineColor(gGlobalForeColor);
     if(Graph->GetMarkerColor()==gGlobalBackColor)Graph->SetMarkerColor(gGlobalForeColor);
 }
-
-bool gGlobalNegativeDraw=false;
-Color_t gGlobalBackColor=kWhite;
-Color_t gGlobalForeColor=kBlack;
 
 
 void SetGlobalNegative(bool negative){

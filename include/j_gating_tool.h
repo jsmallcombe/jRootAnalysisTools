@@ -86,7 +86,8 @@ private:
     bool RangeUpdateHold;
     
 	void ClearSaved();
-    std::chrono::time_point<std::chrono::system_clock> clicktime;
+	// Have to manually specify nanoseconds, or trunacte manaully to microseconds elsewhere, or mac wont compile due the system clock prevision not matching that which is assumed
+    std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> clicktime;
    
 public:
 	jgating_tool(const char *);

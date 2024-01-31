@@ -631,6 +631,8 @@ void jgating_tool::CSaveButton(){
     clicktime=std::chrono::system_clock::now();
 }
 
+
+
 void jgating_tool::NewAxisDrawn() //adjust sliders and control values for new axis
 {
 	if(fFitFcn&&fCanvas1->GetCanvas()->GetListOfPrimitives()->FindObject(peaknumremove)){

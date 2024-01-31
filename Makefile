@@ -56,6 +56,7 @@ clean:
 	rm -f $(J_LIB)/bin/build/Linkdef.h
 	rm -f $(J_LIB)/bin/*.*
 	rm -f $(J_LIB)/bin/BuildInfo
+	rm -f $(J_LIB)/include/jlibmaster.h
 	rm -f $(MINI)
 	rm -f $(TARG)
 	rm -f $(TARGB)
