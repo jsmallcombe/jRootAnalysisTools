@@ -439,7 +439,7 @@ void jEnv::NewDirObject(TObject* obj){
         TCanvas* Can=AddCanvasTab(obj->GetName());
         Can->cd();
 		gPad->Update();
-        DrawCopyGraphOpt((TGraph*)obj,Alternator);
+        DrawCopyGraphOpt((TGraph*)obj,Alternator)->SetMarkerStyle(20);
         Alternator=!Alternator;
         return;
 	}	

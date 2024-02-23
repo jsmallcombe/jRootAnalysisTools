@@ -347,7 +347,7 @@ void j_gating_select_frame::ValuesToSliders() //copy control parameters to slide
 {//cout<<"ValuesToSliders "<<flush;
 	action_hold=true;
 		fHslider1->SetPosition(fit_down,fit_up);
-		fHslider1->SetPointerPosition(target_bin);
+		fHslider1->SetPointerPosition((Double_t)target_bin);
 		fHslider2->SetPosition(gate_range);		
 // 			double over_speed=(double)gate_range/(double)(axis_up-axis_down);
 // 			if(over_speed>0.25){
