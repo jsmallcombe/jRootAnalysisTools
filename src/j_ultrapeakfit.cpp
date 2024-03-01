@@ -262,12 +262,18 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,TH1* fExHist,double fLeftUser,doubl
 	TH1* fFitHist=fHist;
 	if(fExHist)fFitHist=fExHist; // Use the bin cancelled exclusion histogram if passed
 	
+	// The new default to minuit2 caused and issue with fixed parameters in the middle of lists 
+	// Temporary fix, should probably fully embrace minuit2
+	ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit");
+	
 	// Use the bin cancelled exclusion histogram if passed
     TFitResultPtr fPreResult=fFitHist->Fit(fPre, "SRQN");
     
     Int_t FitPreStatus = fPreResult;
     if(FitPreStatus){
-        cout<<endl<<"  Initial shape fit failed! TFitResultPtr Status = "<<FitPreStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fPreResult)<<", Limits = "<<AnyParAtLimit(fPre)<<endl;
+        cout<<endl<<"  Initial shape fit failed! TFitResultPtr Status = "<<FitPreStatus<<", Limits = "<<AnyParAtLimit(fPre)<<endl;
+		// Accessing some of these things during a bad fit results caused crashes
+//         cout<<endl<<"  Initial shape fit failed! TFitResultPtr Status = "<<FitPreStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fPreResult)<<", Limits = "<<AnyParAtLimit(fPre)<<endl;
         return 0;
     }else{
         // If the git was good, get the parameters from the fit

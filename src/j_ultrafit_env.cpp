@@ -411,12 +411,12 @@ TCanvas* UltraFitEnv::GetCan(){
 		
 		ShowCanvas();
 		if(cPan)cCan=cPan->GetCanvas();//This should always be true in new version
-// 		cCan=(TCanvas*)gROOT->GetListOfCanvases()->FindObject("UltraFitCanvas");
+// 		cCan=(TCanvas*)gROOT->GetListOfCanvases()->FindObject(can_name.c_str());
 		if(cCan)return cCan;
 		
 		
-		// Create it if it doesnt exist
-		cCan=new TCanvas("UltraFitCanvas","UltraFitCanvas",800,600);
+		// Create it if it doesnt exist // This shouldnt be reached in current version
+		cCan=new TCanvas(can_name.c_str(),can_name.c_str(),800,600);
 		cCan->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "UltraFitEnv", this,"ClickedCanvas(Int_t,Int_t,Int_t,TObject*)");
 		//Make it invincible, for reasons
 // 		TRootCanvas* c=(TRootCanvas*)cCan->GetCanvasImp();
@@ -428,7 +428,7 @@ TCanvas* UltraFitEnv::GetCan(){
 void UltraFitEnv::KillCan(){
 	if(FindCan()){
 		cCan->Disconnect(0,this,0);
-// 		if(!(strcmp(cCan->GetName(),"UltraFitCanvas"))){			
+// 		if(!(strcmp(cCan->GetName(),can_name.c_str()))){			
 // 			TQObject::Disconnect((TCanvas*)cCan);
 // 			gROOT->GetListOfCanvases()->Remove(cCan);
 // 			delete cCan;
@@ -437,11 +437,11 @@ void UltraFitEnv::KillCan(){
 	cCan=0;
 }
 
-// Setting to an external canvas no controlled by UltraFitEnv
+// Setting to an external canvas not controlled by UltraFitEnv
 void UltraFitEnv::ConnectNewCanvas(TVirtualPad* fPad){if(!fPad)return;
 	//cout<<endl<<"ERROR IN FN F"<<flush;
 	if(!gROOT->GetListOfCanvases()->FindObject(fPad))return;
-	if(!(strcmp(fPad->GetName(),"UltraFitCanvas")))return;
+	if(!(strcmp(fPad->GetName(),can_name.c_str())))return;
 	//Its got to exist and be unrelated
 
 	HideCanvas();
@@ -455,7 +455,7 @@ void UltraFitEnv::ConnectNewCanvas(TVirtualPad* fPad){if(!fPad)return;
 
 void UltraFitEnv::ExternalHistUpdateCheck(){
 	//cout<<endl<<"ERROR IN FN G"<<flush;
-	if((strcmp(GetCan()->GetName(),"UltraFitCanvas"))){//if using external canvas
+	if(GetCan()!=cPan->GetCanvas()){//if using external canvas
 		TH1* fHist=hist_capture(GetCan());
 		if(fHist){//if it has a histogram
 			if(gHist&&gHistDrawn){//If there is a current histogram
@@ -558,7 +558,7 @@ void UltraFitEnv::CaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 			
 			if(fH){
 				// If we're using an external canvas, stop doing that
-// 				if(strcmp(GetCan()->GetName(),"UltraFitCanvas")){
+// 				if(strcmp(GetCan()->GetName(),can_name.c_str())){
 				if(GetCan()!=cPan->GetCanvas()){
 					cCan->Disconnect(0,this,0);
 					cCan=0;
