@@ -139,7 +139,7 @@ bool fitrep(T* HG,TF1* fit,string opts="QRB0NM", int reps=10){
 	ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
 	for(int i=0;i<reps;i++){
 		int status=(int)HG->Fit(fit,opts.c_str());
-		if(0==status||4000==status)return true;
+		if(0==status||1==status||4000==status)return true;
 	}
 	cout<<" Failed fit"<<endl;
 	return false;

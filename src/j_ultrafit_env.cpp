@@ -1,5 +1,6 @@
 #include "j_ultrafit_env.h"
 
+bool gGlobalForceMinuitOldMinimiser=false;
 
 ///////////////////////////////////////
 // Initialiser functions  //

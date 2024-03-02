@@ -40,15 +40,15 @@ void Ultrapeak::NameParam(TF1* t,int bm,bool tg){
 }
 
 void Ultrapeak::NameParam(TF1* fPeakFunc,int n,TransientBitsClass<long>& bits){
-    fPeakFunc->SetParName(gUltraPol0,"na");
-    fPeakFunc->SetParName(gUltraPol1,"na");
-    fPeakFunc->SetParName(gUltraStep,"na");
-    fPeakFunc->SetParName(gUltraOffsetOrPol2,"na");
-    fPeakFunc->SetParName(gUltraTGWR,"na");
-    fPeakFunc->SetParName(gUltraTGHR,"na");
-	fPeakFunc->SetParName(gPeakSigma,"na");
-	fPeakFunc->SetParName(gPeakDecay,"na");
-	fPeakFunc->SetParName(gPeakSharing,"na");
+    fPeakFunc->SetParName(gUltraPol0,("na"+std::to_string(gUltraPol0)).c_str());
+    fPeakFunc->SetParName(gUltraPol1,("na"+std::to_string(gUltraPol1)).c_str());
+    fPeakFunc->SetParName(gUltraStep,("na"+std::to_string(gUltraStep)).c_str());
+    fPeakFunc->SetParName(gUltraOffsetOrPol2,("na"+std::to_string(gUltraOffsetOrPol2)).c_str());
+    fPeakFunc->SetParName(gUltraTGWR,("na"+std::to_string(gUltraTGWR)).c_str());
+    fPeakFunc->SetParName(gUltraTGHR,("na"+std::to_string(gUltraTGHR)).c_str());
+	fPeakFunc->SetParName(gPeakSigma,("na"+std::to_string(gPeakSigma)).c_str());
+	fPeakFunc->SetParName(gPeakDecay,("na"+std::to_string(gPeakDecay)).c_str());
+	fPeakFunc->SetParName(gPeakSharing,("na"+std::to_string(gPeakSharing)).c_str());
     
     if(bits.TestBit(kPeaks)||bits.TestBit(kStep)){
         fPeakFunc->SetParName(gPeakSigma,"Sigma");
@@ -80,8 +80,8 @@ void Ultrapeak::NameParam(TF1* fPeakFunc,int n,TransientBitsClass<long>& bits){
             if(bits.TestBit(PBits(i)))fPeakFunc->SetParName(gPeakNH(i),("Ratio "+ss.str()).c_str());
             else fPeakFunc->SetParName(gPeakNH(i),("Height "+ss.str()).c_str());
         }else{
-            fPeakFunc->SetParName(gPeakNC(i),"na");
-            fPeakFunc->SetParName(gPeakNH(i),"na");
+            fPeakFunc->SetParName(gPeakNC(i),("na"+std::to_string(gPeakNC(i))).c_str());
+            fPeakFunc->SetParName(gPeakNH(i),("na"+std::to_string(gPeakNH(i))).c_str());
         }
     }
 }
@@ -92,7 +92,7 @@ void Ultrapeak::NameParam(TF1* fPeakFunc,int n,TransientBitsClass<long>& bits){
 //
 // Note that while twogaus can be turned off internally with bits (due to extra complexity),
 // decay tails cannot be turned off with bits and are present when either peaks or steps are on.
-// Decay tails can only be contrained in the TF1.
+// Decay tails can only be constrained in the TF1.
 
 void Ultrapeak::FixUnusedParam(TF1* t){
     FixUnusedParam(t,N,cBits);

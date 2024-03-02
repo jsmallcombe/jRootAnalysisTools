@@ -32,6 +32,8 @@
 #include <iomanip>
 using namespace std;
 
+extern bool gGlobalForceMinuitOldMinimiser;
+
 // These globals are set to enable the maths functions declared at global scope to use parameters
 // lists Ultrapeak without compatibility issues and for future extension of parameter list without
 // intense rewrite. However as Parameter lists are subsequently long and contain unused values, 

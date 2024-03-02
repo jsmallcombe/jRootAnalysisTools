@@ -264,20 +264,21 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,TH1* fExHist,double fLeftUser,doubl
 	
 	// The new default to minuit2 caused and issue with fixed parameters in the middle of lists 
 	// Temporary fix, should probably fully embrace minuit2
-	ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit");
+if(gGlobalForceMinuitOldMinimiser)ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit");
+// 	ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2");
 	
 	// Use the bin cancelled exclusion histogram if passed
     TFitResultPtr fPreResult=fFitHist->Fit(fPre, "SRQN");
     
     Int_t FitPreStatus = fPreResult;
-    if(FitPreStatus){
+    if(FitPreStatus==0||FitPreStatus==1){
+        // If the git was good, get the parameters from the fit
+        fPre->GetParameters(fParam);
+    }else{
         cout<<endl<<"  Initial shape fit failed! TFitResultPtr Status = "<<FitPreStatus<<", Limits = "<<AnyParAtLimit(fPre)<<endl;
 		// Accessing some of these things during a bad fit results caused crashes
 //         cout<<endl<<"  Initial shape fit failed! TFitResultPtr Status = "<<FitPreStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fPreResult)<<", Limits = "<<AnyParAtLimit(fPre)<<endl;
         return 0;
-    }else{
-        // If the git was good, get the parameters from the fit
-        fPre->GetParameters(fParam);
     }
     
 	delete fPre; // Done with that TF1
@@ -551,8 +552,9 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,TH1* fExHist,double fLeftUser,doubl
     // FitStatus = migradResult + 10*minosResult + 100*hesseResult + 1000*improveResult ( 0 no error, 4 if error )
     // FitStatus < 0 if error not connected with the minimizer
     
-    if(FitStatus){
-        cout<<endl<<"  BASIC FIT FAILED! TFitResultPtr Status = "<<FitStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fResult)<<", Limits = "<<AnyParAtLimit(fFit)<<endl;
+    if(!(FitStatus==0||FitStatus==1)){
+        cout<<endl<<"  BASIC FIT FAILED! TFitResultPtr Status = "<<FitStatus<<", Limits = "<<AnyParAtLimit(fFit)<<endl;
+//         cout<<endl<<"  BASIC FIT FAILED! TFitResultPtr Status = "<<FitStatus<<", gMinuit status = "<<gMinuit->fCstatu<<", CovarianceMatrix = "<<CovDiag(fResult)<<", Limits = "<<AnyParAtLimit(fFit)<<endl;
         // fResult->GetCovarianceMatrix().Print();
         // fResult->Print("V");
         return 0;
@@ -572,7 +574,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,TH1* fExHist,double fLeftUser,doubl
     // M option is supposed to find improved minimum, but seems to ALWAYS return error code 4000
     fResult=fFitHist->Fit(fFit,(MasterFitOpt+"M").c_str());
     FitStatus = fResult;
-    bool Mfit=(CovDiag(fResult)&&!FitStatus);
+    bool Mfit=(CovDiag(fResult)&&(FitStatus==0||FitStatus==1));
     // cout<<"M fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<endl;
     
     // Set last few impovement options for a final fit 
@@ -602,7 +604,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,TH1* fExHist,double fLeftUser,doubl
         FitStatus = fResult;
 		
         if(fPeakFunc.FitLimitations(fFit,true)){continue;}
-        if(!FitStatus&&CovDiag(fResult)){break;}
+        if((FitStatus==0||FitStatus==1)&&CovDiag(fResult)){break;}
         
         cout<<"  "<<MasterFitOpt<<" fit status = "<<FitStatus<<", CovM "<<CovDiag(fResult)<<", Lim = "<<AnyParAtLimit(fFit)<<", Failed."<<endl;
         MasterFitOpt=MasterFitOpt.substr(0,MasterFitOpt.length()-1);
@@ -630,7 +632,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,TH1* fExHist,double fLeftUser,doubl
         double val=fFit->GetParameter(i);
         double err=fFit->GetParError(i);
         
-        if(!pname.compare("na"))continue;
+        if(pname.find("na")==0)continue;
         cout.precision(5);
         
         //////////// Identical to normal TF1 fit output ////////////
@@ -659,7 +661,7 @@ FullFitHolder* Ultrapeak::PeakFit(TH1* fHist,TH1* fExHist,double fLeftUser,doubl
     cout<<endl;
     cout<<resetiosflags(cout.flags()); // clears all flags
     
-    if(fResult->Status()){
+    if(!(fResult->Status()==0||fResult->Status()==1)){
         cout<<endl<<"       WARNING FIT FAILURE!";
         cout<<endl<<"  Fit Status code : "<<fResult->Status();
         cout<<endl<<"  Fit Status word : "<<gMinuit->fCstatu;
