@@ -30,6 +30,7 @@
 #include <TApplication.h>
 #include <TGTab.h>
 #include <TF2.h>
+#include <RtypesCore.h>
 
 #include "j_utility.h"
 #include "j_ultrafit_env.h"
@@ -172,6 +173,27 @@ public:
     void Integrate(Int_t,Int_t,Int_t,TObject*);
 
 	ClassDef(jIntegrator,1)
+};
+
+
+class jCompCanvas : public TCanvas {
+	
+private:
+	static int ReCol;
+	void ResetView();
+	void ChangeHistColour(TH1*);
+	void HighlightHist(TH1*);
+	void HighlightGraph(TGraph*);
+	TPad* CurrentPad;
+	
+public:
+	jCompCanvas(TH1 *fH=nullptr,Option_t * option = "");
+    virtual ~jCompCanvas();
+	
+	void MouseEvent(Int_t e,Int_t x,Int_t y,TObject* ob);
+	
+		
+	ClassDef(jCompCanvas,1)
 };
 
 

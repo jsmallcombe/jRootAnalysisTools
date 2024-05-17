@@ -713,3 +713,112 @@ void jIntegrator::Integrate(Int_t event, Int_t px, Int_t py, TObject *selected_o
 		}
 	}
 }
+
+
+////////////////////////////////////////////////////////////////
+
+jCompCanvas::jCompCanvas(TH1 *fH, Option_t * option ):TCanvas(),CurrentPad(this){
+	if(fH){
+		this->cd();
+		fH->Draw(option);
+	}
+	this->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jCompCanvas",this,"MouseEvent(Int_t,Int_t,Int_t,TObject*)");
+	
+};
+	
+	
+jCompCanvas::~jCompCanvas(){
+	TQObject::Disconnect(this);
+}
+
+
+void jCompCanvas::MouseEvent(Int_t e,Int_t x,Int_t y,TObject* ob){
+
+// 		cout<<e<<"  "<<x<<"  "<<y<<"  "<<ob<<endl;
+// 	cout<<ob->ClassName()<<endl;
+	
+	if(ob->InheritsFrom(TPad::Class())){
+		if(CurrentPad!=ob)CurrentPad=(TPad*)ob;
+		
+		if(e==kButton1){
+			ResetView();
+			CurrentPad->Modified();
+			CurrentPad->Update();
+		}
+	}else if(ob->InheritsFrom(TH1::Class())){
+		
+// 	cout<<ob->ClassName()<<endl;
+		
+		TH1* h=(TH1*)ob;
+		if(e==kButton1Up){
+			ChangeHistColour(h);
+		}else{
+			HighlightHist(h);
+		}
+		CurrentPad->Modified();
+		CurrentPad->Update();
+	}if(ob->InheritsFrom(TGraph::Class())){
+		
+// 	cout<<ob->ClassName()<<endl;
+		
+		TGraph* g=(TGraph*)ob;
+// 		if(ob->InheritsFrom(TGraph::Class()))h=((TGraph*)ob)->GetHistogram();
+	
+		HighlightGraph(g);
+		CurrentPad->Modified();
+		CurrentPad->Update();
+	}
+};
+	
+void jCompCanvas::ResetView(){
+// 	cout<<endl<<"RESET"<<endl;
+	
+	SetTitle("");
+	
+	TObjLink *lnk = CurrentPad->GetListOfPrimitives()->FirstLink();
+	while (lnk) {
+		if(lnk->GetObject()->InheritsFrom(TH1::Class())){
+			TH1* h=(TH1*)lnk->GetObject();
+			h->SetLineWidth(1);
+			h->SetFillStyle(0);
+		}
+		if(lnk->GetObject()->InheritsFrom(TGraph::Class())){
+			TGraph* h=(TGraph*)lnk->GetObject();
+			h->SetLineWidth(1);
+			h->SetFillStyle(0);
+		}
+		lnk = lnk->Next();
+	}
+	
+}
+
+
+void jCompCanvas::ChangeHistColour(TH1* h){
+// 	cout<<endl<<"CHANGECOLOUR"<<endl;
+	h->SetLineColor(ReCol);
+	HighlightHist(h);
+	ReCol++;
+}
+
+void jCompCanvas::HighlightHist(TH1* h){
+// 	cout<<endl<<"HIGHLIGHT"<<endl;
+	ResetView();
+	
+	SetTitle(h->GetTitle());
+	
+	h->SetLineWidth(4);
+	h->SetFillColor(h->GetLineColor());
+	h->SetFillStyle(3244);
+}
+void jCompCanvas::HighlightGraph(TGraph* g){
+// 	cout<<endl<<"HIGHLIGHT"<<endl;
+	ResetView();
+	
+	SetTitle(g->GetTitle());
+	
+	g->SetLineWidth(4);
+	g->SetFillColor(g->GetLineColor());
+	g->SetFillStyle(3244);
+}
+
+int jCompCanvas::ReCol=1;
