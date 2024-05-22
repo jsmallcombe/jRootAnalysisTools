@@ -179,8 +179,12 @@ public:
 class jCompCanvas : public TCanvas {
 	
 private:
-	static int ReCol;
+	Short_t ReCol;
+	UShort_t ReColI;
+	static UShort_t ColBase[6];
+	bool ColInit;
 	void ResetView();
+	UShort_t Colour(UShort_t Col=0);
 	void ChangeHistColour(TH1*);
 	void HighlightHist(TH1*);
 	void HighlightGraph(TGraph*);

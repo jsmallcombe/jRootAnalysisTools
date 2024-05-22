@@ -717,13 +717,13 @@ void jIntegrator::Integrate(Int_t event, Int_t px, Int_t py, TObject *selected_o
 
 ////////////////////////////////////////////////////////////////
 
-jCompCanvas::jCompCanvas(TH1 *fH, Option_t * option ):TCanvas(),CurrentPad(this){
+jCompCanvas::jCompCanvas(TH1 *fH, Option_t * option ):TCanvas(),ReCol(0),ReColI(0),ColInit(0),CurrentPad(this){
 	if(fH){
 		this->cd();
 		fH->Draw(option);
 	}
 	this->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jCompCanvas",this,"MouseEvent(Int_t,Int_t,Int_t,TObject*)");
-	
+		
 };
 	
 	
@@ -751,10 +751,9 @@ void jCompCanvas::MouseEvent(Int_t e,Int_t x,Int_t y,TObject* ob){
 		
 		TH1* h=(TH1*)ob;
 		if(e==kButton1Up){
-			ChangeHistColour(h);
-		}else{
-			HighlightHist(h);
+			h->SetLineColor(this->Colour());
 		}
+		HighlightHist(h);
 		CurrentPad->Modified();
 		CurrentPad->Update();
 	}if(ob->InheritsFrom(TGraph::Class())){
@@ -781,23 +780,29 @@ void jCompCanvas::ResetView(){
 			TH1* h=(TH1*)lnk->GetObject();
 			h->SetLineWidth(1);
 			h->SetFillStyle(0);
+			if(!ColInit){h->SetLineColor(this->Colour());}  // Initial colouring, so not needed before drawing (doesnt work for multipad canvas)
 		}
 		if(lnk->GetObject()->InheritsFrom(TGraph::Class())){
 			TGraph* h=(TGraph*)lnk->GetObject();
 			h->SetLineWidth(1);
 			h->SetFillStyle(0);
+			if(!ColInit){h->SetLineColor(this->Colour());}
 		}
 		lnk = lnk->Next();
 	}
-	
+	ColInit=true;
 }
 
+UShort_t jCompCanvas::ColBase[6]={kRed,kBlue,kGreen,kMagenta,kCyan,kYellow};
 
-void jCompCanvas::ChangeHistColour(TH1* h){
-// 	cout<<endl<<"CHANGECOLOUR"<<endl;
-	h->SetLineColor(ReCol);
-	HighlightHist(h);
-	ReCol++;
+UShort_t jCompCanvas::Colour(UShort_t Col){
+	if(!Col){ // if given an input its just a filter for the worst colors i.e. dont have white lines
+		Col=ColBase[ReColI]+ReCol;
+		ReColI++;
+		if(ReColI==6){ReColI=0;ReCol++;}
+	}
+	if(Col==0||Col==10||Col==19)Col++;
+	return Col;
 }
 
 void jCompCanvas::HighlightHist(TH1* h){
@@ -806,19 +811,20 @@ void jCompCanvas::HighlightHist(TH1* h){
 	
 	SetTitle(h->GetTitle());
 	
+	h->SetLineColor(this->Colour(h->GetLineColor())); // Filter the colors
 	h->SetLineWidth(4);
 	h->SetFillColor(h->GetLineColor());
 	h->SetFillStyle(3244);
 }
-void jCompCanvas::HighlightGraph(TGraph* g){
+void jCompCanvas::HighlightGraph(TGraph* g){ // Filter the colors
 // 	cout<<endl<<"HIGHLIGHT"<<endl;
 	ResetView();
 	
 	SetTitle(g->GetTitle());
 	
+	g->SetLineColor(this->Colour(g->GetLineColor()));
 	g->SetLineWidth(4);
 	g->SetFillColor(g->GetLineColor());
 	g->SetFillStyle(3244);
 }
 
-int jCompCanvas::ReCol=1;
