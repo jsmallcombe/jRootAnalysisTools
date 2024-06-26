@@ -31,6 +31,7 @@
 #include <TGTab.h>
 #include <TF2.h>
 #include <RtypesCore.h>
+#include <TCutG.h>
 
 #include "j_utility.h"
 #include "j_ultrafit_env.h"
@@ -108,6 +109,16 @@ private:
 	int sliderpos;
 	TStopwatch Stop;
 	void DoLines();
+	
+    TGTextButton *fButton;
+    TGTextButton *fButtonEnd;
+    TGTextButton *fButtonUnuse;
+    TGraph *fCurrentCutG; // Pointer to store the current TCutG
+    bool fCutSetting; // Flag to indicate if the setting cut is active
+    bool fCutActive; // Flag to indicate if the setting cut is active
+    
+    
+    void RemoveGraphs();
     
 public:
 	jAngleAngel(TH1* fH=0);
@@ -123,6 +134,16 @@ public:
 	void MakeHist90(){MakeHist(TMath::Pi()*0.5);};
     
 	ClassDef(jAngleAngel, 2)
+	
+    void HandleEvent(Int_t event, Int_t px, Int_t py, TObject *selected);
+    void StartCutButtonPressed();
+
+    void FinaliseCut();
+    void UnUseCut();
+	
+    TGraph* GetCut() const {
+        return fCurrentCutG;
+    }
 };
 
 

@@ -23,9 +23,9 @@ gROOT->ProcessLine((dir+"/data/LoadFiles.C").c_str());
 //  dir+="/scripts/gPadTest.C";
 //  dir+="/scripts/jEnvTest.C";    
 //  dir+="/scripts/GatingSelectTest.C";  
-//  dir+="/scripts/jAngleTest.C";  
+ dir+="/scripts/jAngleTest.C";  
 //  dir+="/scripts/j2DPeakFitTest.C";  
- dir+="/scripts/CanTest.C";  
+//  dir+="/scripts/CanTest.C";  
 
 
 //Run that script

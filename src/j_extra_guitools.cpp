@@ -223,20 +223,48 @@ void jEval:: Eval(char* cha){
 
 ////////////////////////////////////////////////////////////////
 
-jAngleAngel::jAngleAngel(TH1* fH) : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),fHistHigh(0),fHistLow(0),fHist(0){
+jAngleAngel::jAngleAngel(TH1* fH) : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),fHistHigh(0),fHistLow(0),fHist(0),fCurrentCutG(nullptr), fCutSetting(false),fCutActive(false){
 TVirtualPad* hold=gPad;
+
     SetWindowName("jAngleAngel");
     SetCleanup(kDeepCleanup);
 	Stop.Start();
+	
+	TGHorizontalFrame* topbuttons = new TGHorizontalFrame(this);            
 
-	jHistCapButton *CaptureButton = new jHistCapButton(this," Capture Hist ");
-	CaptureButton->Connect("NewHist(TH1*)","jAngleAngel",this,"SetCapture(TH1*)");	
-	AddFrame(CaptureButton,new TGLayoutHints(kLHintsCenterX, 1, 1, 1, 1));
+		jHistCapButton *CaptureButton = new jHistCapButton(topbuttons," Capture Hist ");
+		CaptureButton->Connect("NewHist(TH1*)","jAngleAngel",this,"SetCapture(TH1*)");	
+		topbuttons->AddFrame(CaptureButton);
+	// 	AddFrame(CaptureButton);
+		
+		fButton = new TGTextButton(topbuttons, "Set Cut");
+		topbuttons->AddFrame(fButton);
+		fButton->Connect("Clicked()", "jAngleAngel", this, "StartCutButtonPressed()");
 
+		fButtonEnd = new TGTextButton(topbuttons, "Finish Cut");
+		topbuttons->AddFrame(fButtonEnd);
+		fButtonEnd->Connect("Clicked()", "jAngleAngel", this, "FinaliseCut()");
+		fButtonEnd->SetState(kButtonDisabled);
+		
+		fButtonUnuse = new TGTextButton(topbuttons, "Remove Cut");
+		topbuttons->AddFrame(fButtonUnuse);
+		fButtonUnuse->Connect("Clicked()", "jAngleAngel", this, "UnUseCut()");
+		fButtonUnuse->SetState(kButtonDisabled);
+		
+	AddFrame(topbuttons,new TGLayoutHints(kLHintsCenterX, 1, 1, 1, 1));
+	
+	// Create a button and add it to the main frame
+	
 	fCanvas1 = new TRootEmbeddedCanvas("anglecan1",this,600,400);
     AddFrame(fCanvas1,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 1, 1, 1, 1));
+	
     
+//     fCanvas1->ToggleEventStatus(); // Show event info on screen apparently, not tested, could be useful
     fCanvas1->GetCanvas()->Connect("RangeChanged()", "jAngleAngel", this, "NewRange()");
+	fCanvas1->GetCanvas()->Disconnect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)");
+
+    fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jAngleAngel", this,
+                    "HandleEvent(Int_t,Int_t,Int_t,TObject*)");
 	
 	fHslider = new TGHSlider(this, 360, kSlider2);
 	fHslider->Connect("PositionChanged(Int_t)", "jAngleAngel", this, "SliderChange()");
@@ -306,6 +334,7 @@ void jAngleAngel::NewRange(){
 
 
 void jAngleAngel::SetCapture(TH1* fH){
+	if(fHist==fH)return;
     lock=true;
     SetNewHist(fH);
     lock=false;
@@ -471,7 +500,7 @@ void jAngleAngel::MakeHist(double offset){
 		xhigh=x1+yr/(tn*g);
 	}
 
-	// A whole lot of guff to calculate speading the counts over bins
+	// A whole lot of guff to calculate spreading the counts over bins
 	double w=X->GetBinWidth(1);
 	double range=1;
 	TGraph grh;
@@ -512,6 +541,13 @@ void jAngleAngel::MakeHist(double offset){
 			
 			double XX=X->GetBinCenter(x);
 			double YY=Y->GetBinCenter(y);
+			
+			if(fCutActive){
+				if(fCurrentCutG){
+					if(!fCurrentCutG->IsInside(XX,YY))continue;
+				}
+			}
+			
 			double A=XX+(YY-y0)/(g*tn);
 // 			ret.Fill(A,fHistHigh->GetBinContent(x,y));	
 			
@@ -536,6 +572,104 @@ void jAngleAngel::MakeHist(double offset){
 	new TCanvas();
 	gPad->Update();
 	ret.DrawCopy("hist");
+}
+
+
+
+void jAngleAngel::HandleEvent(Int_t event, Int_t px, Int_t py, TObject *selected) {
+	
+	if (!fCutSetting) return;
+	
+    TCanvas *canvas = fCanvas1->GetCanvas();
+	
+	if (!fCurrentCutG) {
+		fCurrentCutG = new TGraph();
+		fCurrentCutG->SetName("TRUEGRAPH");	
+	}
+	TGraph *cut=fCurrentCutG;
+	
+	switch (event) {
+	case kButton1Down:
+		{
+			cut->SetPoint(cut->GetN(), gPad->AbsPixeltoX(px), gPad->AbsPixeltoY(py));
+			gPad->Modified();
+			gPad->Update();
+			break;
+		}
+	case kButton1Up:
+		{
+			if ( cut->GetN() == 1) {
+				canvas->cd();
+				cut->Draw("L");
+			}
+			canvas->Update();	
+			break;
+		}
+// 	case kButton1Double:  // Never got doubleclick working, it finished the TGraph/TCut but some other TCanvas function then changes the graph as it "owns" them, couldnt track it down
+	case kKeyPress:
+		{
+			if(py!=kKey_Space) break;
+			FinaliseCut();
+			break;
+		}
+	}
+}
+
+void jAngleAngel::StartCutButtonPressed() {
+    // Reset the TCutG and enable cut modifications
+	if (fCurrentCutG) {
+		RemoveGraphs();
+			fCurrentCutG = nullptr;
+    }
+    fCutSetting = true;
+	fButton->SetState(kButtonDisabled);
+	fButtonEnd->SetState(kButtonUp);
+	fButtonUnuse->SetState(kButtonUp);
+}
+
+
+void jAngleAngel::RemoveGraphs() {
+    TCanvas *canvas = fCanvas1->GetCanvas();
+	TIter next(canvas->GetListOfPrimitives());
+	TObject *obj;
+	while ((obj = next())) {
+		if (obj->InheritsFrom(TGraph::Class())) {
+			canvas->GetListOfPrimitives()->Remove(obj);
+			delete obj;
+		}
+	}
+	fCutActive=false;
+	canvas->Modified();
+	canvas->Update();
+	fButtonUnuse->SetState(kButtonDisabled);
+}
+
+void jAngleAngel::FinaliseCut() {
+
+	if(fCurrentCutG){
+		TCanvas *canvas = fCanvas1->GetCanvas();
+		if ( fCurrentCutG->GetN() > 2) {
+			double X,Y;
+			fCurrentCutG->GetPoint(0,X,Y);
+			fCurrentCutG->SetPoint(fCurrentCutG->GetN(), X,Y);
+			fCutActive=true;
+		}else{RemoveGraphs();}
+		canvas->Update();
+	}
+		
+	// Finalize the cut creation
+	fCutSetting = false;
+	fButton->SetState(kButtonUp);
+	fButtonEnd->SetState(kButtonDisabled);
+}
+
+void jAngleAngel::UnUseCut() {
+	RemoveGraphs();
+	fCutActive=false;
+	fCutSetting = false;
+	
+	fButton->SetState(kButtonUp);
+	fButtonEnd->SetState(kButtonDisabled);
 }
 
 ////////////////////////////////////////////////////////////////
