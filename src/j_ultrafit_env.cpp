@@ -1438,6 +1438,7 @@ const char gHelpCanvas[] = "\n\
   Separation and ratio text inputs provide fit constraints, the box should be \n\
   blank to free the fit. Input without errors fill fix the parameter.\n\
   Example inputs : \"25.0\" \"0.051(2)\" \"-16.0 5\" \"6+-5\" \"3E-5+3e-6\"  \n\
+  Only symmetric error inputs are presently implemented.\n\
   \n\
   For very small numbers of counts the fit mode will automatically switch to\n\
   Poisson Likelihood fitting rather than Pearson Chi Squared minimisation.\n\
