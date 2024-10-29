@@ -232,7 +232,6 @@ The Gate Summing Tool is used for saving the result histograms in memory after g
 \begin{minipage}{0.65\textwidth}
 \begin{enumerate}
 \item Show/Hide Gate Summing Tool.
-\item Create additional save slot.
 \item Draw a sum of the selected histograms in a new window.
 \item Delete all histograms in summing tool memory (Press twice).
 \item Sum Check - Use the check marks to selected which saved histograms will be added to the output.
@@ -525,9 +524,11 @@ The centroids, "integral" and their respective errors can be fetched with $VPC$,
     \item $PeakType$ can take the following values:
       \begin{enumerate}
       \setcounter{enumi}{-1}
+      \item Simple Gaussian
       \item Gaussian + exponential tail
-      \item Gaussian + small exponential tail
-      \item Two Gaussians with identical centroid + one exponential tail
+      \setcounter{enumi}{9}
+      \item Two Gaussian peaks with identical centroid 
+      \item Two Gaussians + one exponential tail
       \end{enumerate}
     \item \textit{TrueCent} Indicates if centroids are specified as the true spectroscopic value or if they are given by the maximum value, which may have been skewed by a large tail. 
     \item $SigmaParameterOveride$, $DecayParameterOveride$, $SharingParameterOveride$ - these allow changing of the peak shape values from their defaults. Defaults are optimised for HPGe and Si(Li) spectra in keV. If used, provide a number in the string, the new value will be fixed in the fit. If desired include and uncertainty in the string (as explained in Section \ref{sec:errors}) to free the parameter
