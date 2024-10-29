@@ -183,7 +183,7 @@ gPad=hold;
 void jEnv::Terminate(){
     FreeObjects.SetOwner();//Will delete list objects irrespective of kCanDelete
     delete this;
-//     delete gChiefCustodian;// For simplicity got rig of custodian class, files no longer closed manually, meh.
+//     delete gChiefCustodian;// For simplicity got rid of custodian class, files no longer closed manually, meh.
     gApplication->Terminate(0);
 }
 

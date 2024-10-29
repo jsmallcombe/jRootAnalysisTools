@@ -25,7 +25,7 @@ dir+="/scripts/UltraFitTest.C";
 //  dir+="/scripts/GatingSelectTest.C";  
 //  dir+="/scripts/jAngleTest.C";  
 //  dir+="/scripts/j2DPeakFitTest.C";  
-//  dir+="/scripts/CanTest.C";  
+//   dir+="/scripts/CanTest.C";  
 
 
 //Run that script

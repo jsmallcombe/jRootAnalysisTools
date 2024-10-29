@@ -113,7 +113,7 @@ Only the \textit{TObjects} which \textit{jEnv} interacts with are visible within
 All functionality requires only a single click.
 When \textit{TObjects} are selected they a passed to \textit{jEnv} from where you can select to draw, fit, gate etc.
  \textit{TH3} type objects can be easily passed to a gating tool without first drawing them, this is a distinct advantage over a standard TBrowser.
- Open files are handled by a global \textit{jTFileCustodian} so that files are closed only when all tools release them i.e. when a \textit{jEnv} instance is terminated open files are closed unless still in use by gating tool etc. 
+ Open files are no longer handled by a global \textit{jTFileCustodian}, open files are closed by ROOT at the end of the session.
 
 \subsubsection{Environment Tabs}
 Initially hidden on the right hand side of the jEnv are the environment tabs. Only the AddSubCompare tool tab is present initially. Fit panel, Spectrum tool and drawn objects will appear in subsequent tabs or can be explicitly drawn in their own windows by using the appropriate icon button.
@@ -339,12 +339,14 @@ Any fits saved to the session list will be drawn in the result window by [Re-Dra
 \\
 \\
 When fits are saved to disk by [Export Peak Info] a plain text file peakinfo.dat containing the centroids, areas and errors is saved, along with a peakinfo.root file containing the full histogram and fit details in a format that can be loaded into root at a later date.
-If peakinfo.dat exists in the current directory a terminal warning message will apear, click [Export Peak Info] to overwrite the file.
+If peakinfo.dat exists in the current directory a terminal warning message will appear, click [Export Peak Info] to overwrite the file.
 The [SaveAs] button at the top of a tool can be used to save an image file of the histograms and fits, or to save the current session with a user specified name rather than the default.
 \\
 \\
 The [Load Session] button can be used to read a saved session root file which will overwrite any currently selected histograms, and the current session saved-fit list, with those from the file.
 The [Clear Saved Peaks] button will clear the current session list and redraw the histogram with no fits, the button must be pressed twice to confirm the action (This has no effect on fit files saved to disk).
+\\
+Saving and loading a session now also saves and restores the current parameter settings, useful for protecting against crashes when entering many parameters of a complicated multi-peak fit.
 
 \subsection{Fit Function \& Logic}
 The primary peak function consists of a pure Gaussian + an exponential convolved with a Gaussian, similar to Radware. The ratio is controlled by a sharing parameter that can take values from 0 to 1. An analytical normalisation is applied to the exponential peak such that its maximum value is always 1. After a fit the output data contains both a centroid and a "True centroid". The centroid is the maximum of the combined peak, the true centroid corresponds to the centroid of the pure Gaussian component which would correspond to the physical spectroscopic value.  
@@ -356,7 +358,7 @@ For very low background counts in the presence of large peaks, the default Pears
 A ``null'' option is also included which fixes all background to zero, i.e. no background fit, for cases where a complete (interpolated) subtraction has been performed.
 \\
 \\ 
-For very small numbers of counts (average per bin less than 10) the fit mode will automatically switch to Poisson Likelihood fitting rather than Pearson Chi Squared minimisation. Exclusion regions will not function for Likelihood fitting.
+For very small numbers of counts (average per bin less than 10) the fit mode will automatically switch to Poisson Likelihood fitting rather than Pearson Chi Squared minimisation. Exclusion regions will not function for Likelihood fitting. Note : This is not the case for a histogram with manually set error bins (such as following a subtraction), for which Pearson Chi Squared is always used.
 \\
 \\
 A TwinGaus fit can be used when mixed resolution detector effects (such as Doppler shift) are significant. Each peak is fit with a narrow and a wide Gaussian with identical centroid. The background step is modified accordingly and all other fitting functionality remains the same. The TwinGaus should only be used in the case of relatively isolated peaks.

@@ -1441,7 +1441,8 @@ const char gHelpCanvas[] = "\n\
   Only symmetric error inputs are presently implemented.\n\
   \n\
   For very small numbers of counts the fit mode will automatically switch to\n\
-  Poisson Likelihood fitting rather than Pearson Chi Squared minimisation.\n\
+  Poisson Likelihood fitting rather than Pearson Chi Squared minimisation,\n\
+  unless error bars have been manually set.\n\
   Exclusion regions will not function for Likelihood fitting.\n\
   \n\
   Shape parameters (Sigma, Decay and Sharing) may be constrained.\n\
