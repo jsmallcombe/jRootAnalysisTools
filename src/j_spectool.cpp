@@ -276,6 +276,7 @@ void jSpecTool::DoUpdate(bool saveaxis){TVirtualPad* hold=gPad;
 	}
 
 	if(rebin>1){
+		H->SetBinContent(H->GetNbinsX()+1,0); // Delete overflow content as it gets mixed imperfect bin counts
 // 		cout<<endl<<H;
 		H->Rebin(rebin);
 		if(S)S->Rebin(rebin);

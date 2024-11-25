@@ -192,7 +192,7 @@ void jHistCapButton::CaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 
 int jAddSubTool::SumNameItt = 0;
 
-jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p, UInt_t w, UInt_t h, UInt_t options):TGCompositeFrame(p,w,h,options),A(0),B(0),result(0),AHist(0),BHist(0),BSet(0),SumHist(0),TempB(0),fGrabFrame(Frame){
+jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p, UInt_t w, UInt_t h, UInt_t options):TGCompositeFrame(p,w,h,options),A(0),B(0),result(0),AHist(0),BHist(0),BSet(0),SumHist(0),DrawHist(0),TempB(0),fGrabFrame(Frame){
 	char buf[32];	//A buffer for processing text through to text boxes
 	SetCleanup(kDeepCleanup);
 	gSubtract=0;
@@ -268,12 +268,18 @@ jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p, UInt_t w, UInt_t h, 
 void jAddSubTool::GrabA(Int_t c,Int_t a,Int_t b,TObject* d){if(c==1)Grab(0);}
 void jAddSubTool::GrabB(Int_t c,Int_t a,Int_t b,TObject* d){if(c==1)Grab(1);}
 void jAddSubTool::Grab(int i){
+    // Make a copy of the globally selected histogram into the class 
+    
 	TH1** H=&AHist;string S="AddSubHoldHistA";
 	if(i){H=&BHist;S="AddSubHoldHistB";}
 	int type=fGrabFrame->Type();
 	if(type && type<3){
 		if(*H)delete *H;
 		*H=(TH1*)fGrabFrame->Hist()->Clone(S.c_str());
+        if(type==1){
+            (*H)->SetBinContent((*H)->GetNbinsX(),0);//Empty TH1 over/overflows
+            (*H)->SetBinContent(0,0);
+        }
 		DrawAB(i);
 		if(SumHist){delete SumHist;SumHist=0;SumNameItt++;}
 		PrepareB();
@@ -283,6 +289,8 @@ void jAddSubTool::Grab(int i){
 
 
 void jAddSubTool::DrawAB(int i){
+    // Draw the small selected histograms icons. Called for new or for swap AB.
+    
 	TVirtualPad* hold=gPad;
 	TH1* H=AHist;TCanvas* Can=A->GetCanvas();
 	if(i){
@@ -297,7 +305,10 @@ void jAddSubTool::DrawAB(int i){
 		H->GetYaxis()->SetLabelSize(0);
 		H->SetStats(kFALSE);
 		DrawCopyHistOpt(H);
-        if(!i)Abinwidth=H->GetXaxis()->GetBinWidth(1);
+        
+        // Set class-scope variable that holds the width of A (primary) histogram bins.
+        // This is here rather than at input, because DrawAB is called for both a new histogram AND for switching AB
+        if(!i)Abinwidth=H->GetXaxis()->GetBinWidth(1); 
 	}else{
 		Can->Clear();
 	}
@@ -312,19 +323,19 @@ void jAddSubTool::Swap(){
 	BHist=H;
 	DrawAB(0);
 	DrawAB(1);
-	if(SumHist){delete SumHist;SumHist=0;SumNameItt++;}
+	if(SumHist){delete SumHist;SumHist=0;SumNameItt++;DrawHist=0;} // Delete in advance so it isnt used by DoSlider() for range;
 	PrepareB();
 	DoSlider();
 }
 
 void jAddSubTool::PrepareB(){
-    if(BSet&&TempB){delete BSet;}
+    if(BSet&&TempB){delete BSet;} //If TempB=true then BSet is NOT sharing BHist
     BSet=0;
     TempB=false;
     
 	if(!(AHist&&BHist))return;
     int Type=HType(AHist);
-    if(Type!=HType(BHist))return;			
+    if(Type!=HType(BHist))return;
 			
     //Check the 2 ranges
     double AXt=AHist->GetXaxis()->GetXmax();
@@ -332,13 +343,16 @@ void jAddSubTool::PrepareB(){
     double BXt=BHist->GetXaxis()->GetXmax();
     double BXb=BHist->GetXaxis()->GetXmin();
     double ranges=(AXt-AXb)/(BXt-BXb);
-    if(AXt<BXb||BXt<AXb)return;
+    
+    if(AXt<BXb||BXt<AXb)return; // No X overlap
         
-    bool xrange=((ranges<0.9990)||(ranges>1.0001));
-    bool xbins=(AHist->GetNbinsX()!=BHist->GetNbinsX());
-    if((xbins||xrange)&&Type==2)return;
+    bool xrange=((ranges<0.9990)||(ranges>1.0001));  // True if range differ
+    bool xbins=(AHist->GetNbinsX()!=BHist->GetNbinsX()); // True if Nbins differ
 
     if(Type==2){
+        // For TH2s only exact matches, otherwise return with BSet=0;
+        if(xbins||xrange)return;
+        
         AXt=AHist->GetYaxis()->GetXmax();
         AXb=AHist->GetYaxis()->GetXmin();
         BXt=BHist->GetYaxis()->GetXmax();
@@ -348,25 +362,43 @@ void jAddSubTool::PrepareB(){
         (ranges<0.9999)||(ranges>1.0001)){
             return;
         }
+                
+        BSet=BHist; // Perfect (enough) match
+        return;
     }
-
+    
     // Histogram types match sufficiently that BSet will be set
+    BSet=BHist; // Initially just a pointer to the main BHist
+    if(!xbins&&!xrange)return;
+    
+    // Now get B hist in the right form
 
-    BSet=BHist;
-
-    //Get the B hist in the right form
-    if(xbins&&!xrange){
-        for(int i=2;i<10;i++){
-            if(AHist->GetNbinsX()*i==BHist->GetNbinsX()){
+    if(xbins&&!xrange){ // As the range is same, but bins differ, try integer rebinning.
+        
+        if(AHist->GetNbinsX()<BHist->GetNbinsX()){
+            if(!(BHist->GetNbinsX()%AHist->GetNbinsX())){ // No remainder A_bins<B
                 BSet=(TH1*)BHist->Clone();
-                BSet->Rebin(i);
-                xbins=false;
+                BSet->Rebin(BHist->GetNbinsX()/AHist->GetNbinsX()); // Just rebin B down
                 TempB=true;
-                break;
+                return;
             }
+        }else{
+            if(!(AHist->GetNbinsX()%BHist->GetNbinsX())){ // No remainder A_bins>B
+                BSet=(TH1*)AHist->Clone();
+                double frac=AHist->GetNbinsX()/BHist->GetNbinsX();
+                for(int b=1;b<=AHist->GetNbinsX();b++){  // Divide the content of bin into new narrow bins
+                    double x=BSet->GetXaxis()->GetBinCenter(b);
+                    double B=BHist->GetXaxis()->FindBin(x);
+                    BSet->SetBinContent(b,BHist->GetBinContent(B)*frac);
+                }
+                TempB=true;
+                return;
+            }
+            
         }
     }
-
+        
+    // If not a match or an easy rebin, do silly rebin    
     if(xbins||xrange){
         BSet=(TH1*)AHist->Clone();
         ExtreemRebin(BSet,BHist);
@@ -376,91 +408,121 @@ void jAddSubTool::PrepareB(){
 
 
 void jAddSubTool::DoSlider(){
+    // Take the value from the slider, do the histogram combining operations and then draw the result.
+    
     int slidepos=fHslider1->GetPosition();
 	double frac=slidepos/500.0;
 	double fracfrac=0.03;//Arbitrary summing fraction error 
 	
 	UpdateText();
 	
-	if(AHist&&BSet){  
-        if(HType(AHist)==2){
-            if(gSubtract>1){
-                gSubtract=-1;
-                AddSubButton();
-                return;
-            }
-            
-            if(Stop.RealTime()<4){
-// 				cout<<endl<<"NO TIME "<<Stop.CpuTime()<<endl;
-                Stop.Start(kFALSE);	
-                return;
-            }
-            Stop.Start();
-        }
-			
-        int rmin=1;
-        int rmax=-1;
-
-        //Delete the previous result and get axis info
-        if(SumHist){
-            rmin=SumHist->GetXaxis()->GetFirst();
-            rmax=SumHist->GetXaxis()->GetLast();
-            delete SumHist;SumHist=0;
-        }
-			
-        //Do add/subtraction
-        
-        switch(gSubtract) {
-            case 1 :    SumHist=scaled_addition(AHist,BSet,frac,fracfrac);
-                        break;
-            case 2 :    SumHist=(TH1*)BSet->Clone();
-                        SumHist->Scale((frac+1)*AHist->Integral()/BSet->Integral());
-                        break;
-            case 3 :    SumHist=(TH1*)BSet->Clone();
-                        transpose_bins(SumHist,slidepos);
-                        break;
-            default :   SumHist=scaled_addition(AHist,BSet,frac,fracfrac,false);
-                        break;
-        }
-        stringstream ss;ss<<"AddSubResultHist"<<SumNameItt;
-        SumHist->SetName(ss.str().c_str());
-
-			
-        //Draw new results with and adjust axis
-        TVirtualPad* hold=gPad;
-        result->GetCanvas()->cd();
-        
-        if(gSubtract>1){
-            TH1* H=DrawCopyHistOpt(AHist,fCheck1->GetState());
-            
-            if(rmax>rmin)H->GetXaxis()->SetRange(rmin,rmax);
-            if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
-            
-            SumHist->SetLineColor(2);
-            DrawHistOpt(SumHist,fCheck1->GetState(),false,true);
-        }else{
-            hformat(SumHist,0);
-            if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
-            
-            DrawHistOpt(SumHist,fCheck1->GetState(),false,false);
-        }
-                
-// 			if(rmax>rmin)SumHist->GetXaxis()->SetRange(rmin,rmax);
-//             hformat(SumHist,0);
-//             if(fCheck1->GetState())SumHist->Draw("hiscol");else SumHist->Draw("col");
-//             if(gSubtract>1){
-//                 if(fCheck1->GetState())AHist->Draw("histsame");else AHist->Draw("same");  
-//                 SumHist->SetLineColor(2);
-//             }
-            
-			result->GetCanvas()->Modified();
-			result->GetCanvas()->Update();
-			gPad=hold;
-    }else{
+    // If we dont have 2 histogram pointers
+	if(!(AHist&&BSet)){  
         result->GetCanvas()->Clear();
         result->GetCanvas()->Modified();
         result->GetCanvas()->Update();
+        return;
     }
+        
+    // If TH2 
+    if(HType(AHist)==2){
+        
+        // Only option <2 allowed for 2D 
+        if(gSubtract>1){ 
+            gSubtract=-1;
+            AddSubButton();
+            return;
+        }
+        
+        // Limit update speed for TH2 to save the CPU
+        if(Stop.RealTime()<4){
+// 				cout<<endl<<"NO TIME "<<Stop.CpuTime()<<endl;
+            Stop.Start(kFALSE);	
+            return;
+        }
+        Stop.Start();
+    }
+    
+    int rmin=1;
+    int rmax=-1;
+
+    //Delete the previous result and get axis info
+    if(DrawHist){
+        //Draw hist could be SumHist or a DrawCopy of A so DONT delete though DrawHist
+        rmin=DrawHist->GetXaxis()->GetFirst();
+        rmax=DrawHist->GetXaxis()->GetLast();
+    }
+    if(SumHist){
+        delete SumHist;SumHist=0;
+    }
+        
+    //Do add/subtraction/other prepartion of result histogram
+    
+    
+// For addition, the rebinned "BSet" should be used, but for comparison the orginal BHist should be used,
+// with aproiate scaling as needed to account for integral:Y_height ratio i.e. bin width
+
+    switch(gSubtract) {
+        case 1 :    SumHist=scaled_addition(AHist,BSet,frac,fracfrac);  // Normalised Scaled Addition
+                    break;
+        case 2 :    SumHist=(TH1*)BHist->Clone();   //Scaled Comparison
+                    SumHist->Scale(frac+1);
+                    break;
+        case 3 :    SumHist=(TH1*)BHist->Clone();
+                    transpose_bins(SumHist,slidepos);
+                    break;
+        case 4 :    SumHist=(TH1*)BHist->Clone();
+                    SumHist->GetXaxis()->SetLimits(BHist->GetXaxis()->GetXmin(),(frac+1)*BHist->GetXaxis()->GetXmax()); 
+                    break; 
+        default :   SumHist=scaled_addition(AHist,BSet,frac,fracfrac,false); // Simple Addition
+                    break;
+    }
+    
+    stringstream ss;ss<<"AddSubResultHist"<<SumNameItt;
+    SumHist->SetName(ss.str().c_str());
+
+    // Draw new results with and adjust axis
+    TVirtualPad* hold=gPad;
+    result->GetCanvas()->cd();
+    
+    if(gSubtract>1){   // Draw the comparison options
+        
+        DrawHist=DrawCopyHistOpt(AHist,fCheck1->GetState());
+        
+        SumHist->SetLineColor(2);
+        DrawHistOpt(SumHist,fCheck1->GetState(),false,true); //Draw same
+        
+        TAxis* TA=DrawHist->GetXaxis();
+        if(rmax>rmin){
+            TA->SetRange(rmin,rmax);
+        }
+        
+        if(gSubtract>2){ // Slide and stretch compare
+//             double NA=DrawHist->Integral()*DrawHist->GetBinWidth(1);
+            double NA=DrawHist->Integral(TA->GetFirst(),TA->GetLast())*DrawHist->GetBinWidth(1);
+
+            TAxis* TB=SumHist->GetXaxis();
+            double NB=SumHist->Integral(TB->FindBin(TA->GetBinLowEdge(TA->GetFirst())),TB->FindBin(TA->GetBinUpEdge(TA->GetLast())))*SumHist->GetBinWidth(1);
+
+            if(NA>0&&NB>0){SumHist->Scale(NA/NB);}
+        }
+        
+    }else{  // Draw the summed histogram options
+        
+        hformat(SumHist,0);
+        DrawHist=SumHist;
+        
+        DrawHistOpt(SumHist,fCheck1->GetState(),false,false); //Draw
+        
+        if(rmax>rmin){
+            DrawHist->GetXaxis()->SetRange(rmin,rmax);
+        }
+            
+    }
+
+    result->GetCanvas()->Modified();
+    result->GetCanvas()->Update();
+    gPad=hold;
 }
 
 void jAddSubTool::DoText(){
@@ -499,7 +561,7 @@ void jAddSubTool::UpdateText(){
 void jAddSubTool::AddSubButton(){
 	gSubtract++;
     
-	if(gSubtract>3)gSubtract=0;
+	if(gSubtract>4)gSubtract=0;
     
     switch(gSubtract) {
     case 0 : addsubclick->SetText("   Add/Sub   ");
@@ -509,6 +571,8 @@ void jAddSubTool::AddSubButton(){
     case 2 : addsubclick->SetText("Scale Compare");
              break;
     case 3 : addsubclick->SetText("Shift Compare");
+             break;
+    case 4 : addsubclick->SetText("Stretch Comp.");
              break;
     }
 
