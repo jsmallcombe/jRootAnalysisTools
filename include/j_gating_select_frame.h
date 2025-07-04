@@ -69,6 +69,7 @@ private:
 	
 	//	CONTROL VALUES
 
+	int maxbin;
 	int background_mode;
 	int backfit_mode;
 	int axis_down,axis_up;  
@@ -82,6 +83,10 @@ private:
 	bool action_hold; 
 	int back_down,back_up;
 	bool SubtractGateFromBack;
+	
+	int set_for_3D;
+    int RebinFactor;
+	int xyz;
 
 	double storef1,storef2;
 	
@@ -98,12 +103,10 @@ private:
 
 	void DoAutoFit();
 	void UpdateDraw(bool overlay=false);
-	
-	string suffix;
 
 public:
    j_gating_select_frame();
-   j_gating_select_frame(TGWindow* parent, TH1* input=0);
+   j_gating_select_frame(TGWindow* parent, TH1* input=nullptr, int ThreeDee=0);
    virtual ~j_gating_select_frame();
    
    TGVerticalFrame   *fHframe4;
@@ -128,22 +131,55 @@ public:
    void UpdateInput(TH1*);
    void UpdateInput();
 
+   void RebinPlus();
+   void RebinMinus();
+   
+   void ChangeProjection(const Int_t);
 
    //signals has to be public
    void OutputReady(){};  
    void InputChange(){}; 
+   void XYZChange(){}; 
    
    void TickClick();
    
-   int GetGateBinDown(){return gate_down;}
-   int GetGateBinUp(){return gate_up;}
-   int GetBackBinDown(){return back_down;}
-   int GetBackBinUp(){return back_up;}
+   int GetGateBinDown(){int ret=(gate_down-1)*RebinFactor+1;
+	   if(ret<0)return 0;
+	   return ret;
+	}
+   int GetGateBinUp(){int ret=gate_up*RebinFactor;
+	   if(ret>maxbin)return maxbin+1;
+	   return ret;
+	}
+   int GetBackBinDown(){int ret=(back_down-1)*RebinFactor+1;
+	   if(ret<0)return 0;
+	   return ret;
+	}
+   int GetBackBinUp(){int ret=back_up*RebinFactor;
+	   if(ret>maxbin)return maxbin+1;
+	   return ret;
+	}
+   int GetXYX(){return xyz;}
    double GetBackFrac(){return backfrack;}
    bool SubtractGate(){return SubtractGateFromBack;}
-
    
    ClassDef(j_gating_select_frame, 1)
+};
+
+
+class j_gating_select_frame_tester : public TGMainFrame {
+	
+	private:
+		TH1* testhist;
+		j_gating_select_frame *jgsframe;
+	public:
+	j_gating_select_frame_tester();
+	j_gating_select_frame_tester(TH1* input=nullptr, int ThreeDee=3);
+   virtual ~j_gating_select_frame_tester(){};
+	
+   void OutputTest();
+	
+	ClassDef(j_gating_select_frame_tester, 1)
 };
 
 #endif

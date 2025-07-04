@@ -1,12 +1,12 @@
 #include "j_gating_select_frame.h"
-
+#include "j_gating_tool.h"
 
 ClassImp(j_gating_select_frame);
 
 //______________________________________________________________________________
 j_gating_select_frame::j_gating_select_frame() : TGVerticalFrame(gClient->GetRoot(), 100, 100){}
 
-j_gating_select_frame::j_gating_select_frame(TGWindow * parent, TH1* input) : TGVerticalFrame(parent, 100, 100),peaknumremove(0)
+j_gating_select_frame::j_gating_select_frame(TGWindow * parent, TH1* input,int ThreeDee) : TGVerticalFrame(parent, 100, 100),peaknumremove(0),set_for_3D(ThreeDee),RebinFactor(1),xyz(0)
 {
 TVirtualPad* hold=gPad;
 	char buf[32];	//A buffer for processing text through to text boxes
@@ -17,7 +17,7 @@ TVirtualPad* hold=gPad;
 	//	CONTROL VALUES
 	//
 	
-	
+	maxbin=1;
 	background_mode=2;
 	backfit_mode=2;
 	target_bin=20;
@@ -31,17 +31,17 @@ TVirtualPad* hold=gPad;
 	m_back_down=1;m_back_up=20;
 	back_down=1;back_up=-1;
 	
-	
 	action_hold=false;
 	
 	//
 	//	HISTOGRAMS AND TF1
 	//
 
-	fFitFcn = new TF1(("quickgausmain"+suffix).c_str(),"gaus(0)+pol2(3)",0,0);
+	fFitFcn = new TF1(jgating_tool::Iterator("quickgausmain"),"gaus(0)+pol2(3)",0,0);
     fFitFcn->SetLineColor(1);
     if(gGlobalNegativeDraw)fFitFcn->SetLineColor(3);
  
+	raw_input=new TH1F();
 	proj=new TH1F();
 	selected=new TH1F();
 	specback=new TH1F();
@@ -71,6 +71,22 @@ TVirtualPad* hold=gPad;
 		fCheck2->SetToolTipText("Show Fit Centroid\n Hide/Show the centroid of the Gaussian\n fit used to calculate background fraction.");
 		fHframe0->AddFrame(fCheck2, fBfly2);
 
+		if(ThreeDee>1){
+			TGButtonGroup* fBgroup1 = new TGButtonGroup(fHframe0,"Projection",kChildFrame);//create a group of buttons belonging (point) to the parent frame
+			TGRadioButton* fRButton1 = new TGRadioButton(fBgroup1,"X ");//create buttons belonging to the group
+			TGRadioButton* fRButton2 = new TGRadioButton(fBgroup1,"Y ");
+			fRButton1->SetToolTipText("Change Gating Projection\n Switch which side of the matrix\n is used for gating. Also useful\n to reset when glitch occurs.");
+			fRButton2->SetToolTipText("Change Gating Projection\n Switch which side of the matrix\n is used for gating. Also useful\n to reset when glitch occurs.");
+			TGRadioButton* fRButton3;
+			if(ThreeDee>2) fRButton3 = new TGRadioButton(fBgroup1,"Z");
+			fRButton3->SetToolTipText("Change Gating Projection\n Switch which side of the matrix\n is used for gating. Also useful\n to reset when glitch occurs.");
+			fRButton1->SetState(kButtonDown);//Set which is pressed
+			fBgroup1->Show();//Display/Add all the buttons
+			fBgroup1->Connect(" Clicked(Int_t)", "j_gating_select_frame", this,"ChangeProjection(Int_t)");
+			fHframe0->AddFrame(fBgroup1, fBfly1);
+		}
+		
+		
 		fBgroup2 = new TGButtonGroup(fHframe0,"Subtraction Scheme",kChildFrame);// Another button group
 			fRButton4 = new TGRadioButton(fBgroup2,"Full ");
 			fRButton4->SetToolTipText("Full Projection\n Take the full projection of the matrix\n as the background spectrum.");
@@ -88,6 +104,15 @@ TVirtualPad* hold=gPad;
 		fBgroup2->Show();
 		fBgroup2->Connect(" Clicked(Int_t)", "j_gating_select_frame", this,"ChangeBackMode(Int_t)");
 		fHframe0->AddFrame(fBgroup2, fBfly1);
+		
+		TGButtonGroup* fBgroup3 = new TGButtonGroup(fHframe0,"Rebin",kChildFrame);// Another button group
+            TGTextButton *RebinPlusButton=new TGTextButton(fBgroup3,"+");
+            RebinPlusButton->Connect("Clicked()","j_gating_select_frame",this,"RebinPlus()");
+            TGTextButton *RebinMinusButton=new TGTextButton(fBgroup3,"-");
+            RebinMinusButton->Connect("Clicked()","j_gating_select_frame",this,"RebinMinus()");
+		fBgroup3->Show();
+		fHframe0->AddFrame(fBgroup3, fBfly1); 
+		
 		
 	this->AddFrame(fHframe0, fBfly4);	
 	
@@ -226,6 +251,7 @@ j_gating_select_frame::~j_gating_select_frame()
 	fTip->Hide();
 	delete fTip;
 	
+	delete raw_input;
 	delete proj;
 	delete selected;
 	delete specback;
@@ -452,7 +478,9 @@ void j_gating_select_frame::DoSlider()
 void j_gating_select_frame::UpdateInput(TH1* input){
 	if(!input)return;
 //cout<<"boooom "<<flush;
-	raw_input=input;
+	delete raw_input;
+	raw_input=(TH1*)input->Clone(jgating_tool::Iterator("projraw"));
+	maxbin=raw_input->GetNbinsX();
 	UpdateInput();
 }
 
@@ -463,7 +491,7 @@ void j_gating_select_frame::UpdateInput(TH1* input){
 // Calles for new input histogram or change axis
 void j_gating_select_frame::UpdateInput()
 {       
-    Emit("InputChange()");
+//     Emit("InputChange()"); // Not sure why this was at the start of Update function in original class, could cause issue
     
 TVirtualPad* hold=gPad;
 
@@ -473,7 +501,11 @@ TVirtualPad* hold=gPad;
 	
 	delete proj;
 
-	proj=(TH1*)raw_input->Clone("proje");
+	proj=(TH1*)raw_input->Clone(jgating_tool::Iterator("proje"));
+	
+	if(RebinFactor>1){
+        proj->Rebin(RebinFactor);
+    }
     
     axis_down=1;
 	axis_up=proj->GetNbinsX();
@@ -483,12 +515,12 @@ TVirtualPad* hold=gPad;
 	proj->SetLineColor(1);
 
 	delete selected;
-	selected=(TH1*)proj->Clone("selected");
+	selected=(TH1*)proj->Clone(jgating_tool::Iterator("selected"));
 	selected->SetLineWidth(3);
 	selected->SetLineColor(2);
 	
 	delete b_man;
-	b_man=(TH1*)proj->Clone("b_man");
+	b_man=(TH1*)proj->Clone(jgating_tool::Iterator("b_man"));
 	b_man->SetLineWidth(3);
 	b_man->SetLineColor(1);
 	
@@ -497,6 +529,7 @@ TVirtualPad* hold=gPad;
 	UpdateDraw();
 	DoHistogram();
 gPad=hold;
+    Emit("InputChange()");
 }
 
 //______________________________________________________________________________
@@ -743,7 +776,7 @@ void j_gating_select_frame::ClickedCanvasOne(Int_t event, Int_t px, Int_t py, TO
 
 //______________________________________________________________________________
 
-// Do the gating on the matrix and produce the output histogram
+// Do the gating on the matrix and produce the output channel information
 void j_gating_select_frame::DoHistogram(){
 	
 	//Rough error on background fraction
@@ -814,3 +847,78 @@ void j_gating_select_frame::UpdateDraw(bool overlay){
 	gPad=hold;
 }
 
+
+void j_gating_select_frame::RebinPlus(){
+    RebinFactor++;
+	UpdateInput();	
+}
+
+void j_gating_select_frame::RebinMinus(){
+    if(RebinFactor>1){
+        RebinFactor--;
+        UpdateInput();
+    }
+}
+
+void j_gating_select_frame::ChangeProjection(const Int_t id)
+{  
+	xyz=id-1;
+    Emit("XYZChange()");
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ClassImp(j_gating_select_frame_tester);
+
+// // // class j_gating_select_frame_tester : public TGMainFrame {
+// // // 	
+// // // 	private:
+// // // 		TH1* testhist;
+// // // 		j_gating_select_frame frame;
+// // // 	public:
+// // // 	j_gating_select_frame_tester();
+// // // 	j_gating_select_frame_tester(TH1* input=nullptr, bool ThreeDee=false);
+// // // 	
+// // // 	
+// // //    void OutputTest();
+// // // 	
+// // // 	ClassDef(j_gating_select_frame_tester, 1)
+// // // }
+
+
+j_gating_select_frame_tester::j_gating_select_frame_tester(TH1* input,int ThreeDee) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame){
+TVirtualPad* hold=gPad;
+
+	if(!input){
+        return;
+    }
+    testhist=input;
+    
+    SetCleanup(kDeepCleanup);	
+    
+	jgsframe = new  j_gating_select_frame(this, testhist,ThreeDee);
+
+    TGLayoutHints* ffExpand = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
+    AddFrame(jgsframe, ffExpand);
+	
+	jgsframe->Connect("XYZChange()","j_gating_select_frame_tester",this,"OutputTest()");
+	jgsframe->Connect("OutputReady()","j_gating_select_frame_tester",this,"OutputTest()");
+	
+    MapSubwindows();
+    Resize(GetDefaultSize());
+    MapWindow();
+	
+gPad=hold;
+}
+void j_gating_select_frame_tester::OutputTest(){
+	cout<<endl;
+	cout<<endl<<jgsframe->GetGateBinDown();
+	cout<<endl<<jgsframe->GetGateBinUp();
+	cout<<endl<<jgsframe->GetBackBinDown();
+	cout<<endl<<jgsframe->GetBackBinUp();
+	cout<<endl<<jgsframe->GetBackFrac();
+	cout<<endl<<jgsframe->SubtractGate();
+	cout<<endl;
+}

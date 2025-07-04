@@ -117,6 +117,9 @@ public:
         Emit("Closed(TObject*)", (Long_t)obj);
     }
 
+    //Move to the new class asap
+	static TString Iterator(TString in){return in+=jgating_tool_iterator;};
+    
 	ClassDef(jgating_tool, 2)
 };
 

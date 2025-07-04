@@ -207,6 +207,7 @@ class TH1Efficiency : public TH1D {
 		FillFin=false;
 		if(fDoErr){
 			fErr=(*Err);
+			Sumw2();
 		}
 	}
 	virtual ~TH1Efficiency(){}
@@ -250,6 +251,7 @@ class TH1Efficiency : public TH1D {
 	
   	void FillFinish(){
 		if(fDoErr&&fSumw2.fN == fNcells){
+// 			std::cout<<"FILL FINISH "<<GetName()<<std::endl;
 			for (Int_t bin = 0; bin < fNcells; ++bin){
 				fSumw2.fArray[bin] += pow(fEstore.fArray[bin],2);
 				fEstore.fArray[bin]=0;
@@ -291,6 +293,7 @@ class TH2Efficiency : public TH2D {
 		ggfrac=ggfracin;
 		if(fDoErr){
 			fErr=(*Err);
+			Sumw2();
 		}
 		asymmetric=false;
 	}
@@ -352,7 +355,7 @@ class TH2Efficiency : public TH2D {
 				fSumw2.fArray[bin] += pow(fEstore.fArray[bin],2);
 				fSumw2.fArray[bin] += pow(fEstore2.fArray[bin],2);
 				
-				fSumw2.fArray[bin] += pow(fArray[bin]*0.05,2);//Assumed 5% error ggfrac
+				fSumw2.fArray[bin] += pow(fArray[bin]*0.05,2);//Assumed 5% error on ggfrac itself
 				
 				fEstore.fArray[bin]=0;
 				fEstore2.fArray[bin]=0;
