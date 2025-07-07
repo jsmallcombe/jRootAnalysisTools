@@ -1,0 +1,65 @@
+Hidden Elements in frames i.e. Manual background slider, Save panel etc
+are made visible when a parent frame calls some mapping/resizing commands, so these need to be manually hidden again at the top level.
+
+///////////////////
+
+Result frame:
+j_gating_result_frame
+
+Inputs:
+TH1** - inputs for results, pre-subtraction gated and projection (pointers should be kept valid at parent level)
+double* - for gate centroid 
+
+Emits:
+"RequestTwoDee(Bool_t)"   only possible when set for 3D
+        Update the TH1**/double* to the parent-parent and then call InputUpdated()
+
+Notes:
+When parent frame changes projection, or its input, call InputUpdated(TH1*)
+When gating finished, call regular draw command; DrawHist()
+Call HideSave() after parent frame initilises the first time.
+
+///////////////////
+
+Result frame:
+j_gating_select_frame
+
+Inputs:
+TH1* - The gate-side projection of the matrix
+
+Emits:
+"OutputReady()"     use functions to fetch bin numbers and do the gating
+"RequestProjection(Int_t)"   change the projection and then UpdateInput(TH1*)
+     
+Notes:
+When parent frame changes projection, or its input, call UpdateInput(TH1*) 
+
+
+///////////////////
+2D Gating frame
+Children: j_gating_select_frame & j_gating_result_frame
+
+Write for 2D only to begin with, then add the "for3D passing" afterward
+
+NOTE:
+The gating functions for 2D->1D fill histograms with the same name without deleting,
+It is slightly faster, so the names should be set by itterator only at class instance initilisation, NOT every call of gating function.
+
+NOTE:
+When calling  InputUpdated(TH1*) calls for select frame, block the recieving function for Emits:"OutputReady()" to avoid double DrawHist() calls to result frame, instead a call of InputUpdated() will be made to result frame, which itself calls the DrawHist().
+
+Move static interator and interator-function to this class and move links in children classes 
+
+///////////////////
+2D Gating Mainframe 
+
+///////////////////
+3D Gating Mainframe 
+
+
+
+
+
+
+
+

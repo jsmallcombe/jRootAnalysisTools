@@ -863,7 +863,7 @@ void j_gating_select_frame::RebinMinus(){
 void j_gating_select_frame::ChangeProjection(const Int_t id)
 {  
 	xyz=id-1;
-    Emit("XYZChange()");
+    Emit("RequestProjection(Int_t)",&xyz);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -903,7 +903,7 @@ TVirtualPad* hold=gPad;
     TGLayoutHints* ffExpand = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
     AddFrame(jgsframe, ffExpand);
 	
-	jgsframe->Connect("XYZChange()","j_gating_select_frame_tester",this,"OutputTest()");
+	jgsframe->Connect("RequestProjection(Int_t)","j_gating_select_frame_tester",this,"OutputTest()");
 	jgsframe->Connect("OutputReady()","j_gating_select_frame_tester",this,"OutputTest()");
 	
     MapSubwindows();

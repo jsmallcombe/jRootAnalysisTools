@@ -6,14 +6,16 @@ ClassImp(j_gating_result_frame);
 //______________________________________________________________________________
 j_gating_result_frame::j_gating_result_frame() : TGHorizontalFrame(gClient->GetRoot(), 100, 100){}
 
-j_gating_result_frame::j_gating_result_frame(TGWindow * parent,  TH1** input, TH1** back, TH1** proj, bool threedee) : TGHorizontalFrame(parent, 100, 100),ThreeDee(threedee),fCheck0(0),fCheck1(0),fFitFcn(0),peaknumremove(0),fTip(0),fFitPanel(0)
+j_gating_result_frame::j_gating_result_frame(TGWindow * parent,  TH1** input, TH1** back, TH1** proj, double* cent,  bool threedee) : TGHorizontalFrame(parent, 100, 100), ThreeDee(threedee), RangeUpdateHold(true),  fCheck0(0), fCheck1(0), fFitFcn(0),fPeakNumText(0),fTip(0),fFitPanel(0),x1(1),x2(-1),y1(1),y2(-1)
 {
 	if(input==nullptr)return;
 	if(back==nullptr)return;
 	if(proj==nullptr)return;
+	if(cent==nullptr)return;
 	
+    fCentroid=cent;
 	fInput=input;
-	fBack=back;
+	fGate=back;
 	fProj=proj;
 	
 TVirtualPad* hold=gPad;
@@ -103,7 +105,7 @@ TVirtualPad* hold=gPad;
         
         fHslider1 = new TGHSlider(rebinframe, 9, kSlider2);
         fHslider1->SetPosition(0);
-        fHslider1->Connect("PositionChanged(Int_t)", "j_gating_result_frame", this, "DoUpdate()");
+        fHslider1->Connect("PositionChanged(Int_t)", "j_gating_result_frame", this, "DrawHist()");
         rebinframe->AddFrame(fHslider1, ffExpandXpad);
         
         RebinText = new TGTextEntry(rebinframe, new TGTextBuffer(4));
@@ -122,7 +124,7 @@ TVirtualPad* hold=gPad;
     
     fCheck1 = new TGCheckButton(buttonframe,"Hide Ers");
     fCheck1->SetState(kButtonDown);
-    fCheck1->Connect(" Clicked()", "j_gating_result_frame", this,"DoUpdate()");
+    fCheck1->Connect(" Clicked()", "j_gating_result_frame", this,"DrawHist()");
     fCheck1->SetToolTipText("Hide Bin Errors on drawn histograms");
 
     buttonframe->AddFrame(fBgroup1, ffCenX);
@@ -143,6 +145,9 @@ TVirtualPad* hold=gPad;
     AddFrame(saveframe,ffExpandY);
 
 	InputUpdated();
+    
+    // create the tooltip with a timeout of 250 ms
+    fTip = new TGToolTip(gClient->GetRoot(), fCanvas1, "", 250);
 
 	//    // Set main frame name, map sub windows (buttons), initialize layout
 	//    // algorithm via Resize() and map main frame
@@ -150,19 +155,230 @@ TVirtualPad* hold=gPad;
 	Resize(GetDefaultSize());
 	MapWindow();
 	
-    HideFrame(saveframe);//Will be undone my parent frame, need to add a functional call to set it
+    HideSave();//Will be undone my parent frame maping/resize, need to add a call after
     
 gPad=hold;
 }
 
 j_gating_result_frame::~j_gating_result_frame()
 {
+    // 	if(fTip){fTip->Hide();delete fTip;} // Causes crashed, but leaves orphaned tooltips otherwise
+    ClearSaved();//delete any saved result histograms
 	Cleanup(); 
 }
 
+void j_gating_result_frame::DrawHist(){
+    TVirtualPad* hold=gPad;
+    RangeUpdateHold=true;
+	fCanvas1->GetCanvas()->cd();
+    
+    TH1* H=nullptr;
+    // Should add some nullptr projection checks here
+    TH1* HIn=*fInput;
+    TH1* HGate=*fGate;
+    TH1* HProj=*fProj;
+    
+    bool TwoDee=false;
+    if(ThreeDee)TwoDee=fCheck0->GetState(); //If draw 2D
+
+    if(TwoDee){//Slight changed for 2D vs 1D drawing
+            
+        if(fRButton2->GetState()){//If Full Projection Drawing Requested
+            H=DrawHistOpt(HProj); //Drawing a using jRoot library default options
+		}else if(fRButton3->GetState()){//If Drawing of Background Requested
+            H=DrawCopyHistOpt(HGate); //Use copy as we want to modify
+            H->Add(HIn,-1);
+            // The background hist never actually exists, because the subtraction is done bin-by-bin to preserve scaled errors.
+            // The resultant suptracted histogram is subtracted from the pre-subtraction gated histogram
+            // This equates to the background histogram values, but the errors will be incorrect.
+        }else{//Default 
+            DrawHistOpt(HIn);//Draw directly the result (for 2D we avoid Copy for speed)
+        }
+    }else{// 1D
+        H=DrawCopyHistOpt(HIn,fCheck1->GetState());//fCheck1 option for draw bin errors or not
+        
+        // Rebining is only used for 1D hists
+        unsigned short rebin=fHslider1->GetPosition()+1;
+        
+        if(rebin>1)H->Rebin(rebin);
+        
+        // Update the rebin slider text
+            char buf[32];
+            sprintf(buf, "%.1f", H->GetXaxis()->GetBinWidth(1));
+            TGTextBuffer* fTbh2=RebinText->GetBuffer();
+            fTbh2->Clear();	fTbh2->AddText(0, buf);
+            RebinText->SetCursorPosition(RebinText->GetCursorPosition());
+            RebinText->Deselect();
+            gClient->NeedRedraw(RebinText);
+        // Exists in this function as adjusting the slider just calls this function
+        
+        TH1* h=nullptr;
+        
+        if(fRButton2->GetState()){//If Full Projection 
+            h=HProj->DrawCopy("same");
+            h->Scale(HIn->Integral()/HProj->Integral());//Scale to make visible
+        }
+        if(fRButton3->GetState()){//If Background
+            h=HGate->DrawCopy("same");
+            h->Add(HIn,-1);
+        }
+        if(h){
+            h->Sumw2(kFALSE);
+            if(rebin>1)h->Rebin(rebin);		
+        }  
+    }//1D/2D
+    
+    
+    //Set the range to what they were before the draw update
+    H->GetXaxis()->SetRangeUser(x1,x2);
+    if(TwoDee){
+        H->GetYaxis()->SetRangeUser(y1,y2);
+    }
+    
+	fCanvas1->GetCanvas()->Modified();
+	fCanvas1->GetCanvas()->Update();
+    
+    RangeUpdateHold=false; 
+    gPad=hold;
+}
+
 void j_gating_result_frame::InputUpdated(){
+    ResetRange();
+	DrawHist();
+}
+
+//Just reset the viewing range of thefinal canvas
+void j_gating_result_frame::ResetRange(){
+//     cout<<endl<<"RESETTING RANGE"<<endl;
+    x1=1E20;
+    x2=-1E20;
+    y1=1E20;
+    y2=-1E20;
+}
+
+
+void j_gating_result_frame::NewAxisDrawn() //adjust sliders and control values for new axis
+{
+	if(!RangeUpdateHold){ // Set true by DrawHist(), so only do this on axis zooming, NOT on new draw
+		TH1* h=hist_capture(fCanvas1->GetCanvas());
+        if(h){
+            TAxis* x=h->GetXaxis();
+            x1=x->GetBinLowEdge(x->GetFirst());
+            x2=x->GetBinUpEdge(x->GetLast());
+            
+            if(ThreeDee){if(fCheck0->GetState()){
+                TAxis* y=h->GetXaxis();
+                y1=y->GetBinLowEdge(y->GetFirst());
+                y2=y->GetBinUpEdge(y->GetLast());
+            }}
+            
+            if(fFitFcn&&fCanvas1->GetCanvas()->GetListOfPrimitives()->FindObject(fPeakNumText)){
+                double cent=fFitFcn->GetParameter(1);
+                fPeakNumText->SetX(cent+(x2-x1)*0.05);
+                fCanvas1->GetCanvas()->Modified();
+                fCanvas1->GetCanvas()->Update();
+            }
+        }
+    }
 	
-}	
+}
+
+void j_gating_result_frame::DoCheckbox2D(){
+    
+    //If the 2D checkbox exist, i.e. ThreeDee was set
+    if(ThreeDee){
+        if(fCheck0->GetState()&&fFitPanel){//If 2D drawing is being requested, and a fit panne exists
+            ftbutton->SetState(kButtonUp);//Pop out the fit pannel button which is kept depressed
+            HideFrame(fFitPanel);//Hide the fitpanel as it is not in use from now
+        }
+    }
+    
+    ResetRange(); //Reset any saved histogram range
+	ClearSavedButtons();ClearSaved(); //Clear the saved histograms so 2D and 1D arent mixed
+    
+    Bool_t emitbool=fCheck0->GetState(); 
+    Emit("RequestTwoDee(Bool_t)", &emitbool); //Pass the request to change up to the parent
+}
+
+
+void j_gating_result_frame::ButtonGroupDoUpdate(Int_t i){ //When the projection buttons clicked
+    if(i==1){
+        ResetRange(); // Reset range
+    }
+    DrawHist();//Draw the histogram panel
+}
+
+
+// Just a basic little no frills, minimal input peak fitter for standard size y/e peaks
+// Added it in to help with quick peak identification
+void j_gating_result_frame::ClickedFinalCanvas(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
+{TVirtualPad* hold=gPad;
+	if (event == kMouseLeave){fTip->Hide(); return;}
+	
+    if(ThreeDee){
+        if(fCheck0->GetState()) return;
+        //Dont try to fit in 2D mode
+    }
+	
+	if(event == kMouseMotion||event == kButton1Double){
+        //Click is given in pixel coordinates
+        double x =fCanvas1->GetCanvas()->PixeltoX(px);
+        
+        //Update the tooltip
+        fTip->Hide();
+        fTip->SetText(TString::Format("%.1f",x));
+        fTip->SetPosition(px+15, py-15);
+        fTip->Reset();
+        
+        if ( event == kButton1Double) {
+            
+            fCanvas1->GetCanvas()->cd();
+        
+            TH1* h=hist_capture(fCanvas1->GetCanvas());
+            if(!h)return;
+            
+            TF1* Quick=UserQuickSingleGausAutoFitE(h,x,x-20,x+20,1);//Free & linear back
+
+            if(fFitFcn)fCanvas1->GetCanvas()->GetListOfPrimitives()->Remove(fFitFcn);
+            fFitFcn=Quick->DrawCopy("same");
+
+            // Print the text on the canvas
+            double cent=Quick->GetParameter(1);
+            stringstream ss;
+            ss<<round(cent*10)/10;
+            
+            delete Quick;
+            
+            TText peaknum;
+            peaknum.SetTextAlign(22);
+            peaknum.SetTextSize(0.035);
+            
+            double shif=(h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetLast())-h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetFirst()))*0.05;
+            //GetXmin() doesnt account for zooming
+            
+            if(fPeakNumText)fCanvas1->GetCanvas()->GetListOfPrimitives()->Remove(fPeakNumText);//Remove if its there else ignored
+            fPeakNumText=peaknum.DrawText(cent+shif,h->GetBinContent(h->FindBin(cent))*0.95,ss.str().c_str());
+
+            fCanvas1->GetCanvas()->Modified();
+            fCanvas1->GetCanvas()->Update();
+        }
+    }
+gPad=hold;
+}
+
+void j_gating_result_frame::HideSave(){
+    HideFrame(saveframe);
+}
+
+
+// Toggle Save Panel Visibility 
+void j_gating_result_frame::SavePanel(){
+	if(IsVisible(saveframe)){
+		HideSave();
+	}else{
+		ShowFrame(saveframe);
+	}
+}
 
 void j_gating_result_frame::AddStoreHistogram(){
 	if(savehists.size()<15){
@@ -178,3 +394,113 @@ void j_gating_result_frame::AddStoreHistogram(){
 	}
 }
 
+void j_gating_result_frame::StoreHistograms(Int_t i){
+	if(i%2){
+		uint select=i/2;
+	// 	cout<<endl<<endl<<i<<endl<<endl;
+		if(select<savehists.size()){
+			if(savehists[select]){delete savehists[select];}savehists[select]=0;
+			
+			TH1* targ=*fInput;
+            if(!targ)return;
+			
+			savehists[select]=(TH1*)targ->Clone(jgating_tool::Iterator("SavedHist"));
+			savehists[select]->GetListOfFunctions()->Clear();
+			
+			if(!savechecks[select]->IsEnabled())savechecks[select]->SetEnabled();
+			
+			stringstream ss;ss<<" "<<*fCentroid<<" ";
+		
+			savebutton[select]->SetText(ss.str().c_str());
+            
+            if(select==savebutton.size()-1)AddStoreHistogram();
+		}
+	}
+}
+
+void j_gating_result_frame::DrawSaved(){
+	TH1* saveadd=0;
+	for(uint i=0;i<savehists.size();i++){
+		if(savehists[i])if(savechecks[i]->GetState()==EButtonState::kButtonDown){
+			if(saveadd){
+				if(saveadd->GetNbinsX()==savehists[i]->GetNbinsX())
+					saveadd->Add(savehists[i]);
+			}else{
+				saveadd=(TH1*)savehists[i]->Clone(jgating_tool::Iterator("SavedHist"));
+			}
+		}
+	}
+	if(saveadd){
+		unsigned short rebin=fHslider1->GetPosition()+1;
+		if(rebin>1)saveadd->Rebin(rebin);
+        DrawPeakClickerCanvas(saveadd);
+        saveadd->SetDirectory(0);
+        saveadd->SetBit(kCanDelete);
+        //Could have done drawcopy but this saves one copy if a big TH2
+	}
+}
+
+void j_gating_result_frame::ClearSavedButtons(){
+    for(uint i=0;i<savehists.size();i++){
+        savechecks[i]->SetState(kButtonUp);
+        savechecks[i]->SetState(kButtonDisabled);
+        savebutton[i]->SetText("[Empty]");
+    }
+}
+
+void j_gating_result_frame::ClearSaved(){
+	for(uint i=0;i<savehists.size();i++){
+        if(savehists[i]){
+            delete savehists[i];
+            savehists[i]=0;
+        }
+    }
+}
+
+
+void j_gating_result_frame::CSaveButton(){
+    
+    std::chrono::duration<double> diff= std::chrono::system_clock::now()-clicktime;
+    if(abs(diff.count())<2){
+        ClearSavedButtons();
+        ClearSaved();
+//         cout<<endl<<"Saved results cleared."<<endl;
+    }else{
+        cout<<"Click twice to clear."<<endl;
+    }
+    
+    clicktime=std::chrono::system_clock::now();
+}
+
+
+void j_gating_result_frame::jSaveAs(){
+	TH1* h=hist_capture(fCanvas1->GetCanvas());
+    if(!h)return;
+	HistSaveAs(h,this,fCanvas1->GetCanvas());
+}
+
+// Create an instance of the hitpanel panel and connect it the output canvas to catch new draws
+// Or hide disconnect it and hide it if it is currently acrive
+void j_gating_result_frame::FitPanel(){
+    
+	if(ThreeDee)if(fCheck0->GetState())return;//Do nothing in 2D mode
+    
+    if(!fFitPanel){
+		fFitPanel=new UltraFitEnv(this,0,fCanvas1->GetCanvas(),2);
+        AddFrame(fFitPanel,new TGLayoutHints(kLHintsExpandY, 1, 1, 1, 1));
+        Resize(GetDefaultSize());
+        HideFrame(fFitPanel);//Hiding panel just for next i
+    }
+    
+	if(IsVisible(fFitPanel)){
+        ftbutton->SetState(kButtonUp);
+        HideFrame(fFitPanel);
+        fFitPanel->KillCan();
+        DrawHist();
+    }else{
+        ftbutton->SetState(kButtonDown);
+        ShowFrame(fFitPanel);
+        fFitPanel->ConnectNewCanvas(fCanvas1->GetCanvas());
+	}
+	
+}

@@ -48,6 +48,7 @@ using namespace std;
 class j_gating_result_frame : public TGHorizontalFrame {
 private:
 	bool ThreeDee;
+	bool RangeUpdateHold;
 	
 	TRootEmbeddedCanvas *fCanvas1;
 	TGVerticalFrame     *resultframe,*saveframe;
@@ -63,7 +64,7 @@ private:
     TGTextButton* ftbutton;
 	
 	TF1 *fFitFcn; 
-	TText* peaknumremove;   
+	TText* fPeakNumText;   
 
 	string make_iterator();
 	TGToolTip *fTip;
@@ -73,36 +74,41 @@ private:
 	vector< TGCheckButton* > savechecks;
 	vector< TGTextButton* > savebutton;
 	
-	TH1 **fInput, **fBack, **fProj;
+	TH1 **fInput, **fGate, **fProj;
+	double *fCentroid;
     
-
+    double x1,x2,y1,y2;
+    
+	void ClearSaved();
+	void ClearSavedButtons();
+	
+	// Have to manually specify nanoseconds, or trunacte manaully to microseconds elsewhere, or mac wont compile due the system clock prevision not matching that which is assumed
+    std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> clicktime;
+	
 public:
    j_gating_result_frame();
-   j_gating_result_frame(TGWindow* parent, TH1** input=nullptr, TH1** back=nullptr, TH1** proj=nullptr,bool threedee=false);
+   j_gating_result_frame(TGWindow* parent, TH1** input=nullptr, TH1** back=nullptr, TH1** proj=nullptr,double* cent=nullptr,bool threedee=false);
    virtual ~j_gating_result_frame();
    
    
-//    	void DoCheckbox2D();
-// 	void DoUpdate2D();
-// 	void DoUpdate();
-// 	void ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*);
-// 	void SavePanel();
-// 	void FitPanel();
-// 	void jSaveAs();
+   	void DoCheckbox2D();
+	void ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*);
+	void SavePanel();
+	void FitPanel();
+	void jSaveAs();
 	void AddStoreHistogram();
-// 	void CSaveButton();
-// 	void StoreHistograms(Int_t);
-// 	void DrawSaved();
-// 	void NewAxisDrawn();
+	void CSaveButton();
+	void StoreHistograms(Int_t);
+	void DrawSaved();
+	void NewAxisDrawn();
 	
-	void InputUpdated();
-//     
-//     void ProcessedConfigure(Event_t*);
-//     void ShareMainPanels();
-//     
-// 	void ResetRange();
-//     void ButtonGroupDoUpdate(Int_t i);
+	void DrawHist();	 // Call for any update in the conditions
+	void InputUpdated(); // A totally new input
+    
+	void ResetRange();
+    void ButtonGroupDoUpdate(Int_t i);
    
+	void HideSave();
    
    ClassDef(j_gating_result_frame, 1)
 };

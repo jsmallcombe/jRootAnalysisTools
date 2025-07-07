@@ -113,7 +113,7 @@ public:
 
    //Functions connected to GUI "slot"
 //    void CloseWindow();
-	void UpdateCanvas();
+   void UpdateCanvas();
    void DoText();
    void DoSlider();
    void DoSlidePoint();
@@ -122,9 +122,6 @@ public:
    void ReDrawOne();
    void ClickedCanvasOne(Int_t,Int_t,Int_t,TObject*);
    void DoHistogram();
-      
-   TH1 *output_hist_point;
-   TH1 *gate_hist,*full,*free_hist;
    
    double GateCentre;
    
@@ -134,13 +131,9 @@ public:
    void RebinPlus();
    void RebinMinus();
    
+   //Input signals has to be public
    void ChangeProjection(const Int_t);
 
-   //signals has to be public
-   void OutputReady(){};  
-   void InputChange(){}; 
-   void XYZChange(){}; 
-   
    void TickClick();
    
    int GetGateBinDown(){int ret=(gate_down-1)*RebinFactor+1;

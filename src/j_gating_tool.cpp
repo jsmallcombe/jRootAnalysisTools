@@ -238,6 +238,7 @@ TVirtualPad* hold=gPad;
     MainPanels->AddFrame(splitterB,ffExpandYLeft);
     MainPanels->AddFrame(resultframe,ffExpandRight);
     
+    //I cant remember/determine who/when calls/connects this. But it seems to do with adjustable frame partition
     Connect("ProcessedConfigure(Event_t*)","jgating_tool", this,"ProcessedConfigure(Event_t*)");
     
     // create the tooltip with a timeout of 250 ms
