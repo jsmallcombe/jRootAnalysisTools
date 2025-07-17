@@ -66,7 +66,6 @@ private:
 	TF1 *fFitFcn; 
 	TText* fPeakNumText;   
 
-	string make_iterator();
 	TGToolTip *fTip;
 	UltraFitEnv* fFitPanel;
     

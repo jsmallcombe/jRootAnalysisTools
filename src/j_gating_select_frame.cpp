@@ -24,8 +24,8 @@ TVirtualPad* hold=gPad;
 	gate_down=19;gate_up=21;
 	gate_range=3;
 	fit_down=1;fit_up=39;
-	backfrack=0.1;
-	backfrackfrac=0.05;
+	backfrac=0.1;
+	backfracfrac=0.05;
 	storef1=1;storef2=1;
 	axis_down=0;axis_up=-1;
 	m_back_down=1;m_back_up=20;
@@ -184,7 +184,7 @@ TVirtualPad* hold=gPad;
 			fTeh3->SetDefaultSize(50,25);
 			fTeh3->SetAlignment (kTextRight);
 			fTeh3->SetToolTipText("Background Fraction");
-			sprintf(buf, "%.4f", backfrack);fTbh3->AddText(0, buf);
+			sprintf(buf, "%.4f", backfrac);fTbh3->AddText(0, buf);
 			fTeh3->Connect("ReturnPressed()", "j_gating_select_frame", this,"DoText()");
 			fTeh3->Connect("TabPressed()", "j_gating_select_frame", this,"DoText()");
 			fTeh3->SetEnabled(kFALSE); //The default is disabled
@@ -337,8 +337,8 @@ void j_gating_select_frame::ValidateValues() //checks stored control parameters 
 		fit_up=target_bin;
 	}
 		
-	if(backfrack<0)backfrack=0.0;
-	if(backfrack>1)backfrack=1.0;
+	if(backfrac<0)backfrac=0.0;
+	if(backfrac>1)backfrac=1.0;
 }	 
 
 //______________________________________________________________________________
@@ -354,7 +354,7 @@ void j_gating_select_frame::FetchSliderValues() //copy slider values to control 
 // 	}
 
 	if(backfit_mode==3){//manual background fraction mode
-		backfrack=(double)fHslider3->GetPosition()/10000.0;
+		backfrac=(double)fHslider3->GetPosition()/10000.0;
 	}
 	
 	if(backfit_mode<3){//peal fitting mode
@@ -381,7 +381,7 @@ void j_gating_select_frame::ValuesToSliders() //copy control parameters to slide
 // 			}else{
 // 				fHslider2->SetPosition(gate_range);
 // 			}
-		fHslider3->SetPosition(backfrack*10000);
+		fHslider3->SetPosition(backfrac*10000);
 		fHslider4->SetPosition(m_back_down,m_back_up);
 	action_hold=false;
 }
@@ -392,7 +392,7 @@ void j_gating_select_frame::FetchTextValues() //copy text values to control para
 {//cout<<"FetchTextValues "<<flush;	
 	target_bin=proj->GetXaxis()->FindFixBin(atof(fTbh1->GetString()));
 	gate_range=atof(fTbh2->GetString())/proj->GetBinWidth(1);
-	backfrack=atof(fTbh3->GetString());
+	backfrac=atof(fTbh3->GetString());
 }
 
 //______________________________________________________________________________
@@ -411,7 +411,7 @@ void j_gating_select_frame::ValuesToText() //copy control parameters to text
 	fTeh2->SetCursorPosition(fTeh2->GetCursorPosition());	fTeh2->Deselect();
 	gClient->NeedRedraw(fTeh2);
 
-	sprintf(buf, "%.4f", backfrack);
+	sprintf(buf, "%.4f", backfrac);
 	fTbh3->Clear();	fTbh3->AddText(0, buf);
 	fTeh3->SetCursorPosition(fTeh3->GetCursorPosition());	fTeh3->Deselect();
 	gClient->NeedRedraw(fTeh3);
@@ -620,7 +620,7 @@ void j_gating_select_frame::DoAutoFit()
 	 double background=ingatecount;
 	 
 	 if(ingatecount<=0){//avoid empty fits
-		backfrack=0;
+		backfrac=0;
 		return;
 	 }
 
@@ -647,11 +647,11 @@ void j_gating_select_frame::DoAutoFit()
 		background=specback->Integral(gate_down,gate_up,"width");
 	}
 	
-	backfrack= background/ingatecount;	
-	if(backfrack>1)backfrack=1;
-	if(!(backfrack<=1&&backfrack>=0))backfrack=0;//guards against INF
+	backfrac= background/ingatecount;	
+	if(backfrac>1)backfrac=1;
+	if(!(backfrac<=1&&backfrac>=0))backfrac=0;//guards against INF
 	
-	//Called to set calculated backfrack to gui
+	//Called to set calculated backfrac to gui
 	ValuesToSliders();
 	ValuesToText();
 }
@@ -781,9 +781,9 @@ void j_gating_select_frame::DoHistogram(){
 	
 	//Rough error on background fraction
 	if(backfit_mode==3)//If its manual increase it
-		backfrackfrac=0.08;
+		backfracfrac=0.08;
 	else
-		backfrackfrac=0.04;
+		backfracfrac=0.04;
 	
 	SubtractGateFromBack=false;
 

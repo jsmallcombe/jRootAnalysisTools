@@ -188,8 +188,9 @@ void j_gating_result_frame::DrawHist(){
 		}else if(fRButton3->GetState()){//If Drawing of Background Requested
             H=DrawCopyHistOpt(HGate); //Use copy as we want to modify
             H->Add(HIn,-1);
-            // The background hist never actually exists, because the subtraction is done bin-by-bin to preserve scaled errors.
-            // The resultant suptracted histogram is subtracted from the pre-subtraction gated histogram
+            // The correctled scaled background hist never actually exists
+            // Because the subtraction is done bin-by-bin to preserve scaled errors.
+            // Instead, the result subtracted histogram is subtracted from the pre-subtraction gated histogram
             // This equates to the background histogram values, but the errors will be incorrect.
         }else{//Default 
             DrawHistOpt(HIn);//Draw directly the result (for 2D we avoid Copy for speed)

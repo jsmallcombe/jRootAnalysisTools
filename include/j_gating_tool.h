@@ -118,7 +118,8 @@ public:
     }
 
     //Move to the new class asap
-	static TString Iterator(TString in){jgating_tool_iterator++;return in+=jgating_tool_iterator;};
+	static int Iterator(){jgating_tool_iterator++;return jgating_tool_iterator;};
+	static TString Iterator(TString in){return in+=Iterator();};
     
 	ClassDef(jgating_tool, 2)
 };

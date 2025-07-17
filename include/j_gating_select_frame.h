@@ -78,8 +78,8 @@ private:
 	int fit_down,fit_up;
 	int m_back_down,m_back_up;
 	Long64_t target_bin;
-	double backfrack;
-	double backfrackfrac;
+	double backfrac;
+	double backfracfrac;
 	bool action_hold; 
 	int back_down,back_up;
 	bool SubtractGateFromBack;
@@ -153,7 +153,9 @@ public:
 	   return ret;
 	}
    int GetXYX(){return xyz;}
-   double GetBackFrac(){return backfrack;}
+   double GetBackFrac(){return backfrac;}
+   double GetBackFracFrac(){return backfracfrac;}
+   bool GetBackMode(){return background_mode;}
    bool SubtractGate(){return SubtractGateFromBack;}
    
    ClassDef(j_gating_select_frame, 1)

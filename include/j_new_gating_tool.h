@@ -7,43 +7,44 @@
 // //
 // //
 // 
-// #ifndef jamesfuncnew_gating_tool
-// #define jamesfuncnew_gating_tool
-// 
-// #include "TROOT.h"
-// #include "TGButton.h"
-// #include "TRootEmbeddedCanvas.h"
-// #include "TGLayout.h"
-// #include "TF1.h"
-// #include "TMath.h"
-// #include "TCanvas.h"
-// #include "TGTextEntry.h"
-// #include "TGSlider.h"
-// //#include "TGTripleSlider.h"
-// #include "TH2F.h"
-// #include "TGButtonGroup.h"
-// #include "TGButton.h"
-// #include "THashList.h"
-// #include "TStyle.h"
-// #include "TGSplitter.h"
-// #include "TGInputDialog.h"
-// 
-// #include <iostream>
-// #include <iomanip> 
-// #include <RQ_OBJECT.h>
-// 
-// #include <fstream>
-// #include <string>
-// #include <sstream>
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <chrono>
-// #include <ctime>    
-// using namespace std;
-// 
-// #include "j_ultrafit_env.h"
-// #include "j_gating_frame.h"
-// 
+#ifndef jamesfuncnew_gating_tool
+#define jamesfuncnew_gating_tool
+
+#include "TROOT.h"
+#include "TGButton.h"
+#include "TRootEmbeddedCanvas.h"
+#include "TGLayout.h"
+#include "TF1.h"
+#include "TMath.h"
+#include "TCanvas.h"
+#include "TGTextEntry.h"
+#include "TGSlider.h"
+//#include "TGTripleSlider.h"
+#include "TH2F.h"
+#include "TGButtonGroup.h"
+#include "TGButton.h"
+#include "THashList.h"
+#include "TStyle.h"
+#include "TGSplitter.h"
+#include "TGInputDialog.h"
+
+#include <RQ_OBJECT.h>
+
+#include <iostream>
+#include <iomanip> 
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <chrono>
+#include <ctime>    
+
+using namespace std;
+
+#include "j_gating_select_frame.h"
+#include "j_gating_result_frame.h"
+
 // class jnewgating_tool : public TGMainFrame {
 // 
 // private:
@@ -116,6 +117,32 @@
 // 
 // 	ClassDef(jnewgating_tool, 2)
 // };
-// 
-// 
-// #endif
+
+class j_gating_frametwodee : public TGHorizontalFrame {
+
+private:
+    TH1 *fInputStore;
+    TH1 *fProj, *fGate, *fBack, *fResult, *fResFullProj;
+    
+    double GateCentralValue;
+    int xy;
+    string suffix;
+	
+	j_gating_select_frame *fGateFrame;
+	j_gating_result_frame *fResFrame;
+    
+public:
+	j_gating_frametwodee(){};
+	j_gating_frametwodee(TGWindow *, TH1*,bool=false);
+	virtual ~j_gating_frametwodee();
+    
+    void ChangeProjection(const Int_t);
+    void UpdateInput(TH1*);
+    void UpdateInput();
+    void DoHistogram();
+
+	ClassDef(j_gating_frametwodee, 2)
+};
+
+
+#endif

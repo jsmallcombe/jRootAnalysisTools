@@ -7,8 +7,9 @@
 // //
 // 
 // #include "j_gating_tool.h" // Currently included just for gGlobalAskWindowName
-// #include "j_new_gating_tool.h"
 // #include "j_gpad_tools.h"
+#include "j_new_gating_tool.h"
+#include "j_gating_tool.h"
 // 
 // 
 // ClassImp(jnewgating_tool);
@@ -128,7 +129,7 @@
 //         fRButton1 = new TGRadioButton(fBgroup1,"    ");
 //         fRButton1->SetToolTipText("Normal View Mode");
 //         fRButton2 = new TGRadioButton(fBgroup1,"Projection ");
-//         fRButton2->SetToolTipText("Show Projection\n Show a scaled version of the full\n un-gated projection for this axis.");
+//         fRButton2->SetToolTipText("Show Projection\n Show a scaled version of the fResFullProj\n un-gated projection for this axis.");
 //         fRButton3 = new TGRadioButton(fBgroup1,"Background ");
 //         fRButton3->SetToolTipText("Show Background\n Show the background spectrum currently\n being subtracted (actual size).");
 //     fRButton1->SetState(kButtonDown);
@@ -201,7 +202,7 @@
 //         gJframe1 = new j_gating_frame(MainPanels,pass,make_iterator());
 //         gJframe1->Connect("InputChange()", "jnewgating_tool", this,"ResetRange()");
 //         gJframe1->Connect("OutputReady()", "jnewgating_tool", this,"DoUpdate2D()");
-//         pass=(TH1*)gJframe1->output_hist_point;
+//         pass=(TH1*)gJframe1->fResult;
 //     }
 //     
 //     //TH2 gate panel
@@ -342,16 +343,16 @@
 // 		fCanvas1->GetCanvas()->cd();
 // 		if(fRButton2->GetState()){
 //             
-// 			TH1* H=DrawCopyHistOpt(gJframe1->full);
+// 			TH1* H=DrawCopyHistOpt(gJframe1->fResFullProj);
 //             H->GetXaxis()->SetRangeUser(x1,x2);
 //             H->GetYaxis()->SetRangeUser(y1,y2);
 // 		}else if(fRButton3->GetState()){
-// 			gJframe1->free_hist->Add(gJframe1->gate_hist,gJframe1->output_hist_point,1,-1);
+// 			gJframe1->free_hist->Add(gJframe1->fGate,gJframe1->fResult,1,-1);
 // 			TH1* H=DrawCopyHistOpt(gJframe1->free_hist);
 //             H->GetXaxis()->SetRangeUser(x1,x2);
 //             H->GetYaxis()->SetRangeUser(y1,y2);
 // 		}else{
-// 			TH1* H=gJframe1->output_hist_point;
+// 			TH1* H=gJframe1->fResult;
 //             DrawHistOpt(H);
 //             H->GetXaxis()->SetRangeUser(x1,x2);
 //             H->GetYaxis()->SetRangeUser(y1,y2);
@@ -363,7 +364,7 @@
 // 		gJframe2->hidebinerrors=fCheck1->GetState();
 // 		MainPanels->ShowFrame(gJframe2);
 // 		MainPanels->ShowFrame(splitterB);
-// 		gJframe2->UpdateInput(gJframe1->output_hist_point);
+// 		gJframe2->UpdateInput(gJframe1->fResult);
 // 	}
 // 	ShareMainPanels();
 // RangeUpdateHold=false;
@@ -391,7 +392,7 @@
 // 	TH1* H;
 // 	fCanvas1->GetCanvas()->cd();
 //     
-// 	H=DrawCopyHistOpt(gJframe2->output_hist_point,fCheck1->GetState());
+// 	H=DrawCopyHistOpt(gJframe2->fResult,fCheck1->GetState());
 // 	if(rebin>1)H->Rebin(rebin);		
 //     H->GetXaxis()->SetRangeUser(x1,x2);
 //     
@@ -411,10 +412,10 @@
 //     
 // 	if(fRButton2->GetState()){
 // 		gJframe2->free_hist->Reset();
-// 		gJframe2->free_hist->Add(gJframe2->full,gJframe2->output_hist_point->Integral()/gJframe2->full->Integral());
+// 		gJframe2->free_hist->Add(gJframe2->fResFullProj,gJframe2->fResult->Integral()/gJframe2->fResFullProj->Integral());
 // 	}
 // 	if(fRButton3->GetState()){
-// 		gJframe2->free_hist->Add(gJframe2->gate_hist,gJframe2->output_hist_point,1,-1);
+// 		gJframe2->free_hist->Add(gJframe2->fGate,gJframe2->fResult,1,-1);
 // 	}
 // 	if(!fRButton1->GetState()){
 // 		gJframe2->free_hist->Sumw2(kFALSE);
@@ -462,7 +463,7 @@
 // 		fCanvas1->GetCanvas()->cd();
 // 	
 // 		TH1* h=hist_capture(fCanvas1->GetCanvas());
-// 		if(!h)h=gJframe2->output_hist_point;
+// 		if(!h)h=gJframe2->fResult;
 // 		
 // 		TF1* Quick=UserQuickSingleGausAutoFitE(h,x,x-20,x+20,1);//Free & linear back
 // 
@@ -527,7 +528,7 @@
 // 
 // void jnewgating_tool::jSaveAs(){
 // 	TH1* h=hist_capture(fCanvas1->GetCanvas());
-// 	if(!h)h=gJframe2->output_hist_point;
+// 	if(!h)h=gJframe2->fResult;
 // 	HistSaveAs(h,this,fCanvas1->GetCanvas());
 // }
 // 
@@ -554,11 +555,11 @@
 // 			if(savehists[select]){delete savehists[select];}savehists[select]=0;
 // 
 // // 			savehists[select]=new TH1F();
-// // 			gJframe2->output_hist_point->Copy(*savehists[select]);
+// // 			gJframe2->fResult->Copy(*savehists[select]);
 // // 			savehists[select]->SetName(("savedhist"+make_iterator()).c_str());
 // 			
-// 			TH1* targ=gJframe2->output_hist_point;;
-// 			if(fCheck0)if(fCheck0->GetState()) targ=gJframe1->output_hist_point;
+// 			TH1* targ=gJframe2->fResult;;
+// 			if(fCheck0)if(fCheck0->GetState()) targ=gJframe1->fResult;
 // 			
 // 			savehists[select]=(TH1*)targ->Clone(("savedhist"+make_iterator()).c_str());
 // 			savehists[select]->GetListOfFunctions()->Clear();
@@ -634,7 +635,7 @@
 // 	if(fFitFcn&&fCanvas1->GetCanvas()->GetListOfPrimitives()->FindObject(peaknumremove)){
 // 		
 // 		TH1* h=hist_capture(fCanvas1->GetCanvas());
-// 		if(!h)h=gJframe2->output_hist_point;
+// 		if(!h)h=gJframe2->fResult;
 // 		double cent=fFitFcn->GetParameter(1);
 // 		double shif=(h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetLast())-h->GetXaxis()->GetBinCenter(h->GetXaxis()->GetFirst()))*0.05;
 // 		peaknumremove->SetX(cent+shif);
@@ -708,3 +709,138 @@
 //     return popup;
 // }
 // 
+
+
+ClassImp(j_gating_frametwodee);
+
+
+j_gating_frametwodee::j_gating_frametwodee(TGWindow *parent,TH1* input,bool ThreeDee) : TGHorizontalFrame(parent, 100, 100),
+    fInputStore(nullptr),fProj(nullptr), fGate(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),
+    GateCentralValue(0), xy(0), suffix(jgating_tool::Iterator("")),
+    fGateFrame(new j_gating_select_frame(this, fProj,(((int)ThreeDee)+1)*2)),
+    fResFrame(new j_gating_result_frame(this, &fResult, &fBack, &fResFullProj, &GateCentralValue, ThreeDee)){
+// It may be better to initilise the frames after the histograms so they dont try to do their first draw with empty histograms
+   
+	UpdateInput(input);  
+}
+    
+j_gating_frametwodee::~j_gating_frametwodee(){
+	Cleanup(); 
+}
+
+void j_gating_frametwodee::ChangeProjection(const Int_t id)
+{  
+	xy=id-1;
+	UpdateInput();
+}
+
+//______________________________________________________________________________
+void j_gating_frametwodee::UpdateInput(TH1* input){ 
+	fInputStore=(TH1*)input->Clone(jgating_tool::Iterator("GateStoreCopy"));
+	UpdateInput();
+}
+
+//______________________________________________________________________________
+
+// Replace histograms and pass new projection to gatingframe
+// Subsequently gatingframe will "emit" and this frame will do the gate
+// Called for new input histogram or change axis
+void j_gating_frametwodee::UpdateInput()
+{       
+//     Emit("InputChange()");///// Not sure if this is needed in this new version yet
+    
+TVirtualPad* hold=gPad;
+
+	if(fProj)delete fProj;
+
+	fProj=hist_proj(fInputStore,xy,"proj"+suffix,true);
+    // We decided to get rid of the overflow histgram view proj_flow from old class
+    
+    //May not be needed
+	fProj->SetStats(0);
+	fProj->SetTitle("");
+	fProj->SetLineColor(1);
+
+	if(fResFullProj)delete fResFullProj;
+	fResFullProj=hist_gater_bin(1,fInputStore,xy,"fResFullProj"+suffix);
+	fResFullProj->SetStats(0);	
+	fResFullProj->SetTitle("");
+	
+	if(fResult)delete fResult;
+	fResult=(TH1*)fResFullProj->Clone(("outputhist"+suffix).c_str());
+	fResult->SetLineColor(1);
+	fResult->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
+
+    fGateFrame->UpdateInput(fProj);
+        
+gPad=hold;
+}
+
+// The main gating function, which is called when daugter select_frame says so
+void j_gating_frametwodee::DoHistogram(){
+	
+    // Some of these could have been set by j_gating_select_frame emits
+    // Or by having DoHistogram takes these as inputs and connecting though the signals
+    double backfrack=fGateFrame->GetBackFrac();
+    double backfrackfrac=fGateFrame->GetBackFracFrac();
+    int gate_down=fGateFrame->GetGateBinDown(), gate_up=fGateFrame->GetGateBinUp();
+    int background_mode=fGateFrame->GetBackMode();
+    int back_down=fGateFrame->GetBackBinDown(), back_up=fGateFrame->GetBackBinUp();
+    
+	// hist_gater_bin *should* nicely fill the histogram matching the name if the TH1 exists
+	// so we dont need to delete pointer fGate
+	fGate=hist_gater_bin(gate_down,gate_up,fInputStore,xy,"fGate"+suffix);
+    fGate->SetLineColor(1);
+	fGate->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
+	
+    // Note the "fResFullProj" projection used to make full and anti includes the overflow, but excludes the underflow bin
+    // This is an intentional choice as often intentionally zeroed data may be sorted into the underflow bin
+    // The underflow bin can be selected with manual sliders
+    
+	switch (background_mode) {
+		case 1://full
+            scaled_back_subtract(fGate,fResFullProj,backfrack,fResult,backfrackfrac);
+			break;
+		case 2://compton
+            {
+                TH1* compton_hist=hist_gater_bin(back_down,fInputStore,xy,"c_gate");
+                scaled_back_subtract(fGate,compton_hist,backfrack,fResult,backfrackfrac);
+                delete compton_hist;
+            }
+			break;
+		case 3://anti gate
+			{
+				TH1* anti_hist=(TH1*)fResFullProj->Clone("antiback");
+				anti_hist->Add(fGate,-1);
+				anti_hist->Sumw2(kFALSE);
+				scaled_back_subtract(fGate,anti_hist,backfrack,fResult,backfrackfrac);
+				delete anti_hist;
+			}
+			break;
+		case 4://none
+			{
+                
+			}
+			break;
+		default://manual // Compton // Antiate
+			{
+				TH1* manb_hist=hist_gater_bin(back_down,back_up,fInputStore,xy,"m_gate_2d");
+                if(gate_down>back_down&&gate_up<back_up)manb_hist->Add(fGate,-1);//In special case remove the gated part
+				manb_hist->Sumw2(kFALSE);
+				scaled_back_subtract(fGate,manb_hist,backfrack,fResult,backfrackfrac);
+				delete manb_hist;				
+			}
+			break;
+	}
+	
+	fResult->SetTitle("");
+
+	Emit("OutputReady()");// Or call the result frame directly
+}
+
+
+
+
+
+
+
