@@ -19,8 +19,6 @@
 #include "TCanvas.h"
 #include "TGTextEntry.h"
 #include "TGSlider.h"
-#include "TGTripleSlider.h"
-#include "TH2F.h"
 #include "TGButtonGroup.h"
 #include "TGButton.h"
 #include "THashList.h"
@@ -28,8 +26,6 @@
 #include "TText.h"
 #include "TGToolTip.h"
 #include "TGLabel.h"
-#include "TSpectrum.h"
-#include "TGComboBox.h"
 
 #include <iostream>
 #include <iomanip> 
@@ -102,12 +98,17 @@ public:
 	void NewAxisDrawn();
 	
 	void DrawHist();	 // Call for any update in the conditions
-	void InputUpdated(); // A totally new input
-    
-	void ResetRange();
+	void ResetRange();   // Can call manually when sending a new histogram
+	void InputUpdated(){; // For a totally new input, or change in projection)
+		ResetRange();
+		DrawHist();
+	}
+	
     void ButtonGroupDoUpdate(Int_t i);
    
 	void HideSave();
+	
+	void RequestTwoDee(Bool_t);
    
    ClassDef(j_gating_result_frame, 1)
 };

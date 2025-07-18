@@ -20,7 +20,6 @@
 #include "TGTextEntry.h"
 #include "TGSlider.h"
 #include "TGTripleSlider.h"
-#include "TH2F.h"
 #include "TGButtonGroup.h"
 #include "TGButton.h"
 #include "THashList.h"
@@ -103,11 +102,18 @@ private:
 
 	void DoAutoFit();
 	void UpdateDraw(bool overlay=false);
+	
+	static int jgating_iterator;
 
 public:
    j_gating_select_frame();
    j_gating_select_frame(TGWindow* parent, TH1* input=nullptr, int ThreeDee=0);
    virtual ~j_gating_select_frame();
+   
+   
+	static int Iterator(){jgating_iterator++;return jgating_iterator;};
+	static TString Iterator(TString in){return in+=Iterator();};
+   
    
    TGVerticalFrame   *fHframe4;
 
@@ -155,8 +161,15 @@ public:
    int GetXYX(){return xyz;}
    double GetBackFrac(){return backfrac;}
    double GetBackFracFrac(){return backfracfrac;}
-   bool GetBackMode(){return background_mode;}
+   int GetBackMode(){return background_mode;}
    bool SubtractGate(){return SubtractGateFromBack;}
+   double* PointGateCentre(){return &GateCentre;}
+   
+   void HideManBar();
+	
+// signals:
+	void OutputReady();
+	void RequestProjection(Int_t);
    
    ClassDef(j_gating_select_frame, 1)
 };

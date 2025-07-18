@@ -1,5 +1,5 @@
 #include "j_gating_result_frame.h"
-#include "j_gating_tool.h"
+#include "j_gating_select_frame.h"
 
 ClassImp(j_gating_result_frame);
 
@@ -85,9 +85,8 @@ TVirtualPad* hold=gPad;
         fCheck0->SetToolTipText("2D Only\n Do not perform the second axis subtraction.\n Instead view TH2 matrix results from the first.");
     }
 	
-	
-	fCanvas1 = new TRootEmbeddedCanvas(jgating_tool::Iterator("Embedded"), resultframe, 600, 400);
-    fCanvas1->GetCanvas()->SetName(jgating_tool::Iterator("ResultCan"));
+	fCanvas1 = new TRootEmbeddedCanvas(j_gating_select_frame::Iterator("Embedded"), resultframe, 600, 400);
+    fCanvas1->GetCanvas()->SetName(j_gating_select_frame::Iterator("ResultCan"));
     
     fCanvas1->GetCanvas()->SetFillColor(33);
     fCanvas1->GetCanvas()->SetBorderMode(0);
@@ -98,7 +97,6 @@ TVirtualPad* hold=gPad;
     fCanvas1->GetCanvas()->Connect("RangeChanged()", "j_gating_result_frame", this, "NewAxisDrawn()");
 	
 	// rebin bar
-    
     TGHorizontalFrame* rebinframe = new TGHorizontalFrame(resultframe, 0, 0, 0);
         TGLabel *reblabel = new TGLabel(rebinframe, "Binning ");
         rebinframe->AddFrame(reblabel,ffCenY);
@@ -149,20 +147,12 @@ TVirtualPad* hold=gPad;
     // create the tooltip with a timeout of 250 ms
     fTip = new TGToolTip(gClient->GetRoot(), fCanvas1, "", 250);
 
-	//    // Set main frame name, map sub windows (buttons), initialize layout
-	//    // algorithm via Resize() and map main frame
-	MapSubwindows();
-	Resize(GetDefaultSize());
-	MapWindow();
-	
-    HideSave();//Will be undone my parent frame maping/resize, need to add a call after
-    
 gPad=hold;
 }
 
 j_gating_result_frame::~j_gating_result_frame()
 {
-    // 	if(fTip){fTip->Hide();delete fTip;} // Causes crashed, but leaves orphaned tooltips otherwise
+    // if(fTip){fTip->Hide();delete fTip;} // Inclusion caused crashes, but ommiting leaves an orphaned tooltip
     ClearSaved();//delete any saved result histograms
 	Cleanup(); 
 }
@@ -173,10 +163,11 @@ void j_gating_result_frame::DrawHist(){
 	fCanvas1->GetCanvas()->cd();
     
     TH1* H=nullptr;
-    // Should add some nullptr projection checks here
     TH1* HIn=*fInput;
     TH1* HGate=*fGate;
     TH1* HProj=*fProj;
+    
+    if(HIn==nullptr||HGate==nullptr||HGate==nullptr)return;
     
     bool TwoDee=false;
     if(ThreeDee)TwoDee=fCheck0->GetState(); //If draw 2D
@@ -243,14 +234,8 @@ void j_gating_result_frame::DrawHist(){
     gPad=hold;
 }
 
-void j_gating_result_frame::InputUpdated(){
-    ResetRange();
-	DrawHist();
-}
-
 //Just reset the viewing range of thefinal canvas
 void j_gating_result_frame::ResetRange(){
-//     cout<<endl<<"RESETTING RANGE"<<endl;
     x1=1E20;
     x2=-1E20;
     y1=1E20;
@@ -258,7 +243,7 @@ void j_gating_result_frame::ResetRange(){
 }
 
 
-void j_gating_result_frame::NewAxisDrawn() //adjust sliders and control values for new axis
+void j_gating_result_frame::NewAxisDrawn() // Save the draw range, so that when gating conditions change we view the same area
 {
 	if(!RangeUpdateHold){ // Set true by DrawHist(), so only do this on axis zooming, NOT on new draw
 		TH1* h=hist_capture(fCanvas1->GetCanvas());
@@ -306,7 +291,7 @@ void j_gating_result_frame::ButtonGroupDoUpdate(Int_t i){ //When the projection 
     if(i==1){
         ResetRange(); // Reset range
     }
-    DrawHist();//Draw the histogram panel
+    DrawHist(); //Draw the histogram panel
 }
 
 
@@ -372,7 +357,7 @@ void j_gating_result_frame::HideSave(){
 }
 
 
-// Toggle Save Panel Visibility 
+// Toggle Save-Panel Visibility 
 void j_gating_result_frame::SavePanel(){
 	if(IsVisible(saveframe)){
 		HideSave();
@@ -398,14 +383,14 @@ void j_gating_result_frame::AddStoreHistogram(){
 void j_gating_result_frame::StoreHistograms(Int_t i){
 	if(i%2){
 		uint select=i/2;
-	// 	cout<<endl<<endl<<i<<endl<<endl;
+        
 		if(select<savehists.size()){
 			if(savehists[select]){delete savehists[select];}savehists[select]=0;
 			
 			TH1* targ=*fInput;
             if(!targ)return;
 			
-			savehists[select]=(TH1*)targ->Clone(jgating_tool::Iterator("SavedHist"));
+			savehists[select]=(TH1*)targ->Clone(j_gating_select_frame::Iterator("SavedHist"));
 			savehists[select]->GetListOfFunctions()->Clear();
 			
 			if(!savechecks[select]->IsEnabled())savechecks[select]->SetEnabled();
@@ -427,7 +412,7 @@ void j_gating_result_frame::DrawSaved(){
 				if(saveadd->GetNbinsX()==savehists[i]->GetNbinsX())
 					saveadd->Add(savehists[i]);
 			}else{
-				saveadd=(TH1*)savehists[i]->Clone(jgating_tool::Iterator("SavedHist"));
+				saveadd=(TH1*)savehists[i]->Clone(j_gating_select_frame::Iterator("SavedHist"));
 			}
 		}
 	}
@@ -465,7 +450,6 @@ void j_gating_result_frame::CSaveButton(){
     if(abs(diff.count())<2){
         ClearSavedButtons();
         ClearSaved();
-//         cout<<endl<<"Saved results cleared."<<endl;
     }else{
         cout<<"Click twice to clear."<<endl;
     }
