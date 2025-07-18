@@ -36,7 +36,7 @@ private:
 	unsigned short Symmetrisation;
 	TH1* Hist[3];
 	vector<TH1*> HistList;
-	j_gating_select_frame *SelectFrame;
+	jGateSelectFrame *SelectFrame;
 	TGButtonGroup *fBgroup1;
 	int XYZ;
 	TH2 *Gate,*Back;

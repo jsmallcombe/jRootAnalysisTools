@@ -1,14 +1,19 @@
 #include "j_gating_select_frame.h"
 
-ClassImp(j_gating_select_frame);
+bool gGlobalAskWindowName=false;
+void SetGlobalAskWindowName(bool set){
+	gGlobalAskWindowName=set;
+}
 
-int j_gating_select_frame::jgating_iterator = 0;
+ClassImp(jGateSelectFrame);
+
+int jGateSelectFrame::jgating_iterator = 0;
 
 
 //______________________________________________________________________________
-j_gating_select_frame::j_gating_select_frame() : TGVerticalFrame(gClient->GetRoot(), 100, 100){}
+jGateSelectFrame::jGateSelectFrame() : TGVerticalFrame(gClient->GetRoot(), 100, 100){}
 
-j_gating_select_frame::j_gating_select_frame(TGWindow * parent, TH1* input,int ThreeDee) : TGVerticalFrame(parent, 100, 100),peaknumremove(0),set_for_3D(ThreeDee),RebinFactor(1),xyz(0)
+jGateSelectFrame::jGateSelectFrame(TGWindow * parent, TH1* input,int ThreeDee) : TGVerticalFrame(parent, 100, 100),peaknumremove(0),set_for_3D(ThreeDee),RebinFactor(1),xyz(0)
 {
 TVirtualPad* hold=gPad;
 	char buf[32];	//A buffer for processing text through to text boxes
@@ -38,7 +43,7 @@ TVirtualPad* hold=gPad;
 	//	HISTOGRAMS AND TF1
 	//
 
-	fFitFcn = new TF1(j_gating_select_frame::Iterator("quickgausmain"),"gaus(0)+pol2(3)",0,0);
+	fFitFcn = new TF1(jGateSelectFrame::Iterator("quickgausmain"),"gaus(0)+pol2(3)",0,0);
     fFitFcn->SetLineColor(1);
     if(gGlobalNegativeDraw)fFitFcn->SetLineColor(3);
  
@@ -65,7 +70,7 @@ TVirtualPad* hold=gPad;
 
 		fCheck2 = new TGCheckButton(fHframe0);// A tick box with hover text belonging to a parent frame
 		fCheck2->SetState(kButtonDown);
-		fCheck2->Connect("Clicked()","j_gating_select_frame",this,"TickClick()");//Link it signal to its slot
+		fCheck2->Connect("Clicked()","jGateSelectFrame",this,"TickClick()");//Link it signal to its slot
 		fCheck2->SetToolTipText("Show Fit Centroid\n Hide/Show the centroid of the Gaussian\n fit used to calculate background fraction.");
 		fHframe0->AddFrame(fCheck2, fBfly2);
 
@@ -82,7 +87,7 @@ TVirtualPad* hold=gPad;
 			}
 			fRButton1->SetState(kButtonDown);//Set which is pressed
 			fBgroup1->Show();//Display/Add all the buttons
-			fBgroup1->Connect(" Clicked(Int_t)", "j_gating_select_frame", this,"ChangeProjection(Int_t)");
+			fBgroup1->Connect(" Clicked(Int_t)", "jGateSelectFrame", this,"ChangeProjection(Int_t)");
 			fHframe0->AddFrame(fBgroup1, fBfly1);
 		}
 		
@@ -102,14 +107,14 @@ TVirtualPad* hold=gPad;
 		fRButton5->SetState(kButtonDown);
 		background_mode=2;
 		fBgroup2->Show();
-		fBgroup2->Connect(" Clicked(Int_t)", "j_gating_select_frame", this,"ChangeBackMode(Int_t)");
+		fBgroup2->Connect(" Clicked(Int_t)", "jGateSelectFrame", this,"ChangeBackMode(Int_t)");
 		fHframe0->AddFrame(fBgroup2, fBfly1);
 		
 		TGButtonGroup* fBgroup3 = new TGButtonGroup(fHframe0,"Rebin",kChildFrame);// Another button group
             TGTextButton *RebinPlusButton=new TGTextButton(fBgroup3,"+");
-            RebinPlusButton->Connect("Clicked()","j_gating_select_frame",this,"RebinPlus()");
+            RebinPlusButton->Connect("Clicked()","jGateSelectFrame",this,"RebinPlus()");
             TGTextButton *RebinMinusButton=new TGTextButton(fBgroup3,"-");
-            RebinMinusButton->Connect("Clicked()","j_gating_select_frame",this,"RebinMinus()");
+            RebinMinusButton->Connect("Clicked()","jGateSelectFrame",this,"RebinMinus()");
 		fBgroup3->Show();
 		fHframe0->AddFrame(fBgroup3, fBfly1); 
 		
@@ -123,8 +128,8 @@ TVirtualPad* hold=gPad;
 		fCanvas1->GetCanvas()->SetFrameFillColor(10);
 		fCanvas1->GetCanvas()->SetMargin(0.01,0.005,0.08,0.005);
 		//    fCanvas1->GetCanvas()->SetGrid();
-			fCanvas1->GetCanvas()->Connect("RangeChanged()", "j_gating_select_frame", this, "ReDrawOne()");
-			fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "j_gating_select_frame", this,"ClickedCanvasOne(Int_t,Int_t,Int_t,TObject*)");
+			fCanvas1->GetCanvas()->Connect("RangeChanged()", "jGateSelectFrame", this, "ReDrawOne()");
+			fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jGateSelectFrame", this,"ClickedCanvasOne(Int_t,Int_t,Int_t,TObject*)");
 	this->AddFrame(fCanvas1, fLcan);
 	
 	TGLabel *sliderlabel = new TGLabel(this, "Gate Position and Fit Range");
@@ -136,13 +141,13 @@ TVirtualPad* hold=gPad;
 		fTeh1->SetToolTipText("Gate Position");
 		fTeh1->SetDefaultSize(50,25);
 		fTeh1->SetAlignment (kTextRight);
-		fTeh1->Connect("ReturnPressed()", "j_gating_select_frame", this,"DoText()");//So it doesnt continually do things while typing is occuring
-		fTeh1->Connect("TabPressed()", "j_gating_select_frame", this,"DoText()");
+		fTeh1->Connect("ReturnPressed()", "jGateSelectFrame", this,"DoText()");//So it doesnt continually do things while typing is occuring
+		fTeh1->Connect("TabPressed()", "jGateSelectFrame", this,"DoText()");
 		fHframe1->AddFrame(fTeh1, fBfly1);
 
 		fHslider1 = new TGTripleHSlider(fHframe1, 190, kSlider1);//Create a control slider
-			fHslider1->Connect("PointerPositionChanged()", "j_gating_select_frame", this, "DoSlidePoint()");//Link it signal to its slot (method fn) 
-			fHslider1->Connect("PositionChanged()", "j_gating_select_frame", this, "DoSlider()");//Link it signal to its slot (method fn) 	
+			fHslider1->Connect("PointerPositionChanged()", "jGateSelectFrame", this, "DoSlidePoint()");//Link it signal to its slot (method fn) 
+			fHslider1->Connect("PositionChanged()", "jGateSelectFrame", this, "DoSlider()");//Link it signal to its slot (method fn) 	
 // 			fHslider1->SetRange(1,raw_2d->GetNbinsX()); //Assiagn default range
 // 			fHslider1->SetPointerPosition(1); //set inital value
 			fHslider1->SetConstrained(kFALSE);//The pointer can traverse the full range, not just the sub slider
@@ -160,8 +165,8 @@ TVirtualPad* hold=gPad;
 			sprintf(buf, "%.1f", proj->GetBinCenter(1));	fTbh1->AddText(0, buf);
 			sprintf(buf, "%.1f", 5*(double)proj->GetBinWidth(1));	fTbh2->AddText(0, buf);
 			
-		fTeh2->Connect("ReturnPressed()", "j_gating_select_frame", this,"DoText()");
-		fTeh2->Connect("TabPressed()", "j_gating_select_frame", this,"DoText()");
+		fTeh2->Connect("ReturnPressed()", "jGateSelectFrame", this,"DoText()");
+		fTeh2->Connect("TabPressed()", "jGateSelectFrame", this,"DoText()");
 		
 		fHframe2->AddFrame(fTeh2, fBfly1);
 
@@ -170,7 +175,7 @@ TVirtualPad* hold=gPad;
 			minifvertrame->AddFrame(sliderlabel, fBfly5);
 			
 			fHslider2 = new TGHSlider(minifvertrame, 200, kSlider2);
-			fHslider2->Connect("PositionChanged(Int_t)", "j_gating_select_frame", this, "DoSlider()");
+			fHslider2->Connect("PositionChanged(Int_t)", "jGateSelectFrame", this, "DoSlider()");
 			minifvertrame->AddFrame(fHslider2, fBly);
 		fHframe2->AddFrame(minifvertrame, fBly);
 		
@@ -185,8 +190,8 @@ TVirtualPad* hold=gPad;
 			fTeh3->SetAlignment (kTextRight);
 			fTeh3->SetToolTipText("Background Fraction");
 			sprintf(buf, "%.4f", backfrac);fTbh3->AddText(0, buf);
-			fTeh3->Connect("ReturnPressed()", "j_gating_select_frame", this,"DoText()");
-			fTeh3->Connect("TabPressed()", "j_gating_select_frame", this,"DoText()");
+			fTeh3->Connect("ReturnPressed()", "jGateSelectFrame", this,"DoText()");
+			fTeh3->Connect("TabPressed()", "jGateSelectFrame", this,"DoText()");
 			fTeh3->SetEnabled(kFALSE); //The default is disabled
 		fHframe3->AddFrame(fTeh3, fBfly1);
 
@@ -194,7 +199,7 @@ TVirtualPad* hold=gPad;
 		minifvertrame = new TGVerticalFrame(fHframe3);
 			sliderlabel = new TGLabel(minifvertrame, "Background Subtraction Fraction");
 			fHslider3 = new TGHSlider(minifvertrame, 300, kSlider2);
-				fHslider3->Connect("PositionChanged(Int_t)", "j_gating_select_frame", this, "DoSlider()");
+				fHslider3->Connect("PositionChanged(Int_t)", "jGateSelectFrame", this, "DoSlider()");
 				fHslider3->SetRange(0,10000);
 				fHslider3->SetEnabled(kFALSE); //The default is disabled
 			minifvertrame->AddFrame(sliderlabel, fBfly5);
@@ -210,7 +215,7 @@ TVirtualPad* hold=gPad;
 			BackModeDrop->AddEntry("TSpectrum Low",6);
 			BackModeDrop->Resize(150,20);
 			BackModeDrop->Select(2);
-			BackModeDrop->Connect(" Selected(Int_t)", "j_gating_select_frame", this,"ChangeBackFit(Int_t)");
+			BackModeDrop->Connect(" Selected(Int_t)", "jGateSelectFrame", this,"ChangeBackFit(Int_t)");
 		fHframe3->AddFrame(BackModeDrop, fBfly3);
 		
 	this->AddFrame(fHframe3, fBly);
@@ -219,7 +224,7 @@ TVirtualPad* hold=gPad;
 	fHframe4 = new TGVerticalFrame(this, 0, 0, 0);// Create a new horizontally alighed frame for some control widgets
 		sliderlabel = new TGLabel(fHframe4, "Manual Background Gate Position");
 		fHslider4 = new TGDoubleHSlider(fHframe4, 190, kSlider1);//Create a control slider
-			fHslider4->Connect("PositionChanged()", "j_gating_select_frame", this, "DoSlider()");
+			fHslider4->Connect("PositionChanged()", "jGateSelectFrame", this, "DoSlider()");
 		fHframe4->AddFrame(sliderlabel, fBfly5);
 		fHframe4->AddFrame(fHslider4, fBly);	
 	this->AddFrame(fHframe4, fBly);	
@@ -234,7 +239,7 @@ gPad=hold;
 
 //______________________________________________________________________________
 
-j_gating_select_frame::~j_gating_select_frame()
+jGateSelectFrame::~jGateSelectFrame()
 {
 	fTip->Hide();
 	delete fTip;
@@ -251,19 +256,19 @@ j_gating_select_frame::~j_gating_select_frame()
 }
 
 //______________________________________________________________________________
-// void j_gating_select_frame::CloseWindow()
+// void jGateSelectFrame::CloseWindow()
 // {
 // 	delete this;
 // }
 
-void j_gating_select_frame::TickClick(){
+void jGateSelectFrame::TickClick(){
 	proj->GetXaxis()->SetRange(1,-1);
 	UpdateCanvas();
 }
 
 //______________________________________________________________________________
 
-void j_gating_select_frame::NewAxisDrawn() //adjust sliders and control values for new axis
+void jGateSelectFrame::NewAxisDrawn() //adjust sliders and control values for new axis
 {
 	axis_down=proj->GetXaxis()->GetFirst();
 	axis_up=proj->GetXaxis()->GetLast();
@@ -289,7 +294,7 @@ void j_gating_select_frame::NewAxisDrawn() //adjust sliders and control values f
 
 //______________________________________________________________________________
 
-void j_gating_select_frame::ValidateValues() //checks stored control parameters are valid
+void jGateSelectFrame::ValidateValues() //checks stored control parameters are valid
 {
 	if(target_bin<axis_down)target_bin=axis_down;
 	if(target_bin>axis_up)target_bin=axis_up;
@@ -327,7 +332,7 @@ void j_gating_select_frame::ValidateValues() //checks stored control parameters 
 
 //______________________________________________________________________________
 
-void j_gating_select_frame::FetchSliderValues() //copy slider values to control parameters
+void jGateSelectFrame::FetchSliderValues() //copy slider values to control parameters
 {
 	target_bin=fHslider1->GetPointerPosition();
 	gate_range=fHslider2->GetPosition();
@@ -348,7 +353,7 @@ void j_gating_select_frame::FetchSliderValues() //copy slider values to control 
 
 //______________________________________________________________________________
 
-void j_gating_select_frame::ValuesToSliders() //copy control parameters to sliders
+void jGateSelectFrame::ValuesToSliders() //copy control parameters to sliders
 {
 	action_hold=true;
 		fHslider1->SetPosition(fit_down,fit_up);
@@ -361,7 +366,7 @@ void j_gating_select_frame::ValuesToSliders() //copy control parameters to slide
 
 //______________________________________________________________________________
 
-void j_gating_select_frame::FetchTextValues() //copy text values to control parameters
+void jGateSelectFrame::FetchTextValues() //copy text values to control parameters
 {
 	target_bin=proj->GetXaxis()->FindFixBin(atof(fTbh1->GetString()));
 	gate_range=atof(fTbh2->GetString())/proj->GetBinWidth(1);
@@ -370,7 +375,7 @@ void j_gating_select_frame::FetchTextValues() //copy text values to control para
 
 //______________________________________________________________________________
 
-void j_gating_select_frame::ValuesToText() //copy control parameters to text
+void jGateSelectFrame::ValuesToText() //copy control parameters to text
 {	char buf[32];
 	
 	//update the text now the sliders have moved
@@ -394,7 +399,7 @@ void j_gating_select_frame::ValuesToText() //copy control parameters to text
 //______________________________________________________________________________
 
 // Updates sliders to match text THEN calls DoHistogram() (which does everything else)
-void j_gating_select_frame::DoText() 
+void jGateSelectFrame::DoText() 
 {
 	// Handle text entry widgets.
 	int xtemp=fHslider1->GetPointerPosition();
@@ -413,7 +418,7 @@ void j_gating_select_frame::DoText()
 //______________________________________________________________________________
 
  // Updates text to match sliders THEN calls DoHistogram() (which does everything else)
-void j_gating_select_frame::DoSlidePoint()
+void jGateSelectFrame::DoSlidePoint()
 {
 	if(!action_hold){//cout<<"DoSlidePoint "<<flush;
 		action_hold=true;
@@ -434,7 +439,7 @@ void j_gating_select_frame::DoSlidePoint()
 
 //______________________________________________________________________________
 // Updates text to match sliders, and THEN calls DoHistogram(), which does everything else
-void j_gating_select_frame::DoSlider()
+void jGateSelectFrame::DoSlider()
 {	
 	if(!action_hold){
 		FetchSliderValues();
@@ -449,10 +454,10 @@ void j_gating_select_frame::DoSlider()
 
 
 //______________________________________________________________________________
-void j_gating_select_frame::UpdateInput(TH1* input){
+void jGateSelectFrame::UpdateInput(TH1* input){
 	if(!input)return;
 	delete raw_input;
-	raw_input=(TH1*)input->Clone(j_gating_select_frame::Iterator("projraw"));
+	raw_input=(TH1*)input->Clone(jGateSelectFrame::Iterator("projraw"));
 	maxbin=raw_input->GetNbinsX();
 	UpdateInput();
 }
@@ -462,7 +467,7 @@ void j_gating_select_frame::UpdateInput(TH1* input){
 // Basically redo everything.
 // All histograms, drawing etc
 // Calles for new input histogram or change axis
-void j_gating_select_frame::UpdateInput()
+void jGateSelectFrame::UpdateInput()
 {
 TVirtualPad* hold=gPad;
 
@@ -470,7 +475,7 @@ TVirtualPad* hold=gPad;
 	
 	delete proj;
 
-	proj=(TH1*)raw_input->Clone(j_gating_select_frame::Iterator("proje"));
+	proj=(TH1*)raw_input->Clone(jGateSelectFrame::Iterator("proje"));
 	
 	if(RebinFactor>1){
         proj->Rebin(RebinFactor);
@@ -484,12 +489,12 @@ TVirtualPad* hold=gPad;
 	proj->SetLineColor(1);
 
 	delete selected;
-	selected=(TH1*)proj->Clone(j_gating_select_frame::Iterator("selected"));
+	selected=(TH1*)proj->Clone(jGateSelectFrame::Iterator("selected"));
 	selected->SetLineWidth(3);
 	selected->SetLineColor(2);
 	
 	delete b_man;
-	b_man=(TH1*)proj->Clone(j_gating_select_frame::Iterator("b_man"));
+	b_man=(TH1*)proj->Clone(jGateSelectFrame::Iterator("b_man"));
 	b_man->SetLineWidth(3);
 	b_man->SetLineColor(1);
 	
@@ -503,7 +508,7 @@ gPad=hold;
 //______________________________________________________________________________
 
 // Make the TSpectrum background histogram
-void j_gating_select_frame::UpdateSpecBack(){
+void jGateSelectFrame::UpdateSpecBack(){
 	delete specback;
 
 	proj->GetXaxis()->SetRange(1,-1);//Doesnt seem to have any issues with NewAxisDrawn()
@@ -518,7 +523,7 @@ void j_gating_select_frame::UpdateSpecBack(){
 
 // Change the way in which background historam is calcuated
 // And recalculate
-void j_gating_select_frame::ChangeBackMode(const Int_t id)
+void jGateSelectFrame::ChangeBackMode(const Int_t id)
 {       
 	background_mode=id;
 	
@@ -528,7 +533,7 @@ void j_gating_select_frame::ChangeBackMode(const Int_t id)
 	DoHistogram();
 }
 
-void j_gating_select_frame::HideManBar(){
+void jGateSelectFrame::HideManBar(){
     HideFrame(fHframe4);
 }
 
@@ -536,7 +541,7 @@ void j_gating_select_frame::HideManBar(){
 
 // Change the mode of background fraction calculation
 // Then update the histograms etc
-void j_gating_select_frame::ChangeBackFit(const Int_t id)
+void jGateSelectFrame::ChangeBackFit(const Int_t id)
 {
 	if(backfit_mode<3&&id>2){//Switching away from a fitting mode
 		storef1=fit_down-target_bin;storef2=fit_up-target_bin;
@@ -583,7 +588,7 @@ void j_gating_select_frame::ChangeBackFit(const Int_t id)
 // Calculated the background fraction
 // Either by fitting or TSpectrum intergral
 // Does nothing when on manual mode
-void j_gating_select_frame::DoAutoFit()
+void jGateSelectFrame::DoAutoFit()
 {  
 	 if(backfit_mode==3)return;//manual mode
 	 
@@ -634,7 +639,7 @@ void j_gating_select_frame::DoAutoFit()
 // Histograms & peak text
 // The call canvas update
 // TF1 parameters should have already been set
-void j_gating_select_frame::UpdateCanvas()
+void jGateSelectFrame::UpdateCanvas()
 {       
 
 	b_man->GetXaxis()->SetRange(m_back_down,m_back_up);
@@ -680,7 +685,7 @@ void j_gating_select_frame::UpdateCanvas()
 
 // Called by canvas range change
 // Either because drawing a new histogram or selecting axis
-void j_gating_select_frame::ReDrawOne(){
+void jGateSelectFrame::ReDrawOne(){
 	
 	if(!action_hold){
 	
@@ -702,7 +707,7 @@ void j_gating_select_frame::ReDrawOne(){
 
 // Function called by canvas interaction
 // Mostly for moving the gate to double click position
-void j_gating_select_frame::ClickedCanvasOne(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
+void jGateSelectFrame::ClickedCanvasOne(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
 {   
 	if (event == kMouseLeave){fTip->Hide(); return;}
 
@@ -740,7 +745,7 @@ void j_gating_select_frame::ClickedCanvasOne(Int_t event, Int_t px, Int_t py, TO
 //______________________________________________________________________________
 
 // Do the gating on the matrix and produce the output channel information
-void j_gating_select_frame::DoHistogram(){
+void jGateSelectFrame::DoHistogram(){
 	
 	//Rough error on background fraction
 	if(backfit_mode==3)//If its manual increase it
@@ -797,7 +802,7 @@ void j_gating_select_frame::DoHistogram(){
 
 // Draw histograms & canvas to the pad
 // these may be updated without redraw
-void j_gating_select_frame::UpdateDraw(bool overlay){
+void jGateSelectFrame::UpdateDraw(bool overlay){
 	TVirtualPad* hold=gPad;
 	fCanvas1->GetCanvas()->cd();
     
@@ -811,19 +816,19 @@ void j_gating_select_frame::UpdateDraw(bool overlay){
 }
 
 
-void j_gating_select_frame::RebinPlus(){
+void jGateSelectFrame::RebinPlus(){
     RebinFactor++;
 	UpdateInput();	
 }
 
-void j_gating_select_frame::RebinMinus(){
+void jGateSelectFrame::RebinMinus(){
     if(RebinFactor>1){
         RebinFactor--;
         UpdateInput();
     }
 }
 
-void j_gating_select_frame::ChangeProjection(const Int_t id)
+void jGateSelectFrame::ChangeProjection(const Int_t id)
 {  
 	xyz=id-1;
     Emit("RequestProjection(Int_t)",xyz);

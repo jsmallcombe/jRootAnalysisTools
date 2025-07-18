@@ -7,8 +7,8 @@
 //
 //
 
-#ifndef j_gating_select_frame_h
-#define j_gating_select_frame_h
+#ifndef jGateSelectFrame_h
+#define jGateSelectFrame_h
 
 
 #include "TGButton.h"
@@ -42,7 +42,10 @@ using namespace std;
 #include "j_fitting.h"
 #include "j_hist_formatting.h"
 
-class j_gating_select_frame : public TGVerticalFrame {
+extern bool gGlobalAskWindowName;
+void SetGlobalAskWindowName(bool set=true);
+
+class jGateSelectFrame : public TGVerticalFrame {
 
 private:
 	TGLayoutHints* fBly;
@@ -106,9 +109,9 @@ private:
 	static int jgating_iterator;
 
 public:
-   j_gating_select_frame();
-   j_gating_select_frame(TGWindow* parent, TH1* input=nullptr, int ThreeDee=0);
-   virtual ~j_gating_select_frame();
+   jGateSelectFrame();
+   jGateSelectFrame(TGWindow* parent, TH1* input=nullptr, int ThreeDee=0);
+   virtual ~jGateSelectFrame();
    
    
 	static int Iterator(){jgating_iterator++;return jgating_iterator;};
@@ -171,23 +174,23 @@ public:
 	void OutputReady();
 	void RequestProjection(Int_t);
    
-   ClassDef(j_gating_select_frame, 1)
+   ClassDef(jGateSelectFrame, 1)
 };
 
 
-class j_gating_select_frame_tester : public TGMainFrame {
+class jGateSelectFrame_tester : public TGMainFrame {
 	
 	private:
 		TH1* testhist;
-		j_gating_select_frame *jgsframe;
+		jGateSelectFrame *jgsframe;
 	public:
-	j_gating_select_frame_tester();
-	j_gating_select_frame_tester(TH1* input=nullptr, int ThreeDee=3);
-   virtual ~j_gating_select_frame_tester(){};
+	jGateSelectFrame_tester();
+	jGateSelectFrame_tester(TH1* input=nullptr, int ThreeDee=3);
+   virtual ~jGateSelectFrame_tester(){};
 	
    void OutputTest();
 	
-	ClassDef(j_gating_select_frame_tester, 1)
+	ClassDef(jGateSelectFrame_tester, 1)
 };
 
 #endif

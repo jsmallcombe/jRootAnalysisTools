@@ -38,7 +38,7 @@ jRootTreeCube::jRootTreeCube():
 	
     AddFrame(ControlFrame,ffExpandY);
 
-	SelectFrame = new j_gating_select_frame(this);
+	SelectFrame = new jGateSelectFrame(this);
     AddFrame(SelectFrame,ffExpand);
 
     MapSubwindows();

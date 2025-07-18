@@ -1,12 +1,12 @@
 #include "j_gating_result_frame.h"
 #include "j_gating_select_frame.h"
 
-ClassImp(j_gating_result_frame);
+ClassImp(jGateResultFrame);
 
 //______________________________________________________________________________
-j_gating_result_frame::j_gating_result_frame() : TGHorizontalFrame(gClient->GetRoot(), 100, 100){}
+jGateResultFrame::jGateResultFrame() : TGHorizontalFrame(gClient->GetRoot(), 100, 100){}
 
-j_gating_result_frame::j_gating_result_frame(TGWindow * parent,  TH1** input, TH1** back, TH1** proj, double* cent,  bool threedee) : TGHorizontalFrame(parent, 100, 100), ThreeDee(threedee), RangeUpdateHold(true),  fCheck0(0), fCheck1(0), fFitFcn(0),fPeakNumText(0),fTip(0),fFitPanel(0),x1(1),x2(-1),y1(1),y2(-1)
+jGateResultFrame::jGateResultFrame(TGWindow * parent,  TH1** input, TH1** back, TH1** proj, double* cent,  bool threedee) : TGHorizontalFrame(parent, 100, 100), ThreeDee(threedee), RangeUpdateHold(true),  fCheck0(0), fCheck1(0), fFitFcn(0),fPeakNumText(0),fTip(0),fFitPanel(0),x1(1),x2(-1),y1(1),y2(-1)
 {
 	if(input==nullptr)return;
 	if(back==nullptr)return;
@@ -39,23 +39,23 @@ TVirtualPad* hold=gPad;
     savebutton.clear();
     
     TGTextButton* spbutton = new TGTextButton(this,">");
-    spbutton->Connect("Clicked()","j_gating_result_frame",this,"SavePanel()");
+    spbutton->Connect("Clicked()","jGateResultFrame",this,"SavePanel()");
     spbutton->SetToolTipText("Show Save Panel\n Open side-panel for holding gating results\n  in memory to enable on-the-fly summing.");
     
     saveframe= new TGVerticalFrame(this, 0, 0, 0); 
     TGTextButton* plushist = new TGTextButton(saveframe,"DrawSum");
-    plushist->Connect("Clicked()","j_gating_result_frame",this,"DrawSaved()");
+    plushist->Connect("Clicked()","jGateResultFrame",this,"DrawSaved()");
     plushist->SetToolTipText("Draw a sum of currently\n selected saved Histograms.");
     saveframe->AddFrame(plushist,ffSpeBuf);//
     
     plushist = new TGTextButton(saveframe,"DeleteAll");
-    plushist->Connect("Clicked()","j_gating_result_frame",this,"CSaveButton()");
+    plushist->Connect("Clicked()","jGateResultFrame",this,"CSaveButton()");
     plushist->SetToolTipText("Clear all locally saved\n gated histograms.");
     saveframe->AddFrame(plushist,ffSpeBuf);//
     
     TGLabel *label = new TGLabel(saveframe, "Saved Gated\n Histograms.\n Check box\n   to sum.");
     savebuttons = new TGButtonGroup(saveframe,15,2);
-    savebuttons->Connect(" Clicked(Int_t)", "j_gating_result_frame", this,"StoreHistograms(Int_t)");//Link test signal to its	
+    savebuttons->Connect(" Clicked(Int_t)", "jGateResultFrame", this,"StoreHistograms(Int_t)");//Link test signal to its	
 	AddStoreHistogram();
     
     saveframe->AddFrame(label,ffSpeBuf);//
@@ -76,25 +76,25 @@ TVirtualPad* hold=gPad;
         fRButton3->SetToolTipText("Show Background\n Show the background spectrum currently\n being subtracted (actual size).");
     fRButton1->SetState(kButtonDown);
     fBgroup1->Show();
-    fBgroup1->Connect(" Clicked(Int_t)", "j_gating_result_frame", this,"ButtonGroupDoUpdate(Int_t)");
+    fBgroup1->Connect(" Clicked(Int_t)", "jGateResultFrame", this,"ButtonGroupDoUpdate(Int_t)");
     
     if(ThreeDee){
         fCheck0 = new TGCheckButton(buttonframe,"2D ");
         fCheck0->SetState(kButtonUp);
-        fCheck0->Connect(" Clicked()", "j_gating_result_frame", this,"DoCheckbox2D()");
+        fCheck0->Connect(" Clicked()", "jGateResultFrame", this,"DoCheckbox2D()");
         fCheck0->SetToolTipText("2D Only\n Do not perform the second axis subtraction.\n Instead view TH2 matrix results from the first.");
     }
 	
-	fCanvas1 = new TRootEmbeddedCanvas(j_gating_select_frame::Iterator("Embedded"), resultframe, 600, 400);
-    fCanvas1->GetCanvas()->SetName(j_gating_select_frame::Iterator("ResultCan"));
+	fCanvas1 = new TRootEmbeddedCanvas(jGateSelectFrame::Iterator("Embedded"), resultframe, 600, 400);
+    fCanvas1->GetCanvas()->SetName(jGateSelectFrame::Iterator("ResultCan"));
     
     fCanvas1->GetCanvas()->SetFillColor(33);
     fCanvas1->GetCanvas()->SetBorderMode(0);
     fCanvas1->GetCanvas()->SetFrameFillColor(10);
 
     fCanvas1->GetCanvas()->SetMargin(0.01,0.005,0.08,0.005);	
-    fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "j_gating_result_frame", this,"ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*)");
-    fCanvas1->GetCanvas()->Connect("RangeChanged()", "j_gating_result_frame", this, "NewAxisDrawn()");
+    fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jGateResultFrame", this,"ClickedFinalCanvas(Int_t,Int_t,Int_t,TObject*)");
+    fCanvas1->GetCanvas()->Connect("RangeChanged()", "jGateResultFrame", this, "NewAxisDrawn()");
 	
 	// rebin bar
     TGHorizontalFrame* rebinframe = new TGHorizontalFrame(resultframe, 0, 0, 0);
@@ -103,7 +103,7 @@ TVirtualPad* hold=gPad;
         
         fHslider1 = new TGHSlider(rebinframe, 9, kSlider2);
         fHslider1->SetPosition(0);
-        fHslider1->Connect("PositionChanged(Int_t)", "j_gating_result_frame", this, "DrawHist()");
+        fHslider1->Connect("PositionChanged(Int_t)", "jGateResultFrame", this, "DrawHist()");
         rebinframe->AddFrame(fHslider1, ffExpandXpad);
         
         RebinText = new TGTextEntry(rebinframe, new TGTextBuffer(4));
@@ -113,16 +113,16 @@ TVirtualPad* hold=gPad;
         rebinframe->AddFrame(RebinText,ffCenY);
     
     ftbutton = new TGTextButton(buttonframe,"Fit Panel");
-    ftbutton->Connect("Clicked()","j_gating_result_frame",this,"FitPanel()");
+    ftbutton->Connect("Clicked()","jGateResultFrame",this,"FitPanel()");
     ftbutton->SetToolTipText("Open Fit Tool\n Open an instance of J-fit panel,\n initially connected to result canvas.");
 
     TGTextButton* SAbutton = new TGTextButton(buttonframe,"SaveAs");
-    SAbutton->Connect("Clicked()","j_gating_result_frame",this,"jSaveAs()");
+    SAbutton->Connect("Clicked()","jGateResultFrame",this,"jSaveAs()");
     SAbutton->SetToolTipText("Save the currently drawn histogram.");
     
     fCheck1 = new TGCheckButton(buttonframe,"Hide Ers");
     fCheck1->SetState(kButtonDown);
-    fCheck1->Connect(" Clicked()", "j_gating_result_frame", this,"DrawHist()");
+    fCheck1->Connect(" Clicked()", "jGateResultFrame", this,"DrawHist()");
     fCheck1->SetToolTipText("Hide Bin Errors on drawn histograms");
 
     buttonframe->AddFrame(fBgroup1, ffCenX);
@@ -150,14 +150,14 @@ TVirtualPad* hold=gPad;
 gPad=hold;
 }
 
-j_gating_result_frame::~j_gating_result_frame()
+jGateResultFrame::~jGateResultFrame()
 {
     // if(fTip){fTip->Hide();delete fTip;} // Inclusion caused crashes, but ommiting leaves an orphaned tooltip
     ClearSaved();//delete any saved result histograms
 	Cleanup(); 
 }
 
-void j_gating_result_frame::DrawHist(){
+void jGateResultFrame::DrawHist(){
     TVirtualPad* hold=gPad;
     RangeUpdateHold=true;
 	fCanvas1->GetCanvas()->cd();
@@ -235,7 +235,7 @@ void j_gating_result_frame::DrawHist(){
 }
 
 //Just reset the viewing range of thefinal canvas
-void j_gating_result_frame::ResetRange(){
+void jGateResultFrame::ResetRange(){
     x1=1E20;
     x2=-1E20;
     y1=1E20;
@@ -243,7 +243,7 @@ void j_gating_result_frame::ResetRange(){
 }
 
 
-void j_gating_result_frame::NewAxisDrawn() // Save the draw range, so that when gating conditions change we view the same area
+void jGateResultFrame::NewAxisDrawn() // Save the draw range, so that when gating conditions change we view the same area
 {
 	if(!RangeUpdateHold){ // Set true by DrawHist(), so only do this on axis zooming, NOT on new draw
 		TH1* h=hist_capture(fCanvas1->GetCanvas());
@@ -269,7 +269,7 @@ void j_gating_result_frame::NewAxisDrawn() // Save the draw range, so that when 
 	
 }
 
-void j_gating_result_frame::DoCheckbox2D(){
+void jGateResultFrame::DoCheckbox2D(){
     
     //If the 2D checkbox exist, i.e. ThreeDee was set
     if(ThreeDee){
@@ -287,7 +287,7 @@ void j_gating_result_frame::DoCheckbox2D(){
 }
 
 
-void j_gating_result_frame::ButtonGroupDoUpdate(Int_t i){ //When the projection buttons clicked
+void jGateResultFrame::ButtonGroupDoUpdate(Int_t i){ //When the projection buttons clicked
     if(i==1){
         ResetRange(); // Reset range
     }
@@ -297,7 +297,7 @@ void j_gating_result_frame::ButtonGroupDoUpdate(Int_t i){ //When the projection 
 
 // Just a basic little no frills, minimal input peak fitter for standard size y/e peaks
 // Added it in to help with quick peak identification
-void j_gating_result_frame::ClickedFinalCanvas(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
+void jGateResultFrame::ClickedFinalCanvas(Int_t event, Int_t px, Int_t py, TObject *selected_ob)
 {TVirtualPad* hold=gPad;
 	if (event == kMouseLeave){fTip->Hide(); return;}
 	
@@ -352,13 +352,13 @@ void j_gating_result_frame::ClickedFinalCanvas(Int_t event, Int_t px, Int_t py, 
 gPad=hold;
 }
 
-void j_gating_result_frame::HideSave(){
+void jGateResultFrame::HideSave(){
     HideFrame(saveframe);
 }
 
 
 // Toggle Save-Panel Visibility 
-void j_gating_result_frame::SavePanel(){
+void jGateResultFrame::SavePanel(){
 	if(IsVisible(saveframe)){
 		HideSave();
 	}else{
@@ -366,7 +366,7 @@ void j_gating_result_frame::SavePanel(){
 	}
 }
 
-void j_gating_result_frame::AddStoreHistogram(){
+void jGateResultFrame::AddStoreHistogram(){
 	if(savehists.size()<15){
 		savebutton.push_back(new TGTextButton(savebuttons,"  [save]  "));
 		
@@ -380,7 +380,7 @@ void j_gating_result_frame::AddStoreHistogram(){
 	}
 }
 
-void j_gating_result_frame::StoreHistograms(Int_t i){
+void jGateResultFrame::StoreHistograms(Int_t i){
 	if(i%2){
 		uint select=i/2;
         
@@ -390,7 +390,7 @@ void j_gating_result_frame::StoreHistograms(Int_t i){
 			TH1* targ=*fInput;
             if(!targ)return;
 			
-			savehists[select]=(TH1*)targ->Clone(j_gating_select_frame::Iterator("SavedHist"));
+			savehists[select]=(TH1*)targ->Clone(jGateSelectFrame::Iterator("SavedHist"));
 			savehists[select]->GetListOfFunctions()->Clear();
 			
 			if(!savechecks[select]->IsEnabled())savechecks[select]->SetEnabled();
@@ -404,7 +404,7 @@ void j_gating_result_frame::StoreHistograms(Int_t i){
 	}
 }
 
-void j_gating_result_frame::DrawSaved(){
+void jGateResultFrame::DrawSaved(){
 	TH1* saveadd=0;
 	for(uint i=0;i<savehists.size();i++){
 		if(savehists[i])if(savechecks[i]->GetState()==EButtonState::kButtonDown){
@@ -412,7 +412,7 @@ void j_gating_result_frame::DrawSaved(){
 				if(saveadd->GetNbinsX()==savehists[i]->GetNbinsX())
 					saveadd->Add(savehists[i]);
 			}else{
-				saveadd=(TH1*)savehists[i]->Clone(j_gating_select_frame::Iterator("SavedHist"));
+				saveadd=(TH1*)savehists[i]->Clone(jGateSelectFrame::Iterator("SavedHist"));
 			}
 		}
 	}
@@ -426,7 +426,7 @@ void j_gating_result_frame::DrawSaved(){
 	}
 }
 
-void j_gating_result_frame::ClearSavedButtons(){
+void jGateResultFrame::ClearSavedButtons(){
     for(uint i=0;i<savehists.size();i++){
         savechecks[i]->SetState(kButtonUp);
         savechecks[i]->SetState(kButtonDisabled);
@@ -434,7 +434,7 @@ void j_gating_result_frame::ClearSavedButtons(){
     }
 }
 
-void j_gating_result_frame::ClearSaved(){
+void jGateResultFrame::ClearSaved(){
 	for(uint i=0;i<savehists.size();i++){
         if(savehists[i]){
             delete savehists[i];
@@ -444,7 +444,7 @@ void j_gating_result_frame::ClearSaved(){
 }
 
 
-void j_gating_result_frame::CSaveButton(){
+void jGateResultFrame::CSaveButton(){
     
     std::chrono::duration<double> diff= std::chrono::system_clock::now()-clicktime;
     if(abs(diff.count())<2){
@@ -458,7 +458,7 @@ void j_gating_result_frame::CSaveButton(){
 }
 
 
-void j_gating_result_frame::jSaveAs(){
+void jGateResultFrame::jSaveAs(){
 	TH1* h=hist_capture(fCanvas1->GetCanvas());
     if(!h)return;
 	HistSaveAs(h,this,fCanvas1->GetCanvas());
@@ -466,7 +466,7 @@ void j_gating_result_frame::jSaveAs(){
 
 // Create an instance of the hitpanel panel and connect it the output canvas to catch new draws
 // Or hide disconnect it and hide it if it is currently acrive
-void j_gating_result_frame::FitPanel(){
+void jGateResultFrame::FitPanel(){
     
 	if(ThreeDee)if(fCheck0->GetState())return;//Do nothing in 2D mode
     

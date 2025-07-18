@@ -7,8 +7,8 @@
 //
 //
 
-#ifndef j_gating_result_frame_h
-#define j_gating_result_frame_h
+#ifndef jGateResultFrame_h
+#define jGateResultFrame_h
 
 
 #include "TGButton.h"
@@ -41,7 +41,7 @@ using namespace std;
 #include "j_ultrafit_env.h"
 
 
-class j_gating_result_frame : public TGHorizontalFrame {
+class jGateResultFrame : public TGHorizontalFrame {
 private:
 	bool ThreeDee;
 	bool RangeUpdateHold;
@@ -81,9 +81,9 @@ private:
     std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> clicktime;
 	
 public:
-   j_gating_result_frame();
-   j_gating_result_frame(TGWindow* parent, TH1** input=nullptr, TH1** back=nullptr, TH1** proj=nullptr,double* cent=nullptr,bool threedee=false);
-   virtual ~j_gating_result_frame();
+   jGateResultFrame();
+   jGateResultFrame(TGWindow* parent, TH1** input=nullptr, TH1** back=nullptr, TH1** proj=nullptr,double* cent=nullptr,bool threedee=false);
+   virtual ~jGateResultFrame();
    
    
    	void DoCheckbox2D();
@@ -110,7 +110,7 @@ public:
 	
 	void RequestTwoDee(Bool_t);
    
-   ClassDef(j_gating_result_frame, 1)
+   ClassDef(jGateResultFrame, 1)
 };
 
 

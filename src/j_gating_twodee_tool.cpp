@@ -7,28 +7,42 @@
 // //
 // 
 
-#include "j_new_gating_tool.h"
-#include "j_gating_select_frame.h"
+#include "j_gating_twodee_tool.h"
+#include "j_gpad_tools.h"  // For gGlobalAskWindowName 
 
 
-ClassImp(jnewgating_tool);
+ClassImp(jGateToolTwoDee);
 
 
-jnewgating_tool::jnewgating_tool(const char * input) : jnewgating_tool(gROOT->FindObject(input)){}
+jGateToolTwoDee::jGateToolTwoDee(const char * input) : jGateToolTwoDee(gROOT->FindObject(input)){}
 
-jnewgating_tool::jnewgating_tool(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame)
+jGateToolTwoDee::jGateToolTwoDee(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame)
 {
 TVirtualPad* hold=gPad;
 
     TH1* pass=nullptr;
+    TString FrameName="";
     
     if(input!=nullptr){
         if(input->IsA()->InheritsFrom("TH2")){
             pass=(TH1*)input;
+            FrameName=pass->GetName();
         }
     }
+    
+///// Handle window naming /////
+        if(gGlobalAskWindowName){
+            char* FrameReNamChar=new char[128];
+            new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",FrameName,FrameReNamChar);
+            FrameName=FrameReNamChar;
+        }
+        
+        if(FrameName.Length()){
+            SetWindowName(FrameName);	
+        }
+/////    
 
-    gJframe1=new j_gating_frametwodee(this,pass,false);
+    gJframe1=new jGateFrameTwoDee(this,pass,false);
 
     TGLayoutHints* ffExpand = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
     
@@ -44,11 +58,11 @@ gPad=hold;
 }
 
 
-void jnewgating_tool::UpdateInput(const char * input){
+void jGateToolTwoDee::UpdateInput(const char * input){
     UpdateInput(gROOT->FindObject(input));
 }
 
-void jnewgating_tool::UpdateInput(TObject* input){
+void jGateToolTwoDee::UpdateInput(TObject* input){
     if(input!=nullptr){
         if(input->IsA()->InheritsFrom("TH2")){
             gJframe1->UpdateInput((TH1*)input);
@@ -60,14 +74,14 @@ void jnewgating_tool::UpdateInput(TObject* input){
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ClassImp(j_gating_frametwodee);
+ClassImp(jGateFrameTwoDee);
 
 
-j_gating_frametwodee::j_gating_frametwodee(TGWindow *parent,TH1* input,bool ThreeDee) : TGHorizontalFrame(parent, 100, 100),
+jGateFrameTwoDee::jGateFrameTwoDee(TGWindow *parent,TH1* input,bool ThreeDee) : TGHorizontalFrame(parent, 100, 100),
     fInputStore(nullptr),fProj(nullptr), fGate(nullptr), fResult(nullptr), fResFullProj(nullptr),
-    xy(0), suffix(j_gating_select_frame::Iterator("")),
-    fGateFrame(new j_gating_select_frame(this, fProj,(((int)ThreeDee)+1)*2)),
-    fResFrame(new j_gating_result_frame(this, &fResult, &fGate, &fResFullProj, fGateFrame->PointGateCentre(), ThreeDee)){
+    xy(0), suffix(jGateSelectFrame::Iterator("")),
+    fGateFrame(new jGateSelectFrame(this, fProj,(((int)ThreeDee)+1)*2)),
+    fResFrame(new jGateResultFrame(this, &fResult, &fGate, &fResFullProj, fGateFrame->PointGateCentre(), ThreeDee)){
         // It may be better to initilise the frames after processing input histograms
         // so that they dont try to do their first draw with empty histograms
    
@@ -77,28 +91,28 @@ j_gating_frametwodee::j_gating_frametwodee(TGWindow *parent,TH1* input,bool Thre
     AddFrame(fGateFrame,ffExpandYLeft);
     AddFrame(fResFrame,ffExpandRight);
 
-    fGateFrame->Connect("OutputReady()","j_gating_frametwodee",this,"DoHistogram()");
-    fGateFrame->Connect("RequestProjection(Int_t)","j_gating_frametwodee",this,"ChangeProjection(Int_t)");
+    fGateFrame->Connect("OutputReady()","jGateFrameTwoDee",this,"DoHistogram()");
+    fGateFrame->Connect("RequestProjection(Int_t)","jGateFrameTwoDee",this,"ChangeProjection(Int_t)");
     
-    fResFrame->Connect("RequestTwoDee(Bool_t)","j_gating_frametwodee",this,"RequestTwoDee(Bool_t)");
+    fResFrame->Connect("RequestTwoDee(Bool_t)","jGateFrameTwoDee",this,"RequestTwoDee(Bool_t)");
         
 	UpdateInput(input);
 }
     
-j_gating_frametwodee::~j_gating_frametwodee(){
+jGateFrameTwoDee::~jGateFrameTwoDee(){
 	Cleanup(); 
 }
 
-void j_gating_frametwodee::ChangeProjection(const Int_t id)
+void jGateFrameTwoDee::ChangeProjection(const Int_t id)
 {  
 	xy=id;
 	UpdateInput();
 }
 
 //______________________________________________________________________________
-void j_gating_frametwodee::UpdateInput(TH1* input){ 
+void jGateFrameTwoDee::UpdateInput(TH1* input){ 
     if(input==nullptr)return;
-	fInputStore=(TH1*)input->Clone(j_gating_select_frame::Iterator("GateStoreCopy"));
+	fInputStore=(TH1*)input->Clone(jGateSelectFrame::Iterator("GateStoreCopy"));
 	UpdateInput();
 }
 
@@ -107,7 +121,7 @@ void j_gating_frametwodee::UpdateInput(TH1* input){
 // Replace histograms and pass new projection to gatingframe
 // Subsequently gatingframe will "emit" and this frame will do the gate
 // Called for new input histogram or change axis
-void j_gating_frametwodee::UpdateInput(){       
+void jGateFrameTwoDee::UpdateInput(){       
 if(fInputStore==nullptr)return;
 TVirtualPad* hold=gPad;
 
@@ -138,10 +152,10 @@ gPad=hold;
 }
 
 // The main gating function, which is called when daugter select_frame says so
-void j_gating_frametwodee::DoHistogram(){
+void jGateFrameTwoDee::DoHistogram(){
 if(fInputStore==nullptr)return;
 	
-    // Some of these could have been set by j_gating_select_frame emits
+    // Some of these could have been set by jGateSelectFrame emits
     // Or by having DoHistogram takes these as inputs and connecting though the signals
     double backfrack=fGateFrame->GetBackFrac();
     double backfrackfrac=fGateFrame->GetBackFracFrac();

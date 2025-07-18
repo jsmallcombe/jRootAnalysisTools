@@ -45,7 +45,6 @@ using namespace std;
 #include "j_gating_frame.h"
 
 extern bool gGlobalAskWindowName;
-void SetGlobalAskWindowName(bool set=true);
 
 class jgating_tool : public TGMainFrame {
 

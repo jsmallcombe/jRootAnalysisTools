@@ -11,11 +11,11 @@
 		retb=(TH2F*)MyFile->Get("ey")->Clone();
 		MyFile->Close();
 			
-		new jnewgating_tool(retb);
+		new jGateToolTwoDee(retb);
 // 		new jgating_tool(retb);
 		
-// 		new jnewgating_tool("");
-// 		jnewgating_tool *bob=new jnewgating_tool("");
+// 		new jGateToolTwoDee("");
+// 		jGateToolTwoDee *bob=new jGateToolTwoDee("");
 // 		bob->UpdateInput(reta);
 		
 	}else{

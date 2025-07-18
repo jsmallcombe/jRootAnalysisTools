@@ -7,14 +7,15 @@
 // //
 // //
 // 
-#ifndef jamesfuncnew_gating_tool
-#define jamesfuncnew_gating_tool
+#ifndef jGateToolTwoDee_h
+#define jGateToolTwoDee_h
 
 #include "TROOT.h"
 #include "TGLayout.h"
 #include "TF1.h"
 #include "TMath.h"
 #include "TH2.h"
+#include "TGInputDialog.h"
 
 #include <RQ_OBJECT.h>
 
@@ -28,35 +29,35 @@
 
 using namespace std;
 
-#include "j_gating_select_frame.h"
 #include "j_gating_result_frame.h"
+#include "j_gating_select_frame.h"
 #include "j_gate_subtract.h"
 
-class j_gating_frametwodee;
+class jGateFrameTwoDee;
 
-class jnewgating_tool : public TGMainFrame {
+class jGateToolTwoDee : public TGMainFrame {
 
 private:
-	j_gating_frametwodee *gJframe1;
+	jGateFrameTwoDee *gJframe1;
    
 public:
-	jnewgating_tool(const char *);
-	jnewgating_tool(TObject* = hist_capture());
-	virtual ~jnewgating_tool(){
+	jGateToolTwoDee(const char *);
+	jGateToolTwoDee(TObject* = hist_capture());
+	virtual ~jGateToolTwoDee(){
         Cleanup();
     };
 
 	void UpdateInput(const char *);
 	void UpdateInput(TObject* = hist_capture());
     
-	ClassDef(jnewgating_tool, 2)
+	ClassDef(jGateToolTwoDee, 2)
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class j_gating_frametwodee : public TGHorizontalFrame {
+class jGateFrameTwoDee : public TGHorizontalFrame {
 
 private:
     TH1 *fInputStore;
@@ -65,13 +66,13 @@ private:
     int xy;
     string suffix;
 	
-	j_gating_select_frame *fGateFrame;
-	j_gating_result_frame *fResFrame;
+	jGateSelectFrame *fGateFrame;
+	jGateResultFrame *fResFrame;
     
 public:
-	j_gating_frametwodee(){};
-	j_gating_frametwodee(TGWindow *, TH1*,bool=false);
-	virtual ~j_gating_frametwodee();
+	jGateFrameTwoDee(){};
+	jGateFrameTwoDee(TGWindow *, TH1*,bool=false);
+	virtual ~jGateFrameTwoDee();
     
     void ChangeProjection(const Int_t);
     void RequestTwoDee(Bool_t){};
@@ -85,7 +86,7 @@ public:
        fGateFrame->HideManBar();
     }
     
-	ClassDef(j_gating_frametwodee, 2)
+	ClassDef(jGateFrameTwoDee, 2)
 };
 
 

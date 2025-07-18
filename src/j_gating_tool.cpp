@@ -9,10 +9,6 @@
 #include "j_gating_tool.h"
 #include "j_gpad_tools.h"
 
-bool gGlobalAskWindowName=false;
-void SetGlobalAskWindowName(bool set){
-	gGlobalAskWindowName=set;
-}
 
 ClassImp(jgating_tool);
 
