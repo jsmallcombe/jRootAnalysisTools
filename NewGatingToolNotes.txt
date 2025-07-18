@@ -1,6 +1,20 @@
-Make TH3 gating tool
+Updated the header notes
+
 Make THSparse gatting tool
+
+Make A 2D OR 3D gating wrapper class
+
 Reintrioduce the adjustable width from old class
-Connect new gating tools to jEnv, depreiciate the old ones from the codebase
+Maybe important :
+        gJframe1->ChangeOptions(kFixedWidth);
+        Connect("ProcessedConfigure(Event_t*)","jgating_tool", this,"ProcessedConfigure(Event_t*)");
+Overriding the Layout command seems to be a better way
+        
+The rebinning of the gating select frame has a glitch (common to old code).
+when rebinning the selection jumps to the old bin number, now wrong.
+Similar behaviour error on change project or updated input?
+Review and fix
+
+Connect new gating tools to jEnv, depreiciate the old ones from the codebase.
 Update the readme to use the updated class names
 

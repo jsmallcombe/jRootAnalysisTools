@@ -167,7 +167,7 @@ void jGateResultFrame::DrawHist(){
     TH1* HGate=*fGate;
     TH1* HProj=*fProj;
     
-    if(HIn==nullptr||HGate==nullptr||HGate==nullptr)return;
+    if(HIn==nullptr||HGate==nullptr||HProj==nullptr)return;
     
     bool TwoDee=false;
     if(ThreeDee)TwoDee=fCheck0->GetState(); //If draw 2D
@@ -184,7 +184,7 @@ void jGateResultFrame::DrawHist(){
             // Instead, the result subtracted histogram is subtracted from the pre-subtraction gated histogram
             // This equates to the background histogram values, but the errors will be incorrect.
         }else{//Default 
-            DrawHistOpt(HIn);//Draw directly the result (for 2D we avoid Copy for speed)
+            H=DrawHistOpt(HIn);//Draw directly the result (for 2D we avoid Copy for speed)
         }
     }else{// 1D
         H=DrawCopyHistOpt(HIn,fCheck1->GetState());//fCheck1 option for draw bin errors or not
@@ -216,7 +216,8 @@ void jGateResultFrame::DrawHist(){
         }
         if(h){
             h->Sumw2(kFALSE);
-            if(rebin>1)h->Rebin(rebin);		
+            if(rebin>1)h->Rebin(rebin);
+            h->SetLineColor(kRed);
         }  
     }//1D/2D
     
@@ -283,7 +284,7 @@ void jGateResultFrame::DoCheckbox2D(){
 	ClearSavedButtons();ClearSaved(); //Clear the saved histograms so 2D and 1D arent mixed
     
     Bool_t emitbool=fCheck0->GetState(); 
-    Emit("RequestTwoDee(Bool_t)", &emitbool); //Pass the request to change up to the parent
+    Emit("RequestTwoDee(Bool_t)", emitbool); //Pass the request to change up to the parent
 }
 
 

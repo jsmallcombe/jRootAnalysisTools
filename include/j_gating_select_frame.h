@@ -10,7 +10,7 @@
 #ifndef jGateSelectFrame_h
 #define jGateSelectFrame_h
 
-
+#include "TROOT.h"
 #include "TGButton.h"
 #include "TRootEmbeddedCanvas.h"
 #include "TGLayout.h"
@@ -170,27 +170,25 @@ public:
    
    void HideManBar();
 	
+   void Update3D(){
+	Emit("UpdateClicked()");
+   }
+   
 // signals:
 	void OutputReady();
 	void RequestProjection(Int_t);
+	void UpdateClicked();
+	void BackModeChange();
    
-   ClassDef(jGateSelectFrame, 1)
+   ClassDef(jGateSelectFrame, 2)
 };
 
 
-class jGateSelectFrame_tester : public TGMainFrame {
-	
-	private:
-		TH1* testhist;
-		jGateSelectFrame *jgsframe;
-	public:
-	jGateSelectFrame_tester();
-	jGateSelectFrame_tester(TH1* input=nullptr, int ThreeDee=3);
-   virtual ~jGateSelectFrame_tester(){};
-	
-   void OutputTest();
-	
-	ClassDef(jGateSelectFrame_tester, 1)
-};
+
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+
+TGTransientFrame* MakeTH3Popup(const TGWindow* window=gClient->GetRoot());
 
 #endif

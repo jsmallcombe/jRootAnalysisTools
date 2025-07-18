@@ -62,6 +62,7 @@ TVirtualPad* hold=gPad;
 	TGLayoutHints* fLcan = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 5, 5, 0, 0);
 	TGLayoutHints* fBfly1 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 3, 3);
 	TGLayoutHints* fBfly2 = new TGLayoutHints(kLHintsLeft | kLHintsCenterY,    0, 0, 0, 0);
+	TGLayoutHints* fBfly2b = new TGLayoutHints(kLHintsRight | kLHintsCenterY,    0, 0, 0, 0);
 	TGLayoutHints* fBfly3 = new TGLayoutHints(kLHintsBottom,    4,4, 4,4);
 	TGLayoutHints* fBfly4 = new TGLayoutHints(kLHintsTop | kLHintsCenterX, 5, 5, 3, 3);
 	TGLayoutHints* fBfly5 = new TGLayoutHints(kLHintsCenterX,    0, 0, 0, 0);
@@ -179,7 +180,13 @@ TVirtualPad* hold=gPad;
 			minifvertrame->AddFrame(fHslider2, fBly);
 		fHframe2->AddFrame(minifvertrame, fBly);
 		
-
+		if(ThreeDee>2){
+			TGTextButton* fTButton1 = new TGTextButton(fHframe2,"&Update");
+			fTButton1->Connect("Clicked()","jGateSelectFrame",this,"Update3D()");
+			fTButton1->SetToolTipText("Update 1st Gate Result\n TH3s only gate upon clicked.");
+			fHframe2->AddFrame(fTButton1, fBfly2b);
+		}
+		
 	this->AddFrame(fHframe2, fBly);
 	
 	//Create some text entry boxes 
@@ -531,6 +538,8 @@ void jGateSelectFrame::ChangeBackMode(const Int_t id)
 	UpdateDraw();
 	
 	DoHistogram();
+	
+	Emit("BackModeChange()");
 }
 
 void jGateSelectFrame::HideManBar(){
@@ -834,3 +843,54 @@ void jGateSelectFrame::ChangeProjection(const Int_t id)
     Emit("RequestProjection(Int_t)",xyz);
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+	
+#include <TGIcon.h>
+
+TGTransientFrame* MakeTH3Popup(const TGWindow* window){
+	
+	return nullptr;
+    TGTransientFrame* popup=new TGTransientFrame(window, gClient->GetRoot(), 400, 200, kHorizontalFrame);
+
+    TGLayoutHints *fL1 = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 5, 20, 0, 0);
+
+    TGIcon *fIcon = new TGIcon(popup, popup->GetClient()->GetPicture("mb_stop_s.xpm"),100, 100);
+    popup->AddFrame(fIcon,new TGLayoutHints(kLHintsCenterY, 20, 15, 20, 20));
+
+    TGVerticalFrame* fLabelFrame = new TGVerticalFrame(popup, 60, 20);
+    popup->AddFrame(fLabelFrame,fL1);
+   
+    TGLabel *label1 = new TGLabel(fLabelFrame,"====================================================");
+    TGLabel *label2 = new TGLabel(fLabelFrame,"========= Beginning Processing of Histogram ========");
+    TGLabel *label3 = new TGLabel(fLabelFrame,"================ Please Be Patient =================");
+    TGLabel *label4 = new TGLabel(fLabelFrame,"====================================================");
+//        label->SetTextJustify(text_align);
+    fLabelFrame->AddFrame(label1, fL1);    
+    fLabelFrame->AddFrame(label2, fL1);    
+    fLabelFrame->AddFrame(label3, fL1);    
+    fLabelFrame->AddFrame(label4, fL1);    
+        
+    cout<<endl<<endl<<" ============== Beginning Processing of Histogram ============ "<<endl<<" ====== Please be patient until window appears ====== "<<endl<<endl;
+    
+    popup->SetWindowName("LOADING");
+
+    popup->MapSubwindows();
+    popup->Resize(popup->GetDefaultSize());
+    popup->MapWindow();
+//     gClient->NeedRedraw(popup,kTRUE);
+    gClient->WaitFor(popup);
+
+    int waitc = 0;
+    while (!popup->IsMapped() && waitc++ < 100) {
+        gSystem->ProcessEvents();
+        gSystem->Sleep(2); // Reduce sleep for better responsiveness
+        // Little loop to buy Xsystem time to draw the box before code moves on
+    }
+    popup->DontCallClose();
+    popup->CenterOnParent();// position relative to the parent's window
+    
+    return popup;
+}

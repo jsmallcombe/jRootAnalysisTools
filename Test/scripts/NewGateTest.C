@@ -1,6 +1,6 @@
 {
 
-	int a=2;
+	int a=3;
 
 	
 	TH1 *reta,*retb;
@@ -20,10 +20,9 @@
 		
 	}else{
 
-// 		TFile* MyFile= new TFile("Test/data/3Ddata.root","READ");
-// 		gROOT->cd();
-// 		reta=(TH3F*)MyFile->Get("Gamma_Gamma_Gamma")->Clone();
-// 		MyFile->Close();	
+		TFile* MyFile= new TFile("Test/data/3Ddata.root","READ");
+		gROOT->cd();
+		retb=(TH3F*)MyFile->Get("Mult_alphaprotons_gamma");
 		
 		TH3I* three=new TH3I("three","three",20,0,20,20,0,20,20,0,20);
 		TRandom r;
@@ -34,6 +33,16 @@
 		reta=three;
 		
 // 		b = new jgating_tool(reta);
+		
+		
+// 		new jGateToolThreeDee(retb);
+// 		new jgating_tool(retb);
+		
+// 		new jGateToolThreeDee("");
+		
+		jGateToolThreeDee *bill=new jGateToolThreeDee("");
+		bill->UpdateInput(reta);
+		
 		
 	}
 	
