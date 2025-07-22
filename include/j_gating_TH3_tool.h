@@ -61,7 +61,8 @@ class jGatingFrameTH3 : public TGHorizontalFrame {
 
 private:
     TH1 *fInputStore;
-    TH1 *fProj, *fGate, *fResult, *fResFullProj;
+    TH1 *fProj, *fBack, *fResult, *fResFullProj;
+    double fBackFrac;
     
     int xyz;
     string suffix;

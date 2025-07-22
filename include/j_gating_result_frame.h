@@ -69,8 +69,8 @@ private:
 	vector< TGCheckButton* > savechecks;
 	vector< TGTextButton* > savebutton;
 	
-	TH1 **fInput, **fGate, **fProj;
-	double *fCentroid;
+	TH1 **fInput, **fBack, **fProj;
+	double *fBackFrac ,*fCentroid;
     
     double x1,x2,y1,y2;
     
@@ -82,7 +82,7 @@ private:
 	
 public:
    jGateResultFrame();
-   jGateResultFrame(TGWindow* parent, TH1** input=nullptr, TH1** back=nullptr, TH1** proj=nullptr,double* cent=nullptr,bool threedee=false);
+   jGateResultFrame(TGWindow* parent, TH1** input=nullptr, TH1** back=nullptr, TH1** proj=nullptr, double* frac=nullptr,double* cent=nullptr,bool threedee=false);
    virtual ~jGateResultFrame();
    
    

@@ -77,11 +77,12 @@ void jGatingToolTH2::UpdateInput(TObject* input){
 ClassImp(jGatingFrameTH2);
 
 jGatingFrameTH2::jGatingFrameTH2(TGWindow *parent,TH1* input,bool DeeThree) : TGHorizontalFrame(parent, 100, 100),
-    fInputStore(nullptr),fProj(nullptr), fGate(nullptr), fResult(nullptr), fResFullProj(nullptr),
+    fInputStore(nullptr),fProj(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),
+    fBackFrac(0.0),
     ThreeDee(0), xy(0), suffix(jGateSelectFrame::Iterator("")),
-    fGateTwo(nullptr), fResultTwo(nullptr), fResFullProjTwo(nullptr),
+    fBackTwo(nullptr), fResultTwo(nullptr), fResFullProjTwo(nullptr),
     fGateFrame(new jGateSubtractionFrame(this, fProj,2)),
-    fResFrame(new jGateResultFrame(this, &fResult, &fGate, &fResFullProj, fGateFrame->PointGateCentre(), DeeThree)){
+    fResFrame(new jGateResultFrame(this, &fResult, &fBack, &fResFullProj, &fBackFrac, fGateFrame->PointGateCentre(), DeeThree)){
         // It may be better to initilise the frames after processing input histograms
         // so that they dont try to do their first draw with empty histograms
    
@@ -126,13 +127,13 @@ void jGatingFrameTH2::RequestTwoDee(const bool DoThreeDee){
     }
     
     if(!ThreeDee&&DoThreeDee){
-        if(fGate)delete fGate;
+        if(fBack)delete fBack;
         if(fResult)delete fResult;
         if(fResFullProj)delete fResFullProj;
     }
     
     ThreeDee=DoThreeDee;
-    fGate=nullptr;
+    fBack=nullptr;
     fResult=nullptr;
     fResFullProj=nullptr;
     
@@ -154,9 +155,11 @@ void jGatingFrameTH2::RequestTwoDee(const bool DoThreeDee){
 void jGatingFrameTH2::UpdateTypeSwitch(){     
     if(ThreeDee){
         
-        fGate=*fGateTwo;
+        // We are trusting the 3D level frame to have called jGatingFrameTH2::SetTwoDeePass()
+        fBack=*fBackTwo;
         fResult=*fResultTwo;
         fResFullProj=*fResFullProjTwo;
+        fBackFrac=*fBackFracTwo;
         
         fResFrame->DrawHist();
     }else{
@@ -168,7 +171,7 @@ void jGatingFrameTH2::UpdateTypeSwitch(){
 
 // Replace histograms and pass new projection to gatingframe
 // Subsequently gatingframe will "emit" and this frame will do the gate
-// Called for new input histogram or change axis
+// Called for new input histogram OR change axis
 void jGatingFrameTH2::UpdateInput(){       
 if(fInputStore==nullptr)return;
 TVirtualPad* hold=gPad;
@@ -184,15 +187,13 @@ TVirtualPad* hold=gPad;
 	fProj->SetLineColor(1);
 
 	if(fResFullProj)delete fResFullProj;
-	fResFullProj=fGateFrame->GateAxisByBin(fInputStore,xy,1,0,"fResFullProj"+suffix);
+	fResFullProj=fGateFrame->GateAxisByBin(fInputStore,xy,1,-1,"ResFullProj"+suffix);
 	fResFullProj->SetStats(0);	
 	fResFullProj->SetTitle("");
 	
 	if(fResult)delete fResult;
-	fResult=(TH1*)fResFullProj->Clone(("outputhist"+suffix).c_str());
-	fResult->SetLineColor(1);
-	fResult->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
-
+	if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
+    
 	fResFrame->ResetRange();
     fGateFrame->UpdateInput(fProj);
     
@@ -212,54 +213,49 @@ if(fInputStore==nullptr)return;
     int back_down=fGateFrame->GetBackBinDown(), back_up=fGateFrame->GetBackBinUp();
     
 	// fGateFrame->GateAxisByBin *should* nicely fill the histogram matching the name if the TH1 exists
-	// so we dont need to delete pointer fGate
-	fGate=fGateFrame->GateAxisByBin(fInputStore,xy,gate_down,gate_up,"fGate"+suffix);
-    fGate->SetLineColor(1);
-	fGate->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
-	
-    // Note the "fResFullProj" projection used to make full and anti includes the overflow, but excludes the underflow bin
-    // This is an intentional choice as often intentionally zeroed data may be sorted into the underflow bin
+	// so we dont need to delete pointers except for when changing axis, handled by UpdateInput
+	fResult=fGateFrame->GateAxisByBin(fInputStore,xy,gate_down,gate_up,"Gated"+suffix);
+    fResult->SetLineColor(1);
+    fResult->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
+	fResult->SetTitle("");
+
+    // Note the projection "fResFullProj" used to make "full" and "anti" background options
+    // include the overflow bins, but excludes the underflow bin.
+    // This is an intentional choice, as often intentionally zeroed data may be sorted into the underflow bin
     // The underflow bin can be selected with manual sliders
-    
+
 	switch (background_mode) {
 		case 1://full
-            fGateFrame->scaled_back_subtract(fGate,fResFullProj,backfrack,fResult,backfrackfrac);
+                fBack=fResFullProj;
 			break;
 		case 2://compton
-            {
-                TH1* compton_hist=fGateFrame->GateAxisByBin(fInputStore,xy,back_down,-1,"c_gate");
-                fGateFrame->scaled_back_subtract(fGate,compton_hist,backfrack,fResult,backfrackfrac);
-                delete compton_hist;
-            }
+                fBack=fGateFrame->GateAxisByBin(fInputStore,xy,back_down,-1,"Back");
 			break;
 		case 3://anti gate
 			{
-				TH1* anti_hist=(TH1*)fResFullProj->Clone("antiback");
-				anti_hist->Add(fGate,-1);
-				anti_hist->Sumw2(kFALSE);
-				fGateFrame->scaled_back_subtract(fGate,anti_hist,backfrack,fResult,backfrackfrac);
-				delete anti_hist;
+				fBack=(TH1*)fResFullProj->Clone(TString(fResFullProj->GetName()).ReplaceAll("ResFullProj", "Back"));
+				fBack->Add(fResult,-1);
+				fBack->Sumw2(kFALSE);//Important as the Add is not an arithmetic subtraction, but an exact data removal
 			}
 			break;
 		case 4://none
 			{
-				TString hpt=fResult->GetName();
-				fGate->Copy(*fResult);
-				fResult->SetName(hpt);
+                fBack=fResult;
 			}
 			break;
-		default://manual // Compton // Antiate
+		default:  //manual 
 			{
-				TH1* manb_hist=fGateFrame->GateAxisByBin(fInputStore,xy,back_down,back_up,"m_gate_2d");
-                if(gate_down>back_down&&gate_up<back_up)manb_hist->Add(fGate,-1);//In special case remove the gated part
-				manb_hist->Sumw2(kFALSE);
-				fGateFrame->scaled_back_subtract(fGate,manb_hist,backfrack,fResult,backfrackfrac);
-				delete manb_hist;				
+				fBack=fGateFrame->GateAxisByBin(fInputStore,xy,back_down,back_up,"Back");
+                if(gate_down>back_down&&gate_up<back_up){
+                    fBack->Add(fResult,-1);//In special case remove the gated part
+                    fBack->Sumw2(kFALSE);
+                }				
 			}
 			break;
 	}
 	
-	fResult->SetTitle("");
+	if(fResult!=fBack)fBackFrac=fGateFrame->ScaledBackgroundSubtract(fResult,fBack,backfrack,backfrackfrac);
+    else fBackFrac=1;
 
     fResFrame->DrawHist();
 }

@@ -6,17 +6,16 @@ ClassImp(jGateResultFrame);
 //______________________________________________________________________________
 jGateResultFrame::jGateResultFrame() : TGHorizontalFrame(gClient->GetRoot(), 100, 100){}
 
-jGateResultFrame::jGateResultFrame(TGWindow * parent,  TH1** input, TH1** back, TH1** proj, double* cent,  bool threedee) : TGHorizontalFrame(parent, 100, 100), ThreeDee(threedee), RangeUpdateHold(true),  fCheck0(0), fCheck1(0), fFitFcn(0),fPeakNumText(0),fTip(0),fFitPanel(0),x1(1),x2(-1),y1(1),y2(-1)
+jGateResultFrame::jGateResultFrame(TGWindow * parent,  TH1** input, TH1** back, TH1** proj, double* frac, double* cent,  bool threedee) : TGHorizontalFrame(parent, 100, 100), ThreeDee(threedee), RangeUpdateHold(true),  fCheck0(0), fCheck1(0), fFitFcn(0),fPeakNumText(0),fTip(0),fFitPanel(0),
+fInput(input), fBack(back), fProj(proj), fBackFrac(frac), fCentroid(cent),
+x1(1),x2(-1),y1(1),y2(-1)
 {
-	if(input==nullptr)return;
-	if(back==nullptr)return;
-	if(proj==nullptr)return;
-	if(cent==nullptr)return;
-	
-    fCentroid=cent;
-	fInput=input;
-	fGate=back;
-	fProj=proj;
+	if(fInput==nullptr)return;
+	if(fBack==nullptr)return;
+	if(fProj==nullptr)return;
+	if(fBackFrac==nullptr)return;
+	if(fCentroid==nullptr)return;
+    
 	
 TVirtualPad* hold=gPad;
 // 	char buf[32];	//A buffer for processing text through to text boxes
@@ -164,10 +163,11 @@ void jGateResultFrame::DrawHist(){
     
     TH1* H=nullptr;
     TH1* HIn=*fInput;
-    TH1* HGate=*fGate;
+    TH1* HBack=*fBack;
     TH1* HProj=*fProj;
+    double Frac=*fBackFrac;
     
-    if(HIn==nullptr||HGate==nullptr||HProj==nullptr)return;
+    if(HIn==nullptr||HBack==nullptr||HProj==nullptr)return;
     
     bool TwoDee=false;
     if(ThreeDee)TwoDee=fCheck0->GetState(); //If draw 2D
@@ -177,12 +177,11 @@ void jGateResultFrame::DrawHist(){
         if(fRButton2->GetState()){//If Full Projection Drawing Requested
             H=DrawHistOpt(HProj); //Drawing a using jRoot library default options
 		}else if(fRButton3->GetState()){//If Drawing of Background Requested
-            H=DrawCopyHistOpt(HGate); //Use copy as we want to modify
-            H->Add(HIn,-1);
-            // The correctled scaled background hist never actually exists
-            // Because the subtraction is done bin-by-bin to preserve scaled errors.
-            // Instead, the result subtracted histogram is subtracted from the pre-subtraction gated histogram
-            // This equates to the background histogram values, but the errors will be incorrect.
+            H=DrawCopyHistOpt(HBack); //Use copy as we want to modify
+            H->Scale(Frac);
+            // The correctly *scaled* background hist never actually exists
+            // The scaling is done in within the internal subtraction routine
+            // The errors will not be scaled as they are in the subtraction
         }else{//Default 
             H=DrawHistOpt(HIn);//Draw directly the result (for 2D we avoid Copy for speed)
         }
@@ -209,15 +208,16 @@ void jGateResultFrame::DrawHist(){
         if(fRButton2->GetState()){//If Full Projection 
             h=HProj->DrawCopy("same");
             h->Scale(HIn->Integral()/HProj->Integral());//Scale to make visible
+            h->SetLineColor(kGreen+1);
         }
         if(fRButton3->GetState()){//If Background
-            h=HGate->DrawCopy("same");
-            h->Add(HIn,-1);
+            h=HBack->DrawCopy("same");
+            h->Scale(Frac);
+            h->SetLineColor(kRed+1);
         }
         if(h){
             h->Sumw2(kFALSE);
             if(rebin>1)h->Rebin(rebin);
-            h->SetLineColor(kRed);
         }  
     }//1D/2D
     

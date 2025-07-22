@@ -60,14 +60,16 @@ class jGatingFrameTH2 : public TGHorizontalFrame {
 
 private:
     TH1 *fInputStore;
-    TH1 *fProj, *fGate, *fResult, *fResFullProj;
+    TH1 *fProj, *fBack, *fResult, *fResFullProj;
+    double fBackFrac;
     
     bool ThreeDee;
     int xy;
-    string suffix;
+    TString suffix;
     
     // For the 3D use-case
-	TH1 **fGateTwo, **fResultTwo, **fResFullProjTwo;
+	TH1 **fBackTwo, **fResultTwo, **fResFullProjTwo;
+	double *fBackFracTwo;
 	
 	jGateSubtractionFrame *fGateFrame;
 	jGateResultFrame *fResFrame;
@@ -86,10 +88,11 @@ public:
     void DoHistogram();
 
     // For the 3D use-case
-    void SetTwoDeePass(TH1 **res,TH1 **gate,TH1 **pro){
+    void SetTwoDeePass(TH1 **res,TH1 **gate,TH1 **pro,double *bfr){
         fResultTwo=res;
-        fGateTwo=gate;
+        fBackTwo=gate;
         fResFullProjTwo=pro;
+        fBackFracTwo=bfr;
     }
     
     void Init(){

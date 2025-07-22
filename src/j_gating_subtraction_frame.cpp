@@ -37,12 +37,16 @@ TH1* jGateSubtractionFrame::GateByBin(TH3* in,int xyz,int lower,int upper,TStrin
 		case 1: SetRangeAxis(in->GetYaxis(),lower,upper);  break;
 		default: SetRangeAxis(in->GetZaxis(),lower,upper);  break;
 	}
-	TH1* ret=in->Project3D(is[xyz%6]);
-	if(name!="")ret->SetName(name);
+	
+	TString Opt=is[xyz%6];
+	if(name.Length())Opt=name+"_"+Opt;
+	
+	
+	TH1* ret=in->Project3D(Opt);
 	return ret;
 }
  //NOTE 1: The generated histogram is named th3name + option
-
+ 
 // // ProjectionX/Y/Z are not in TH1 only TH2/TH3
 // // Project3D is only in TH3, but can also function as ProjectionX/Y/Z
 	
@@ -59,8 +63,8 @@ TH1* jGateSubtractionFrame::GateByBin(TH2* in,int xyz,int lower,int upper,TStrin
 ///////
 TH1* jGateSubtractionFrame::GateAxisByBin(TH1* in,int xyz,int lower,int upper,TString name){
 	ResetRanges(in,false); //Change to "true" for ranges to include under/overflows
-	if(in->IsA()->InheritsFrom(TH3::Class()))return GateAxisByBin((TH3*)in,xyz,lower,upper,name);
-	if(in->IsA()->InheritsFrom(TH2::Class()))return GateAxisByBin((TH2*)in,xyz,lower,upper,name);
+	if(in->IsA()->InheritsFrom(TH3::Class()))return GateByBin((TH3*)in,xyz,lower,upper,name);
+	if(in->IsA()->InheritsFrom(TH2::Class()))return GateByBin((TH2*)in,xyz,lower,upper,name);
 	return 0;
 }
 
@@ -68,7 +72,7 @@ TH1* jGateSubtractionFrame::GateAxisByBin(TH1* in,int xyz,int lower,int upper,TS
 // Projection functions
 //
 
-TH1* jGateSubtractionFrame::ProjectAxisByBin(TH1* input,int xyz,string name){
+TH1* jGateSubtractionFrame::ProjectAxisByBin(TH1* input,int xyz,TString name){
 	return GateAxisByBin(input,xyz+3,1,0,name); //exclude underoverflow
 // 	return GateAxisByBin(input,xyz+3,0,-1,name);  //include underoverflow
 }
@@ -99,6 +103,23 @@ TH1* jGateSubtractionFrame::scaled_back_subtract(TH1* gate,TH1* back ,double bac
 	
 	if(uncertainfrac){static_cast< TH1ErrorErrorAdj* > (pass)->AdjustError(back,backfrack*uncertainfrac);}
 	return pass;
+}
+
+
+double jGateSubtractionFrame::ScaledBackgroundSubtract(TH1* gate,TH1* back ,double backfrack,double uncertainfrac){
+	 
+	double backcount=back->Integral();
+	double forecount=gate->Integral();
+	backfrack*=forecount/backcount;
+	
+	if(!back->GetSumw2N())back->Sumw2();
+	if(!gate->GetSumw2N())gate->Sumw2();
+	
+	gate->Add(back,-backfrack);
+	
+	if(uncertainfrac>0){static_cast< TH1ErrorErrorAdj* > (gate)->AdjustError(back,backfrack*uncertainfrac);}
+	
+	return backfrack;
 }
 
 

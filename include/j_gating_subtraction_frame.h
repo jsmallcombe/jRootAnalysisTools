@@ -48,7 +48,7 @@ private:
 
 	// 2D gating functions
 	// these will nicely overwrite/fill any previously done 2D projection add a name in string
-	TH1* GateByBin(TH2*,int=0,int=0,int=-1,TString="proj");
+	TH1* GateByBin(TH2*,int=0,int=0,int=-1,TString="");
 
 
 public:
@@ -58,17 +58,18 @@ public:
    
    
 	// This just forward to the correct above type after checking TH2/3 inheritance 
-	TH1* GateAxisByBin(TH1*,int=0,int=0,int=-1,TString="proj");
+	TH1* GateAxisByBin(TH1*,int=0,int=0,int=-1,TString="");
 	
 	// Project an axis Functions
 	// these will nicely overwrite/fill any previously done 2D projection add a name in string
-	TH1* ProjectAxisByBin(TH1* in,int xyz=0,string name="proj");
+	TH1* ProjectAxisByBin(TH1*,int=0,TString="");
 
 	//addition/subtraction functions 
 	//Work for th2 and 3 inherited classes
 	TH1* scaled_back_subtract(TH1*,TH1*,double,double=0,bool scale=true);
 	TH1* scaled_back_subtract(TH1*,TH1*,double,TH1*,double=0,bool scale=true);
 
+	double ScaledBackgroundSubtract(TH1*,TH1*,double,double=0);
 	
    ClassDef(jGateSubtractionFrame, 1)
 };
