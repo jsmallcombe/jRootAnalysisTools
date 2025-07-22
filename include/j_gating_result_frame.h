@@ -7,8 +7,8 @@
 //
 //
 
-#ifndef jGateResultFrame_h
-#define jGateResultFrame_h
+#ifndef jGatingResultFrame_h
+#define jGatingResultFrame_h
 
 
 #include "TGButton.h"

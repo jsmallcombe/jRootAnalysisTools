@@ -237,10 +237,11 @@ void jGateResultFrame::DrawHist(){
 
 //Just reset the viewing range of thefinal canvas
 void jGateResultFrame::ResetRange(){
-    x1=1E20;
-    x2=-1E20;
-    y1=1E20;
-    y2=-1E20;
+    x1=0;
+    x2=0;
+    y1=0;
+    y2=0;
+//Previously +-1E20 was used, but that was because RangeUser, not bins, were being used
 }
 
 

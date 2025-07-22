@@ -7,16 +7,16 @@
 // //
 // 
 
-#include "j_gating_threedee_tool.h"
+#include "j_gating_TH3_tool.h"
 #include "j_gpad_tools.h"  // For gGlobalAskWindowName 
 
 
-ClassImp(jGateToolThreeDee);
+ClassImp(jGatingToolTH3);
 
 
-jGateToolThreeDee::jGateToolThreeDee(const char * input) : jGateToolThreeDee(gROOT->FindObject(input)){}
+jGatingToolTH3::jGatingToolTH3(const char * input) : jGatingToolTH3(gROOT->FindObject(input)){}
 
-jGateToolThreeDee::jGateToolThreeDee(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame)
+jGatingToolTH3::jGatingToolTH3(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame)
 {
 TVirtualPad* hold=gPad;
 
@@ -42,8 +42,8 @@ TVirtualPad* hold=gPad;
         }
 /////    
 
-//     gJframe1=new jGateFrameThreeDee(this,pass);
-    gJframe1=new jGateFrameThreeDee(this,nullptr);
+//     gJframe1=new jGatingFrameTH3(this,pass);
+    gJframe1=new jGatingFrameTH3(this,nullptr);
 
     TGLayoutHints* ffExpand = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
     
@@ -61,11 +61,11 @@ gPad=hold;
 }
 
 
-void jGateToolThreeDee::UpdateInput(const char * input){
+void jGatingToolTH3::UpdateInput(const char * input){
     UpdateInput(gROOT->FindObject(input));
 }
 
-void jGateToolThreeDee::UpdateInput(TObject* input){
+void jGatingToolTH3::UpdateInput(TObject* input){
     if(input!=nullptr){
         if(input->IsA()->InheritsFrom("TH3")){
             gJframe1->UpdateInput((TH1*)input);
@@ -78,11 +78,11 @@ void jGateToolThreeDee::UpdateInput(TObject* input){
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-jGateFrameThreeDee::jGateFrameThreeDee(TGWindow *parent,TH1* input) : TGHorizontalFrame(parent, 100, 100),
+jGatingFrameTH3::jGatingFrameTH3(TGWindow *parent,TH1* input) : TGHorizontalFrame(parent, 100, 100),
     fInputStore(nullptr),fProj(nullptr), fGate(nullptr), fResult(nullptr), fResFullProj(nullptr),
     xyz(0), suffix(jGateSelectFrame::Iterator("")),
-    fGateFrame(new jGateSelectFrame(this, fProj,3)),
-    fResFrame(new jGateFrameTwoDee(this, fResult, true)),
+    fGateFrame(new jGateSubtractionFrame(this, fProj,3)),
+    fResFrame(new jGatingFrameTH2(this, fResult, true)),
     UpdateLock(false),UpdateLockSetting(true)
 {
         // It may be better to initilise the frames after processing input histograms
@@ -94,30 +94,30 @@ jGateFrameThreeDee::jGateFrameThreeDee(TGWindow *parent,TH1* input) : TGHorizont
     AddFrame(fGateFrame,ffExpandYLeft);
     AddFrame(fResFrame,ffExpandRight);
 
-    fGateFrame->Connect("OutputReady()","jGateFrameThreeDee",this,"DoHistogram()");
-    fGateFrame->Connect("RequestProjection(Int_t)","jGateFrameThreeDee",this,"ChangeProjection(Int_t)");
-    fGateFrame->Connect("BackModeChange()","jGateFrameThreeDee",this,"CallDoHistogram()");
-    fGateFrame->Connect("UpdateClicked()","jGateFrameThreeDee",this,"CallDoHistogram()");
+    fGateFrame->Connect("OutputReady()","jGatingFrameTH3",this,"DoHistogram()");
+    fGateFrame->Connect("RequestProjection(Int_t)","jGatingFrameTH3",this,"ChangeProjection(Int_t)");
+    fGateFrame->Connect("BackModeChange()","jGatingFrameTH3",this,"CallDoHistogram()");
+    fGateFrame->Connect("UpdateClicked()","jGatingFrameTH3",this,"CallDoHistogram()");
     
-//     fResFrame->Connect("RequestTwoDee(Bool_t)","jGateFrameThreeDee",this,"RequestTwoDee(Bool_t)");
+//     fResFrame->Connect("RequestTwoDee(Bool_t)","jGatingFrameTH3",this,"RequestTwoDee(Bool_t)");
     fResFrame->SetTwoDeePass(&fResult, &fGate, &fResFullProj);
     
 	UpdateInput(input);
 }
     
-jGateFrameThreeDee::~jGateFrameThreeDee(){
+jGatingFrameTH3::~jGatingFrameTH3(){
 // 	Closed(this);
 	Cleanup(); 
 }
 
-void jGateFrameThreeDee::ChangeProjection(const Int_t id)
+void jGatingFrameTH3::ChangeProjection(const Int_t id)
 {  
 	xyz=id;
 	UpdateInput();
 }
 
 //______________________________________________________________________________
-void jGateFrameThreeDee::UpdateInput(TH1* input){ 
+void jGatingFrameTH3::UpdateInput(TH1* input){ 
     if(input==nullptr)return;
 	fInputStore=input; //Dont clone for a TH3 type
 	UpdateInput();
@@ -128,14 +128,14 @@ void jGateFrameThreeDee::UpdateInput(TH1* input){
 // Replace histograms and pass new projection to gatingframe
 // Subsequently gatingframe will "emit" and this frame will do the gate
 // Called for new input histogram or change axis
-void jGateFrameThreeDee::UpdateInput(){       
+void jGatingFrameTH3::UpdateInput(){       
 if(fInputStore==nullptr)return;
 TVirtualPad* hold=gPad;
 TGTransientFrame* PopUp=MakeTH3Popup(this);
 
 	if(fProj)delete fProj;
 
-	fProj=hist_proj(fInputStore,xyz,"proj"+suffix,true);
+	fProj=fGateFrame->ProjectAxisByBin(fInputStore,xyz,"proj"+suffix);
     // We decided to get rid of the overflow histgram view proj_flow from old class
     
     // May not be needed
@@ -144,7 +144,7 @@ TGTransientFrame* PopUp=MakeTH3Popup(this);
 	fProj->SetLineColor(1);
 
 	if(fResFullProj)delete fResFullProj;
-	fResFullProj=hist_gater_bin(1,fInputStore,xyz,"fResFullProj"+suffix);
+	fResFullProj=fGateFrame->GateAxisByBin(fInputStore,xyz,1,0,"fResFullProj"+suffix);
 	fResFullProj->SetStats(0);	
 	fResFullProj->SetTitle("");
 	
@@ -162,7 +162,7 @@ gPad=hold;
 }
 
 // The main gating function, which is called when daugter select_frame says so
-void jGateFrameThreeDee::DoHistogram(){
+void jGatingFrameTH3::DoHistogram(){
 if(fInputStore==nullptr)return;
 if(UpdateLock) return;
 	
@@ -176,9 +176,9 @@ if(UpdateLock) return;
     
 
     if(fGate)delete fGate;
-	// hist_gater_bin *should* nicely fill the histogram matching the name if the TH1 exists
+	// fGateFrame->GateAxisByBin *should* nicely fill the histogram matching the name if the TH1 exists
 	// so we dont need to delete pointer fGate
-	fGate=hist_gater_bin(gate_down,gate_up,fInputStore,xyz,"fGate"+suffix);
+	fGate=fGateFrame->GateAxisByBin(fInputStore,xyz,gate_down,gate_up,"fGate"+suffix);
     fGate->SetLineColor(1);
 	fGate->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
 	
@@ -188,12 +188,12 @@ if(UpdateLock) return;
     
 	switch (background_mode) {
 		case 1://full
-            scaled_back_subtract(fGate,fResFullProj,backfrack,fResult,backfrackfrac);
+            fGateFrame->scaled_back_subtract(fGate,fResFullProj,backfrack,fResult,backfrackfrac);
 			break;
 		case 2://compton
             {
-                TH1* compton_hist=hist_gater_bin(back_down,fInputStore,xyz,"c_gate");
-                scaled_back_subtract(fGate,compton_hist,backfrack,fResult,backfrackfrac);
+                TH1* compton_hist=fGateFrame->GateAxisByBin(fInputStore,xyz,back_down,0,"c_gate");
+                fGateFrame->scaled_back_subtract(fGate,compton_hist,backfrack,fResult,backfrackfrac);
                 delete compton_hist;
             }
 			break;
@@ -202,7 +202,7 @@ if(UpdateLock) return;
 				TH1* anti_hist=(TH1*)fResFullProj->Clone("antiback");
 				anti_hist->Add(fGate,-1);
 				anti_hist->Sumw2(kFALSE);
-				scaled_back_subtract(fGate,anti_hist,backfrack,fResult,backfrackfrac);
+				fGateFrame->scaled_back_subtract(fGate,anti_hist,backfrack,fResult,backfrackfrac);
 				delete anti_hist;
 			}
 			break;
@@ -215,10 +215,10 @@ if(UpdateLock) return;
 			break;
 		default://manual // Compton // Antiate
 			{
-				TH1* manb_hist=hist_gater_bin(back_down,back_up,fInputStore,xyz,"m_gate_2d");
+				TH1* manb_hist=fGateFrame->GateAxisByBin(fInputStore,xyz,back_down,back_up,"m_gate_2d");
                 if(gate_down>back_down&&gate_up<back_up)manb_hist->Add(fGate,-1);//In special case remove the gated part
 				manb_hist->Sumw2(kFALSE);
-				scaled_back_subtract(fGate,manb_hist,backfrack,fResult,backfrackfrac);
+				fGateFrame->scaled_back_subtract(fGate,manb_hist,backfrack,fResult,backfrackfrac);
 				delete manb_hist;				
 			}
 			break;
@@ -231,13 +231,13 @@ if(UpdateLock) return;
     if(UpdateLockSetting)UpdateLock=true;
 }
 
-void jGateFrameThreeDee::CallDoHistogram(){
+void jGatingFrameTH3::CallDoHistogram(){
 if(fInputStore==nullptr)return;
     UpdateLock=false;
 	DoHistogram();
 }
 
-void jGateFrameThreeDee::Layout(){
+void jGatingFrameTH3::Layout(){
     int W = GetWidth();
     int H = GetHeight();
     int W1 = W / 3.;
@@ -248,4 +248,4 @@ void jGateFrameThreeDee::Layout(){
     fResFrame->MoveResize(W1, 0, W2, H);
 }   
 
-ClassImp(jGateFrameThreeDee);
+ClassImp(jGatingFrameTH3);

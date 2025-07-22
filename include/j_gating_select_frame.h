@@ -7,8 +7,8 @@
 //
 //
 
-#ifndef jGateSelectFrame_h
-#define jGateSelectFrame_h
+#ifndef jGatingSelectFrame_h
+#define jGatingSelectFrame_h
 
 #include "TROOT.h"
 #include "TGButton.h"
@@ -188,6 +188,9 @@ public:
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
+
+// But in a base level class of the gating classes so TH3 and THnSparse classes will both have use of it.
+// Could be relocated to >2D class if the they are unified later 
 
 TGTransientFrame* MakeTH3Popup(const TGWindow* window=gClient->GetRoot());
 

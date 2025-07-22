@@ -1,6 +1,6 @@
 {
 
-	int a=3;
+	int a=2;
 
 	
 	TH1 *reta,*retb;
@@ -11,11 +11,26 @@
 		retb=(TH2F*)MyFile->Get("ey")->Clone();
 		MyFile->Close();
 			
-		new jGateToolTwoDee(retb);
-// 		new jgating_tool(retb);
 		
-// 		new jGateToolTwoDee("");
-// 		jGateToolTwoDee *bob=new jGateToolTwoDee("");
+// // removing overflow underflow for comparison with old methods
+// 		int X=retb->GetNbinsX();
+// 		int Y=retb->GetNbinsY();
+// 		for(int y=0;y<Y+1;y++){
+// 			retb->SetBinContent(0,y,0.0);
+// 			retb->SetBinContent(X+1,y,0.0);
+// 		}
+// 		for(int y=0;y<X+1;y++){
+// 			retb->SetBinContent(y,0,0.0);
+// 			retb->SetBinContent(y,Y+1,0.0);
+// 		}
+		
+		
+		
+		new jGatingToolTH2(retb);
+		new jgating_tool(retb);
+		
+// 		new jGatingToolTH2("");
+// 		jGatingToolTH2 *bob=new jGatingToolTH2("");
 // 		bob->UpdateInput(reta);
 		
 	}else{
@@ -35,12 +50,12 @@
 // 		b = new jgating_tool(reta);
 		
 		
-// 		new jGateToolThreeDee(retb);
+// 		new jGatingToolTH3(retb);
 // 		new jgating_tool(retb);
 		
-// 		new jGateToolThreeDee("");
+// 		new jGatingToolTH3("");
 		
-		jGateToolThreeDee *bill=new jGateToolThreeDee("");
+		jGatingToolTH3 *bill=new jGatingToolTH3("");
 		bill->UpdateInput(reta);
 		
 		
@@ -49,6 +64,6 @@
 	
 	
 	
-// 		new jEnv;
+		new jEnv;
 // 		new TBrowser;
 }

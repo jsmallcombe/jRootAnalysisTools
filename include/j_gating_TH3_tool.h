@@ -7,14 +7,16 @@
 // //
 // //
 // 
-#ifndef jGateToolTwoDee_h
-#define jGateToolTwoDee_h
+#ifndef jGatingToolTH3_h
+#define jGatingToolTH3_h
 
 #include "TROOT.h"
+#include "TBuffer.h"
 #include "TGLayout.h"
 #include "TF1.h"
 #include "TMath.h"
 #include "TH2.h"
+#include "TH3.h"
 #include "TGInputDialog.h"
 
 #include <RQ_OBJECT.h>
@@ -29,78 +31,71 @@
 
 using namespace std;
 
-#include "j_gating_result_frame.h"
-#include "j_gating_select_frame.h"
-#include "j_gate_subtract.h"
+#include "j_gating_TH2_tool.h"
 
-class jGateFrameTwoDee;
+class jGatingFrameTH3;
 
-class jGateToolTwoDee : public TGMainFrame {
+class jGatingToolTH3 : public TGMainFrame {
 
 private:
-	jGateFrameTwoDee *gJframe1;
+	jGatingFrameTH3 *gJframe1;
    
 public:
-	jGateToolTwoDee(const char *);
-	jGateToolTwoDee(TObject* = hist_capture());
-	virtual ~jGateToolTwoDee(){
+	jGatingToolTH3(const char *);
+	jGatingToolTH3(TObject* = hist_capture());
+	virtual ~jGatingToolTH3(){
         Cleanup();
     };
 
 	void UpdateInput(const char *);
 	void UpdateInput(TObject* = hist_capture());
     
-	ClassDef(jGateToolTwoDee, 2)
+	ClassDef(jGatingToolTH3, 1)
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class jGateFrameTwoDee : public TGHorizontalFrame {
+class jGatingFrameTH3 : public TGHorizontalFrame {
 
 private:
     TH1 *fInputStore;
     TH1 *fProj, *fGate, *fResult, *fResFullProj;
     
-    bool ThreeDee;
-    int xy;
+    int xyz;
     string suffix;
-    
-    // For the 3D use-case
-	TH1 **fGateTwo, **fResultTwo, **fResFullProjTwo;
 	
-	jGateSelectFrame *fGateFrame;
-	jGateResultFrame *fResFrame;
+	jGateSubtractionFrame *fGateFrame;
+	jGatingFrameTH2 *fResFrame;
+    
+    bool UpdateLock;
     
 public:
-	jGateFrameTwoDee(){};
-	jGateFrameTwoDee(TGWindow *, TH1*,bool=false);
-	virtual ~jGateFrameTwoDee();
+	jGatingFrameTH3(){};
+	jGatingFrameTH3(TGWindow *, TH1*);
+	virtual ~jGatingFrameTH3();
     
     void ChangeProjection(const Int_t);
-    void RequestTwoDee(const Bool_t);
+    void RequestTwoDee(Bool_t){};
     
     void UpdateInput(TH1*);
-    void UpdateTypeSwitch();
     void UpdateInput();
     void DoHistogram();
-
-    // For the 3D use-case
-    void SetTwoDeePass(TH1 **res,TH1 **gate,TH1 **pro){
-        fResultTwo=res;
-        fGateTwo=gate;
-        fResFullProjTwo=pro;
-    }
     
+    void CallDoHistogram();
+
     void Init(){
-       fResFrame->HideSave(); 
+       fResFrame->Init(); 
        fGateFrame->HideManBar();
     }
     
-    bool TestThreeDee(){return ThreeDee;}
+    void Layout() override;
     
-	ClassDef(jGateFrameTwoDee, 2)
+    bool UpdateLockSetting;
+    
+    //Using instead of ClassDef because the above override was causing issues with "Steamer"
+	ClassDefOverride(jGatingFrameTH3, 3)
 };
 
 

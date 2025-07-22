@@ -7,16 +7,16 @@
 // //
 // 
 
-#include "j_gating_twodee_tool.h"
+#include "j_gating_TH2_tool.h"
 #include "j_gpad_tools.h"  // For gGlobalAskWindowName 
 
 
-ClassImp(jGateToolTwoDee);
+ClassImp(jGatingToolTH2);
 
 
-jGateToolTwoDee::jGateToolTwoDee(const char * input) : jGateToolTwoDee(gROOT->FindObject(input)){}
+jGatingToolTH2::jGatingToolTH2(const char * input) : jGatingToolTH2(gROOT->FindObject(input)){}
 
-jGateToolTwoDee::jGateToolTwoDee(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame)
+jGatingToolTH2::jGatingToolTH2(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame)
 {
 TVirtualPad* hold=gPad;
 
@@ -42,7 +42,7 @@ TVirtualPad* hold=gPad;
         }
 /////    
 
-    gJframe1=new jGateFrameTwoDee(this,pass,false);
+    gJframe1=new jGatingFrameTH2(this,pass,false);
 
     TGLayoutHints* ffExpand = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
     
@@ -58,11 +58,11 @@ gPad=hold;
 }
 
 
-void jGateToolTwoDee::UpdateInput(const char * input){
+void jGatingToolTH2::UpdateInput(const char * input){
     UpdateInput(gROOT->FindObject(input));
 }
 
-void jGateToolTwoDee::UpdateInput(TObject* input){
+void jGatingToolTH2::UpdateInput(TObject* input){
     if(input!=nullptr){
         if(input->IsA()->InheritsFrom("TH2")){
             gJframe1->UpdateInput((TH1*)input);
@@ -74,13 +74,13 @@ void jGateToolTwoDee::UpdateInput(TObject* input){
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ClassImp(jGateFrameTwoDee);
+ClassImp(jGatingFrameTH2);
 
-jGateFrameTwoDee::jGateFrameTwoDee(TGWindow *parent,TH1* input,bool DeeThree) : TGHorizontalFrame(parent, 100, 100),
+jGatingFrameTH2::jGatingFrameTH2(TGWindow *parent,TH1* input,bool DeeThree) : TGHorizontalFrame(parent, 100, 100),
     fInputStore(nullptr),fProj(nullptr), fGate(nullptr), fResult(nullptr), fResFullProj(nullptr),
     ThreeDee(0), xy(0), suffix(jGateSelectFrame::Iterator("")),
     fGateTwo(nullptr), fResultTwo(nullptr), fResFullProjTwo(nullptr),
-    fGateFrame(new jGateSelectFrame(this, fProj,2)),
+    fGateFrame(new jGateSubtractionFrame(this, fProj,2)),
     fResFrame(new jGateResultFrame(this, &fResult, &fGate, &fResFullProj, fGateFrame->PointGateCentre(), DeeThree)){
         // It may be better to initilise the frames after processing input histograms
         // so that they dont try to do their first draw with empty histograms
@@ -91,27 +91,27 @@ jGateFrameTwoDee::jGateFrameTwoDee(TGWindow *parent,TH1* input,bool DeeThree) : 
     AddFrame(fGateFrame,ffExpandYLeft);
     AddFrame(fResFrame,ffExpandRight);
 
-    fGateFrame->Connect("OutputReady()","jGateFrameTwoDee",this,"DoHistogram()");
-    fGateFrame->Connect("RequestProjection(Int_t)","jGateFrameTwoDee",this,"ChangeProjection(Int_t)");
+    fGateFrame->Connect("OutputReady()","jGatingFrameTH2",this,"DoHistogram()");
+    fGateFrame->Connect("RequestProjection(Int_t)","jGatingFrameTH2",this,"ChangeProjection(Int_t)");
     
-    fResFrame->Connect("RequestTwoDee(Bool_t)","jGateFrameTwoDee",this,"RequestTwoDee(Bool_t)");
+    fResFrame->Connect("RequestTwoDee(Bool_t)","jGatingFrameTH2",this,"RequestTwoDee(Bool_t)");
         
 	UpdateInput(input);
 }
     
-jGateFrameTwoDee::~jGateFrameTwoDee(){
+jGatingFrameTH2::~jGatingFrameTH2(){
     if(fInputStore){delete fInputStore;}
 	Cleanup(); 
 }
 
-void jGateFrameTwoDee::ChangeProjection(const Int_t id)
+void jGatingFrameTH2::ChangeProjection(const Int_t id)
 {  
 	xy=id;
 	UpdateInput();
 }
 
 //______________________________________________________________________________
-void jGateFrameTwoDee::UpdateInput(TH1* input){ 
+void jGatingFrameTH2::UpdateInput(TH1* input){ 
     if(input==nullptr)return;
 	fInputStore=(TH1*)input->Clone(jGateSelectFrame::Iterator("GateStoreCopy"));
 	UpdateTypeSwitch();
@@ -120,9 +120,9 @@ void jGateFrameTwoDee::UpdateInput(TH1* input){
 //______________________________________________________________________________
 
 // Toggle the current 2D vs 1D opperation
-void jGateFrameTwoDee::RequestTwoDee(const bool DoThreeDee){
+void jGatingFrameTH2::RequestTwoDee(const bool DoThreeDee){
     if(DoThreeDee==ThreeDee){
-        cout<<endl<<"jGateFrameTwoDee::RequestTwoDee(const bool) CALL ERROR"<<endl;
+        cout<<endl<<"jGatingFrameTH2::RequestTwoDee(const bool) CALL ERROR"<<endl;
     }
     
     if(!ThreeDee&&DoThreeDee){
@@ -151,7 +151,7 @@ void jGateFrameTwoDee::RequestTwoDee(const bool DoThreeDee){
 //______________________________________________________________________________
 
 // In "2D mode" we simply pass new histograms to resultframes
-void jGateFrameTwoDee::UpdateTypeSwitch(){     
+void jGatingFrameTH2::UpdateTypeSwitch(){     
     if(ThreeDee){
         
         fGate=*fGateTwo;
@@ -169,13 +169,13 @@ void jGateFrameTwoDee::UpdateTypeSwitch(){
 // Replace histograms and pass new projection to gatingframe
 // Subsequently gatingframe will "emit" and this frame will do the gate
 // Called for new input histogram or change axis
-void jGateFrameTwoDee::UpdateInput(){       
+void jGatingFrameTH2::UpdateInput(){       
 if(fInputStore==nullptr)return;
 TVirtualPad* hold=gPad;
 
 	if(fProj)delete fProj;
 
-	fProj=hist_proj(fInputStore,xy,"proj"+suffix,true);
+	fProj=fGateFrame->ProjectAxisByBin(fInputStore,xy,"proj"+suffix);
     // We decided to get rid of the overflow histgram view proj_flow from old class
     
     // May not be needed
@@ -184,7 +184,7 @@ TVirtualPad* hold=gPad;
 	fProj->SetLineColor(1);
 
 	if(fResFullProj)delete fResFullProj;
-	fResFullProj=hist_gater_bin(1,fInputStore,xy,"fResFullProj"+suffix);
+	fResFullProj=fGateFrame->GateAxisByBin(fInputStore,xy,1,0,"fResFullProj"+suffix);
 	fResFullProj->SetStats(0);	
 	fResFullProj->SetTitle("");
 	
@@ -200,7 +200,7 @@ gPad=hold;
 }
 
 // The main gating function, which is called when daugter select_frame says so
-void jGateFrameTwoDee::DoHistogram(){
+void jGatingFrameTH2::DoHistogram(){
 if(fInputStore==nullptr)return;
 	
     // Some of these could have been set by jGateSelectFrame emits
@@ -211,9 +211,9 @@ if(fInputStore==nullptr)return;
     int background_mode=fGateFrame->GetBackMode();
     int back_down=fGateFrame->GetBackBinDown(), back_up=fGateFrame->GetBackBinUp();
     
-	// hist_gater_bin *should* nicely fill the histogram matching the name if the TH1 exists
+	// fGateFrame->GateAxisByBin *should* nicely fill the histogram matching the name if the TH1 exists
 	// so we dont need to delete pointer fGate
-	fGate=hist_gater_bin(gate_down,gate_up,fInputStore,xy,"fGate"+suffix);
+	fGate=fGateFrame->GateAxisByBin(fInputStore,xy,gate_down,gate_up,"fGate"+suffix);
     fGate->SetLineColor(1);
 	fGate->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
 	
@@ -223,12 +223,12 @@ if(fInputStore==nullptr)return;
     
 	switch (background_mode) {
 		case 1://full
-            scaled_back_subtract(fGate,fResFullProj,backfrack,fResult,backfrackfrac);
+            fGateFrame->scaled_back_subtract(fGate,fResFullProj,backfrack,fResult,backfrackfrac);
 			break;
 		case 2://compton
             {
-                TH1* compton_hist=hist_gater_bin(back_down,fInputStore,xy,"c_gate");
-                scaled_back_subtract(fGate,compton_hist,backfrack,fResult,backfrackfrac);
+                TH1* compton_hist=fGateFrame->GateAxisByBin(fInputStore,xy,back_down,-1,"c_gate");
+                fGateFrame->scaled_back_subtract(fGate,compton_hist,backfrack,fResult,backfrackfrac);
                 delete compton_hist;
             }
 			break;
@@ -237,7 +237,7 @@ if(fInputStore==nullptr)return;
 				TH1* anti_hist=(TH1*)fResFullProj->Clone("antiback");
 				anti_hist->Add(fGate,-1);
 				anti_hist->Sumw2(kFALSE);
-				scaled_back_subtract(fGate,anti_hist,backfrack,fResult,backfrackfrac);
+				fGateFrame->scaled_back_subtract(fGate,anti_hist,backfrack,fResult,backfrackfrac);
 				delete anti_hist;
 			}
 			break;
@@ -250,10 +250,10 @@ if(fInputStore==nullptr)return;
 			break;
 		default://manual // Compton // Antiate
 			{
-				TH1* manb_hist=hist_gater_bin(back_down,back_up,fInputStore,xy,"m_gate_2d");
+				TH1* manb_hist=fGateFrame->GateAxisByBin(fInputStore,xy,back_down,back_up,"m_gate_2d");
                 if(gate_down>back_down&&gate_up<back_up)manb_hist->Add(fGate,-1);//In special case remove the gated part
 				manb_hist->Sumw2(kFALSE);
-				scaled_back_subtract(fGate,manb_hist,backfrack,fResult,backfrackfrac);
+				fGateFrame->scaled_back_subtract(fGate,manb_hist,backfrack,fResult,backfrackfrac);
 				delete manb_hist;				
 			}
 			break;
