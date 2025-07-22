@@ -102,6 +102,12 @@ jGatingFrameTH2::jGatingFrameTH2(TGWindow *parent,TH1* input,bool DeeThree) : TG
     
 jGatingFrameTH2::~jGatingFrameTH2(){
     if(fInputStore){delete fInputStore;}
+    
+	if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
+	if(fProj)delete fProj;
+	if(fResFullProj)delete fResFullProj;
+	if(fResult)delete fResult;
+    
 	Cleanup(); 
 }
 
@@ -192,7 +198,9 @@ TVirtualPad* hold=gPad;
 	fResFullProj->SetTitle("");
 	
 	if(fResult)delete fResult;
+    fResult=nullptr;
 	if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
+    fBack=nullptr;
     
 	fResFrame->ResetRange();
     fGateFrame->UpdateInput(fProj);
@@ -204,6 +212,9 @@ gPad=hold;
 void jGatingFrameTH2::DoHistogram(){
 if(fInputStore==nullptr)return;
 	
+    // Testing the name-based histogram recycling functions as intended
+    cout<<endl<<" "<<fResFullProj<<" "<<fBack<<" "<<fResult<<" ";
+    
     // Some of these could have been set by jGateSelectFrame emits
     // Or by having DoHistogram takes these as inputs and connecting though the signals
     double backfrack=fGateFrame->GetBackFrac();
@@ -224,6 +235,7 @@ if(fInputStore==nullptr)return;
     // This is an intentional choice, as often intentionally zeroed data may be sorted into the underflow bin
     // The underflow bin can be selected with manual sliders
 
+    TH1* fBackTidy=fBack;
 	switch (background_mode) {
 		case 1://full
                 fBack=fResFullProj;
@@ -256,6 +268,17 @@ if(fInputStore==nullptr)return;
 	
 	if(fResult!=fBack)fBackFrac=fGateFrame->ScaledBackgroundSubtract(fResult,fBack,backfrack,backfrackfrac);
     else fBackFrac=1;
+    
+    if(fBackTidy&&fBack!=fBackTidy){
+        if(fBackTidy!=fResult&&fBackTidy!=fResFullProj) delete fBackTidy;
+    }
+//         The method GateAxisByBin, used for fResult and for the Compton and manual background
+//         will reuse the exiting histogram in memory, the other options do not.
+//         So we catch those and delete the abandoned fBack histgram
+    
+    
+    // Testing the name-based histogram recycling functions as intended
+//     cout<<endl<<" "<<fResFullProj<<" "<<fBack<<" "<<fResult<<" "<<endl;
 
     fResFrame->DrawHist();
 }
