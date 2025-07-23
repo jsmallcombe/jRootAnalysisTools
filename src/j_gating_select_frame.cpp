@@ -888,7 +888,7 @@ TGTransientFrame* MakeTH3Popup(const TGWindow* window){
     int waitc = 0;
     while (!popup->IsMapped() && waitc++ < 100) {
         gSystem->ProcessEvents();
-        gSystem->Sleep(2); // Reduce sleep for better responsiveness
+        gSystem->Sleep(20000); // Reduce sleep for better responsiveness
         // Little loop to buy Xsystem time to draw the box before code moves on
     }
     popup->DontCallClose();

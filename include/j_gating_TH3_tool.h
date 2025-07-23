@@ -18,6 +18,7 @@
 #include "TH2.h"
 #include "TH3.h"
 #include "TGInputDialog.h"
+#include "TGFrame.h"
 
 #include <RQ_OBJECT.h>
 
@@ -33,31 +34,8 @@ using namespace std;
 
 #include "j_gating_TH2_tool.h"
 
-class jGatingFrameTH3;
-
 class jGatingToolTH3 : public TGMainFrame {
 
-private:
-	jGatingFrameTH3 *gJframe1;
-   
-public:
-	jGatingToolTH3(const char *);
-	jGatingToolTH3(TObject* = hist_capture());
-	virtual ~jGatingToolTH3(){
-        Cleanup();
-    };
-
-	void UpdateInput(const char *);
-	void UpdateInput(TObject* = hist_capture());
-    
-	ClassDef(jGatingToolTH3, 1)
-};
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class jGatingFrameTH3 : public TGHorizontalFrame {
 
 private:
     TH1 *fInputStore;
@@ -69,15 +47,21 @@ private:
     
     bool UpdateLock;
     
+    bool DetachedHead;
+    
+//     TGMainFrame* child;
+    TGTransientFrame* child;
+    
 public:
-	jGatingFrameTH3(){};
-	jGatingFrameTH3(TGWindow *, TH1*);
-	virtual ~jGatingFrameTH3();
+	jGatingToolTH3(TObject* = hist_capture(),bool=false);
+	jGatingToolTH3(const char *,bool=false);
+	virtual ~jGatingToolTH3();
     
     void ChangeProjection(const Int_t);
     void RequestTwoDee(Bool_t){};
     
-    void UpdateInput(TH1*);
+	void UpdateInput(const char *);
+	void UpdateInput(TObject*);
     void UpdateInput();
     void DoHistogram();
     
@@ -93,8 +77,7 @@ public:
     bool UpdateLockSetting;
     
     //Using instead of ClassDef because the above override was causing issues with "Steamer"
-	ClassDefOverride(jGatingFrameTH3, 4)
+	ClassDefOverride(jGatingToolTH3, 5)
 };
-
 
 #endif

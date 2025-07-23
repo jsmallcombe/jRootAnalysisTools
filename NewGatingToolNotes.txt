@@ -1,16 +1,13 @@
 
 ------------------
 
-Rename ThreeDee integer to dimensionalioty / Ndim etc 
+Add globals:
+Overflow/Underflow Setting
+backfracfrac
+TH3head
 
-Write a 3dim THnSparse generating function
-
-Th3 should have a 2 panel option, probably dividing into a main window class and a frame isn't needed for >2D
-
-The projections methods currently set to overflow off should have 4 options for 4 flow modes, global setting, local override
+The underoverflow off should have 4 options for 4 flow modes
 Write an explanation of this for the manual
-
-Set backfracfrac to be an ajustable global parameter
 
 What happened to the TH3 popup?
 
@@ -23,7 +20,11 @@ NOTE 4: underflow/overflow are included by default in the projection To exclude 
 
 ------------------
 
+Rename ThreeDee integer to dimensionalioty / Ndim etc 
+
 Updated the header notes
+
+------------------
 
 Make THSparse gatting tool
 
@@ -42,6 +43,5 @@ Review and fix
 
 Connect new gating tools to jEnv, depreiciate the old ones from the codebase.
 Update the readme to use the updated class names
-
 
 ------------------

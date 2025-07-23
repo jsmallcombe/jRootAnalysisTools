@@ -14,51 +14,73 @@
 ClassImp(jGatingToolTH3);
 
 
-jGatingToolTH3::jGatingToolTH3(const char * input) : jGatingToolTH3(gROOT->FindObject(input)){}
+jGatingToolTH3::jGatingToolTH3(const char * input,bool detach) : jGatingToolTH3(gROOT->FindObject(input),detach){}
 
-jGatingToolTH3::jGatingToolTH3(TObject* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame)
-{
+jGatingToolTH3::jGatingToolTH3(TObject* input,bool detach) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
+    fInputStore(nullptr),fProj(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),fBackFrac(0.0),
+    fGateFrame(new jGateSubtractionFrame(this,3)),
+    UpdateLock(false),
+    DetachedHead(detach),child(nullptr),
+    UpdateLockSetting(true)
+{    
 TVirtualPad* hold=gPad;
 
-    TH1* pass=nullptr;
-    TString FrameName="";
-    
-    if(input!=nullptr){
-        if(input->IsA()->InheritsFrom("TH3")){
-            pass=(TH1*)input;
-            FrameName=pass->GetName();
-        }
-    }
-    
-///// Handle window naming /////
-        if(gGlobalAskWindowName){
-            char* FrameReNamChar=new char[128];
-            new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",FrameName,FrameReNamChar);
-            FrameName=FrameReNamChar;
-        }
+    TGLayoutHints* ffExpandYLeft = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY | kLHintsLeft, 0, 0, 0, 0);
+    TGLayoutHints* ffExpandRight = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY | kLHintsRight, 0, 0, 0, 0);
+    AddFrame(fGateFrame,ffExpandYLeft);
+
+    if(DetachedHead){
+//         child = new TGMainFrame(gClient->GetRoot(), 200, 200);
+        child = new TGTransientFrame(gClient->GetRoot(),this,  200, 200);
+        child->DontCallClose();  // disables the default WM close handler
         
-        if(FrameName.Length()){
-            SetWindowName(FrameName);	
-        }
-/////    
+        fResFrame=new jGatingFrameTH2(child, fResult, true);
+        child->AddFrame(fResFrame,ffExpandRight);
 
-//     gJframe1=new jGatingFrameTH3(this,pass);
-    gJframe1=new jGatingFrameTH3(this,nullptr);
+        child->MapSubwindows();
+        child->Resize();
+        child->MapWindow();
+        
+    }else{
+        fResFrame=new jGatingFrameTH2(this, fResult, true);
+        AddFrame(fResFrame,ffExpandRight);
+    }
 
-    TGLayoutHints* ffExpand = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
+    fGateFrame->Connect("OutputReady()","jGatingToolTH3",this,"DoHistogram()");
+    fGateFrame->Connect("RequestProjection(Int_t)","jGatingToolTH3",this,"ChangeProjection(Int_t)");
+    fGateFrame->Connect("BackModeChange()","jGatingToolTH3",this,"CallDoHistogram()");
+    fGateFrame->Connect("UpdateClicked()","jGatingToolTH3",this,"CallDoHistogram()");
     
-    AddFrame(gJframe1, ffExpand);
-
+    
+//     fResFrame->Connect("RequestTwoDee(Bool_t)","jGatingToolTH3",this,"RequestTwoDee(Bool_t)");
+    fResFrame->SetTwoDeePass(&fResult, &fBack, &fResFullProj, &fBackFrac);
+    
     MapSubwindows();
     Resize(GetDefaultSize());
     MapWindow();
-    gJframe1->Init();
+    Init();
     
     // Moved the  histogram input out from the Constructor so Maping is done before the popup call etc. Maybe?
-    gJframe1->UpdateInput(pass);
-
+	UpdateInput(input);
+    
+    RaiseWindow();
 gPad=hold;
 }
+    
+jGatingToolTH3::~jGatingToolTH3(){
+// 	Closed(this);
+    
+	if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
+	if(fResFullProj)delete fResFullProj;
+	if(fResult)delete fResult;
+    
+    if(DetachedHead)if(child)delete child;
+    
+	Cleanup(); 
+}
+
+
+//______________________________________________________________________________
 
 
 void jGatingToolTH3::UpdateInput(const char * input){
@@ -66,68 +88,47 @@ void jGatingToolTH3::UpdateInput(const char * input){
 }
 
 void jGatingToolTH3::UpdateInput(TObject* input){
-    if(input!=nullptr){
-        if(input->IsA()->InheritsFrom("TH3")){
-            gJframe1->UpdateInput((TH1*)input);
-        }
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-jGatingFrameTH3::jGatingFrameTH3(TGWindow *parent,TH1* input) : TGHorizontalFrame(parent, 100, 100),
-    fInputStore(nullptr),fProj(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),fBackFrac(0.0),
-    fGateFrame(new jGateSubtractionFrame(this,3)),
-    fResFrame(new jGatingFrameTH2(this, fResult, true)),
-    UpdateLock(false),UpdateLockSetting(true)
-{
-        // It may be better to initilise the frames after processing input histograms
-        // so that they dont try to do their first draw with empty histograms
-           
-    TGLayoutHints* ffExpandYLeft = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY | kLHintsLeft, 0, 0, 0, 0);
-    TGLayoutHints* ffExpandRight = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY | kLHintsRight, 0, 0, 0, 0);
+    if(input==nullptr)return;
+    if(input->IsA()->InheritsFrom("TH3")){
+        fInputStore=(TH1*)input; //Dont clone for a TH3 type
         
-    AddFrame(fGateFrame,ffExpandYLeft);
-    AddFrame(fResFrame,ffExpandRight);
+        ///// Handle window naming /////
+        TString FrameName=fInputStore->GetName();
 
-    fGateFrame->Connect("OutputReady()","jGatingFrameTH3",this,"DoHistogram()");
-    fGateFrame->Connect("RequestProjection(Int_t)","jGatingFrameTH3",this,"ChangeProjection(Int_t)");
-    fGateFrame->Connect("BackModeChange()","jGatingFrameTH3",this,"CallDoHistogram()");
-    fGateFrame->Connect("UpdateClicked()","jGatingFrameTH3",this,"CallDoHistogram()");
-    
-//     fResFrame->Connect("RequestTwoDee(Bool_t)","jGatingFrameTH3",this,"RequestTwoDee(Bool_t)");
-    fResFrame->SetTwoDeePass(&fResult, &fBack, &fResFullProj, &fBackFrac);
-    
-	UpdateInput(input);
-}
-    
-jGatingFrameTH3::~jGatingFrameTH3(){
-// 	Closed(this);
-	Cleanup(); 
+        if(gGlobalAskWindowName){
+            char* FrameReNamChar=new char[128];
+            new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",FrameName,FrameReNamChar);
+            FrameName=FrameReNamChar;
+        }
+        
+        if(FrameName.Length()){
+            if(DetachedHead){
+                child->SetWindowName(FrameName+"_SecondAxis");
+                SetWindowName(FrameName+"_FirstAxis");
+            }else{
+                SetWindowName(FrameName);	
+            }
+        }
+        
+        UpdateInput(); //Actually Process the input
+    }
+
 }
 
-void jGatingFrameTH3::ChangeProjection(const Int_t id)
+
+void jGatingToolTH3::ChangeProjection(const Int_t id)
 {  
 // 	xyz=id;
 	UpdateInput();
 }
 
-//______________________________________________________________________________
-void jGatingFrameTH3::UpdateInput(TH1* input){ 
-    if(input==nullptr)return;
-	fInputStore=input; //Dont clone for a TH3 type
-	UpdateInput();
-}
 
 //______________________________________________________________________________
 
 // Replace histograms and pass new projection to gatingframe
 // Subsequently gatingframe will "emit" and this frame will do the gate
 // Called for new input histogram or change axis
-void jGatingFrameTH3::UpdateInput(){       
+void jGatingToolTH3::UpdateInput(){       
 if(fInputStore==nullptr)return;
 TVirtualPad* hold=gPad;
 TGTransientFrame* PopUp=MakeTH3Popup(this);
@@ -148,32 +149,38 @@ gPad=hold;
 }
 
 // The main gating function, which is called when daugter select_frame says so
-void jGatingFrameTH3::DoHistogram(){
+void jGatingToolTH3::DoHistogram(){
 if(fInputStore==nullptr)return;
 if(UpdateLock) return;
 	
     fBackFrac=fGateFrame->DoGateSubtract(fInputStore, fResult, fBack, fResFullProj);
     
     fResFrame->UpdateInput(fResult);
-    
+
+    if(DetachedHead){
+        child->RaiseWindow();
+//         child->SetFocus();
+    }
+        
     if(UpdateLockSetting)UpdateLock=true;
 }
 
-void jGatingFrameTH3::CallDoHistogram(){
+void jGatingToolTH3::CallDoHistogram(){
 if(fInputStore==nullptr)return;
     UpdateLock=false;
 	DoHistogram();
 }
 
-void jGatingFrameTH3::Layout(){
+void jGatingToolTH3::Layout(){
+    
     int W = GetWidth();
     int H = GetHeight();
     int W1 = W / 3.;
     if(fResFrame->TestThreeDee())W1 = W / 2;
     int W2 = W - W1;
-
+    
+    if(DetachedHead)W1=W;
     fGateFrame->MoveResize(0, 0, W1, H);
-    fResFrame->MoveResize(W1, 0, W2, H);
+    if(!DetachedHead)fResFrame->MoveResize(W1, 0, W2, H);
 }   
 
-ClassImp(jGatingFrameTH3);

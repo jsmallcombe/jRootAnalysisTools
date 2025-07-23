@@ -81,6 +81,7 @@
 		
 		
 		new jGatingToolTH3(three);
+// 		new jGatingToolTH3(three,true);
 // 		new jgating_tool(retb);
 		
 // 		new jGatingToolTH3("");
@@ -95,27 +96,18 @@
 // Set slice condition on Z (axis 2)
 // sparse->GetAxis(2)->SetRange(sparse->GetAxis(2)->FindBin(5.0), sparse->GetAxis(2)->FindBin(10.0));
 
-sparse->GetAxis(0)->SetRange(1,4);
-sparse->GetAxis(1)->SetRange(1,4);
+// sparse->GetAxis(0)->SetRange(1,4);
+// sparse->GetAxis(1)->SetRange(1,4);
 // 		new TCanvas();
 // 		gPad->Update();
 // 		sparse->Projection(0)->DrawCopy();
 // 		new TCanvas();
 // 		gPad->Update();
 // 		sparse->Projection(1)->DrawCopy();
-		new TCanvas();
-		gPad->Update();
-		sparse->Projection(2)->DrawCopy();
-// projXY->Draw("COLZ");
+// 		new TCanvas();
+// 		gPad->Update();
+// 		sparse->Projection(2)->DrawCopy();
 
-		
-		
-// 		GetAxis(d)->SetRange(...)
-		
-		
-		
-		
-		
 		
 		
 		
