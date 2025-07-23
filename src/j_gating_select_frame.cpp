@@ -43,7 +43,7 @@ TVirtualPad* hold=gPad;
 	//	HISTOGRAMS AND TF1
 	//
 
-	fFitFcn = new TF1(jGateSelectFrame::Iterator("quickgausmain"),"gaus(0)+pol2(3)",0,0);
+	fFitFcn = new TF1(Iterator("quickgausmain"),"gaus(0)+pol2(3)",0,0);
     fFitFcn->SetLineColor(1);
     if(gGlobalNegativeDraw)fFitFcn->SetLineColor(3);
  
@@ -463,26 +463,32 @@ void jGateSelectFrame::DoSlider()
 //______________________________________________________________________________
 void jGateSelectFrame::UpdateInput(TH1* input){
 	if(!input)return;
+	
+// We store an actual clone of the input (raw_input), which is kept unchanged to be copied from when rebining etc	
 	delete raw_input;
-	raw_input=(TH1*)input->Clone(jGateSelectFrame::Iterator("projraw"));
+	raw_input=(TH1*)input->Clone(Iterator("projraw"));
 	maxbin=raw_input->GetNbinsX();
+	raw_input->SetStats(0);
+	raw_input->SetTitle("");
+	raw_input->SetLineColor(1);
+	
 	UpdateInput();
 }
+
 
 //______________________________________________________________________________
 
 // Basically redo everything.
 // All histograms, drawing etc
-// Calles for new input histogram or change axis
+// Calles for new input histogram or change axis / rebin
 void jGateSelectFrame::UpdateInput()
 {
 TVirtualPad* hold=gPad;
 
 	axis_down=0;axis_up=-1;
 	
-	delete proj;
-
-	proj=(TH1*)raw_input->Clone(jGateSelectFrame::Iterator("proje"));
+	if(proj)delete proj;
+	proj=(TH1*)raw_input->Clone(Iterator("proje"));
 	
 	if(RebinFactor>1){
         proj->Rebin(RebinFactor);
@@ -490,18 +496,14 @@ TVirtualPad* hold=gPad;
     
     axis_down=1;
 	axis_up=proj->GetNbinsX();
-	
-	proj->SetStats(0);
-	proj->SetTitle("");
-	proj->SetLineColor(1);
 
 	delete selected;
-	selected=(TH1*)proj->Clone(jGateSelectFrame::Iterator("selected"));
+	selected=(TH1*)proj->Clone(Iterator("selected"));
 	selected->SetLineWidth(3);
 	selected->SetLineColor(2);
 	
 	delete b_man;
-	b_man=(TH1*)proj->Clone(jGateSelectFrame::Iterator("b_man"));
+	b_man=(TH1*)proj->Clone(Iterator("b_man"));
 	b_man->SetLineWidth(3);
 	b_man->SetLineColor(1);
 	

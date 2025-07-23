@@ -77,11 +77,11 @@ void jGatingToolTH2::UpdateInput(TObject* input){
 ClassImp(jGatingFrameTH2);
 
 jGatingFrameTH2::jGatingFrameTH2(TGWindow *parent,TH1* input,bool DeeThree) : TGHorizontalFrame(parent, 100, 100),
-    fInputStore(nullptr),fProj(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),
+    fInputStore(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),
     fBackFrac(0.0),
-    ThreeDee(0), xy(0), suffix(jGateSelectFrame::Iterator("")),
+    ThreeDee(0), xyz(0), suffix(jGateSelectFrame::Iterator("")),
     fBackTwo(nullptr), fResultTwo(nullptr), fResFullProjTwo(nullptr),
-    fGateFrame(new jGateSubtractionFrame(this, fProj,2)),
+    fGateFrame(new jGateSubtractionFrame(this, 2)),
     fResFrame(new jGateResultFrame(this, &fResult, &fBack, &fResFullProj, &fBackFrac, fGateFrame->PointGateCentre(), DeeThree)){
         // It may be better to initilise the frames after processing input histograms
         // so that they dont try to do their first draw with empty histograms
@@ -104,7 +104,6 @@ jGatingFrameTH2::~jGatingFrameTH2(){
     if(fInputStore){delete fInputStore;}
     
 	if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
-	if(fProj)delete fProj;
 	if(fResFullProj)delete fResFullProj;
 	if(fResult)delete fResult;
     
@@ -113,7 +112,7 @@ jGatingFrameTH2::~jGatingFrameTH2(){
 
 void jGatingFrameTH2::ChangeProjection(const Int_t id)
 {  
-	xy=id;
+	xyz=id;
 	UpdateInput();
 }
 
@@ -182,28 +181,28 @@ void jGatingFrameTH2::UpdateInput(){
 if(fInputStore==nullptr)return;
 TVirtualPad* hold=gPad;
 
-	if(fProj)delete fProj;
-
-	fProj=fGateFrame->ProjectAxisByBin(fInputStore,xy,"proj"+suffix);
-    // We decided to get rid of the overflow histgram view proj_flow from old class
-    
-    // May not be needed
-	fProj->SetStats(0);
-	fProj->SetTitle("");
-	fProj->SetLineColor(1);
-
-	if(fResFullProj)delete fResFullProj;
-	fResFullProj=fGateFrame->GateAxisByBin(fInputStore,xy,1,-1,"ResFullProj"+suffix);
-	fResFullProj->SetStats(0);	
-	fResFullProj->SetTitle("");
-	
-	if(fResult)delete fResult;
+    // Reset the range of the result frame which otherwise keeps the axis zoom the same when gates are changed
+	fResFrame->ResetRange();
+        
+    // Decided to keep ownership and deletion of gated histograms in this class 
+    // and to pass to the jGateSubtractionFrame functions by reference each time
+    // rather than setting TH1** at fGateFrame initilisation time
+    // this *should* make it easy to template functions for different matrix types ...
+  	if(fResult)delete fResult;
     fResult=nullptr;
 	if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
-    fBack=nullptr;
+    fBack=nullptr;  
+	if(fResFullProj)delete fResFullProj;
+
     
-	fResFrame->ResetRange();
-    fGateFrame->UpdateInput(fProj);
+    fGateFrame->UpdateInput(fInputStore, fResFullProj);
+//     jGateSubtractionFrame::UpdateInput() sets projection histogram and calls parent
+//     jGateSelectFrame::UpdateInput() which in turn calls jGateSelectFrame::DoHistogram()
+//     at the end of that function the signal Emit("OutputReady()"); is called
+//     through signal slot mechanism, that calls this jGatingFrameTH2::DoHistogram()
+    
+//     Creating fResFullProj at this point is unnecessary/complex for 1D projections
+//     but it is efficient at higher dim, and we are trying to keep the code the same
     
 gPad=hold;
 }
@@ -212,74 +211,9 @@ gPad=hold;
 void jGatingFrameTH2::DoHistogram(){
 if(fInputStore==nullptr)return;
 	
-    // Testing the name-based histogram recycling functions as intended
-    cout<<endl<<" "<<fResFullProj<<" "<<fBack<<" "<<fResult<<" ";
+    fBackFrac=fGateFrame->DoGateSubtract(fInputStore, fResult, fBack, fResFullProj);
     
-    // Some of these could have been set by jGateSelectFrame emits
-    // Or by having DoHistogram takes these as inputs and connecting though the signals
-    double backfrack=fGateFrame->GetBackFrac();
-    double backfrackfrac=fGateFrame->GetBackFracFrac();
-    int gate_down=fGateFrame->GetGateBinDown(), gate_up=fGateFrame->GetGateBinUp();
-    int background_mode=fGateFrame->GetBackMode();
-    int back_down=fGateFrame->GetBackBinDown(), back_up=fGateFrame->GetBackBinUp();
-    
-	// fGateFrame->GateAxisByBin *should* nicely fill the histogram matching the name if the TH1 exists
-	// so we dont need to delete pointers except for when changing axis, handled by UpdateInput
-	fResult=fGateFrame->GateAxisByBin(fInputStore,xy,gate_down,gate_up,"Gated"+suffix);
-    fResult->SetLineColor(1);
-    fResult->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
-	fResult->SetTitle("");
-
-    // Note the projection "fResFullProj" used to make "full" and "anti" background options
-    // include the overflow bins, but excludes the underflow bin.
-    // This is an intentional choice, as often intentionally zeroed data may be sorted into the underflow bin
-    // The underflow bin can be selected with manual sliders
-
-    TH1* fBackTidy=fBack;
-	switch (background_mode) {
-		case 1://full
-                fBack=fResFullProj;
-			break;
-		case 2://compton
-                fBack=fGateFrame->GateAxisByBin(fInputStore,xy,back_down,-1,"Back");
-			break;
-		case 3://anti gate
-			{
-				fBack=(TH1*)fResFullProj->Clone(TString(fResFullProj->GetName()).ReplaceAll("ResFullProj", "Back"));
-				fBack->Add(fResult,-1);
-				fBack->Sumw2(kFALSE);//Important as the Add is not an arithmetic subtraction, but an exact data removal
-			}
-			break;
-		case 4://none
-			{
-                fBack=fResult;
-			}
-			break;
-		default:  //manual 
-			{
-				fBack=fGateFrame->GateAxisByBin(fInputStore,xy,back_down,back_up,"Back");
-                if(gate_down>back_down&&gate_up<back_up){
-                    fBack->Add(fResult,-1);//In special case remove the gated part
-                    fBack->Sumw2(kFALSE);
-                }				
-			}
-			break;
-	}
-	
-	if(fResult!=fBack)fBackFrac=fGateFrame->ScaledBackgroundSubtract(fResult,fBack,backfrack,backfrackfrac);
-    else fBackFrac=1;
-    
-    if(fBackTidy&&fBack!=fBackTidy){
-        if(fBackTidy!=fResult&&fBackTidy!=fResFullProj) delete fBackTidy;
-    }
-//         The method GateAxisByBin, used for fResult and for the Compton and manual background
-//         will reuse the exiting histogram in memory, the other options do not.
-//         So we catch those and delete the abandoned fBack histgram
-    
-    
-    // Testing the name-based histogram recycling functions as intended
-//     cout<<endl<<" "<<fResFullProj<<" "<<fBack<<" "<<fResult<<" "<<endl;
-
     fResFrame->DrawHist();
+    
 }
 

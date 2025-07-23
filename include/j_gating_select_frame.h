@@ -88,7 +88,6 @@ private:
 	
 	int set_for_3D;
     int RebinFactor;
-	int xyz;
 
 	double storef1,storef2;
 	
@@ -107,6 +106,9 @@ private:
 	void UpdateDraw(bool overlay=false);
 	
 	static int jgating_iterator;
+	
+protected:
+	int xyz;
 
 public:
    jGateSelectFrame();

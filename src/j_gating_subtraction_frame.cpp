@@ -6,8 +6,8 @@ ClassImp(jGateSubtractionFrame);
 
 jGateSubtractionFrame::jGateSubtractionFrame() : jGateSelectFrame(){}
 
-jGateSubtractionFrame::jGateSubtractionFrame(TGWindow * parent, TH1* input,int ThreeDee) : 
-		jGateSelectFrame(parent, input,ThreeDee)
+jGateSubtractionFrame::jGateSubtractionFrame(TGWindow * parent,int ThreeDee) : 
+		jGateSelectFrame(parent, nullptr,ThreeDee),IterSuffix(Iterator(""))
 		{}
 		
 void jGateSubtractionFrame::SetRangeAxis(TAxis* ax,int lower,int upper){
@@ -121,6 +121,98 @@ double jGateSubtractionFrame::ScaledBackgroundSubtract(TH1* gate,TH1* back ,doub
 	
 	return backfrack;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
+
+void jGateSubtractionFrame::UpdateInput(TH1*&fInput, TH1*&fResFullProj){
+    
+	fResFullProj=GateAxisByBin(fInput,xyz,1,-1,"ResFullProj"+IterSuffix);
+	fResFullProj->SetStats(0);	
+	fResFullProj->SetTitle("");
+	
+	TH1* proj=ProjectAxisByBin(fInput,xyz,"proj"+IterSuffix);
+    jGateSelectFrame::UpdateInput(proj);// call base class version
+	delete proj; //Cloned inside jGateSelectFrame::UpdateInput()
+}
+    
+
+ 
+double jGateSubtractionFrame::DoGateSubtract(TH1*&fInput, TH1*&fResult, TH1*&fBack, TH1*&fResFullProj){
+        
+    // Testing the name-based histogram recycling functions as intended
+	cout<<endl;
+    if(fResFullProj)cout<<" "<<fResFullProj->GetName()<<" ";
+	if(fBack)cout<<fBack->GetName()<<" ";
+	if(fResult)cout<<fResult->GetName()<<" ";
+    cout<<endl<<" "<<fResFullProj<<" "<<fBack<<" "<<fResult<<" ";
+    
+	// GateAxisByBin *should* nicely fill the histogram matching the name if the TH1 exists
+	// so we dont need to delete pointers except for when changing axis, handled by UpdateInput
+	fResult=GateAxisByBin(fInput,xyz,GetGateBinDown(),GetGateBinUp(),"Gated"+IterSuffix);
+    fResult->SetLineColor(1);
+    fResult->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
+	fResult->SetTitle("");
+
+    // Note the projection "fResFullProj" used to make "full" and "anti" background options
+    // include the overflow bins, but excludes the underflow bin.
+    // This is an intentional choice, as often intentionally zeroed data may be sorted into the underflow bin
+    // The underflow bin can be selected with manual sliders
+
+    TH1* fBackTidy=fBack;
+	switch (GetBackMode()) {
+		case 1://full
+                fBack=fResFullProj;
+			break;
+		case 2://compton
+                fBack=GateAxisByBin(fInput,xyz,GetBackBinDown(),-1,"Back"+IterSuffix);
+			break;
+		case 3://anti gate
+			{
+				fBack=(TH1*)fResFullProj->Clone(TString(fResFullProj->GetName()).ReplaceAll("ResFullProj", "Back"));
+				fBack->Add(fResult,-1);
+				fBack->Sumw2(kFALSE);//Important as the Add is *not* an arithmetic subtraction, but an exact data removal
+			}
+			break;
+		case 4://none
+			{
+                fBack=fResult;
+			}
+			break;
+		default:  //manual 
+			{
+				fBack=GateAxisByBin(fInput,xyz,GetBackBinDown(),GetBackBinUp(),"Back"+IterSuffix);
+                if(GetGateBinDown()>GetBackBinDown()&&GetGateBinUp()<GetBackBinUp()){
+                    fBack->Add(fResult,-1);//In special case remove the gated part
+                    fBack->Sumw2(kFALSE);
+                }				
+			}
+			break;
+	}
+	
+	double fBackFrac=1;
+	if(fResult!=fBack)fBackFrac=ScaledBackgroundSubtract(fResult,fBack,GetBackFrac(),GetBackFracFrac());
+    
+    
+//    The method GateAxisByBin, used for fResult, and for the backgrounds Compton & manual
+//    will reuse the exiting histogram in memory, the other options do not.
+//    So we catch those and delete the abandoned fBack histgram
+    if(fBackTidy&&fBack!=fBackTidy){
+        if(fBackTidy!=fResult&&fBackTidy!=fResFullProj) delete fBackTidy;
+    }
+    
+    // Testing the name-based histogram recycling functions as intended
+    cout<<endl<<" "<<fResFullProj<<" "<<fBack<<" "<<fResult<<" ";
+    cout<<endl<<" "<<fResFullProj->GetName()<<" "<<fBack->GetName()<<" "<<fResult->GetName()<<endl;
+
+    return fBackFrac;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 
 
 

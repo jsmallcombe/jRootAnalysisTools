@@ -60,11 +60,11 @@ class jGatingFrameTH2 : public TGHorizontalFrame {
 
 private:
     TH1 *fInputStore;
-    TH1 *fProj, *fBack, *fResult, *fResFullProj;
+    TH1 *fBack, *fResult, *fResFullProj;
     double fBackFrac;
     
     bool ThreeDee;
-    int xy;
+    int xyz;
     TString suffix;
     
     // For the 3D use-case

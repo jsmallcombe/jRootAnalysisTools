@@ -69,7 +69,7 @@ private:
 	vector< TGCheckButton* > savechecks;
 	vector< TGTextButton* > savebutton;
 	
-	TH1 **fInput, **fBack, **fProj;
+	TH1 **fResult, **fBack, **fProj;
 	double *fBackFrac ,*fCentroid;
     
     double x1,x2,y1,y2;

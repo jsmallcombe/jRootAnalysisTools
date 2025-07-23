@@ -36,7 +36,10 @@ using namespace std;
 class jGateSubtractionFrame : public jGateSelectFrame {
 
 private:
-
+	
+	// Unsures projections have unique names from any other simaltanious instances of gater class
+	TString IterSuffix;
+	
 	// Helper functions to ensure overflow is included when we want it
 	void SetRangeAxis(TAxis* ax,int=0,int=0);
 	void ResetRanges(TH1*,bool=false);
@@ -53,7 +56,7 @@ private:
 
 public:
    jGateSubtractionFrame();
-   jGateSubtractionFrame(TGWindow* parent, TH1* input=nullptr, int ThreeDee=0);
+   jGateSubtractionFrame(TGWindow* parent, int ThreeDee=0);
    virtual ~jGateSubtractionFrame(){};
    
    
@@ -71,7 +74,11 @@ public:
 
 	double ScaledBackgroundSubtract(TH1*,TH1*,double,double=0);
 	
-   ClassDef(jGateSubtractionFrame, 1)
+	
+	void UpdateInput(TH1*&, TH1*&);  
+	double DoGateSubtract(TH1*&, TH1*&, TH1*&, TH1*&);
+	
+   ClassDef(jGateSubtractionFrame, 2)
 };
 
 

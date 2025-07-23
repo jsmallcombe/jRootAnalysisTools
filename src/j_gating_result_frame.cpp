@@ -6,11 +6,11 @@ ClassImp(jGateResultFrame);
 //______________________________________________________________________________
 jGateResultFrame::jGateResultFrame() : TGHorizontalFrame(gClient->GetRoot(), 100, 100){}
 
-jGateResultFrame::jGateResultFrame(TGWindow * parent,  TH1** input, TH1** back, TH1** proj, double* frac, double* cent,  bool threedee) : TGHorizontalFrame(parent, 100, 100), ThreeDee(threedee), RangeUpdateHold(true),  fCheck0(0), fCheck1(0), fFitFcn(0),fPeakNumText(0),fTip(0),fFitPanel(0),
-fInput(input), fBack(back), fProj(proj), fBackFrac(frac), fCentroid(cent),
+jGateResultFrame::jGateResultFrame(TGWindow * parent,  TH1** res, TH1** back, TH1** proj, double* frac, double* cent,  bool threedee) : TGHorizontalFrame(parent, 100, 100), ThreeDee(threedee), RangeUpdateHold(true),  fCheck0(0), fCheck1(0), fFitFcn(0),fPeakNumText(0),fTip(0),fFitPanel(0),
+fResult(res), fBack(back), fProj(proj), fBackFrac(frac), fCentroid(cent),
 x1(1),x2(-1),y1(1),y2(-1)
 {
-	if(fInput==nullptr)return;
+	if(fResult==nullptr)return;
 	if(fBack==nullptr)return;
 	if(fProj==nullptr)return;
 	if(fBackFrac==nullptr)return;
@@ -162,7 +162,7 @@ void jGateResultFrame::DrawHist(){
 	fCanvas1->GetCanvas()->cd();
     
     TH1* H=nullptr;
-    TH1* HIn=*fInput;
+    TH1* HIn=*fResult;
     TH1* HBack=*fBack;
     TH1* HProj=*fProj;
     double Frac=*fBackFrac;
@@ -389,7 +389,7 @@ void jGateResultFrame::StoreHistograms(Int_t i){
 		if(select<savehists.size()){
 			if(savehists[select]){delete savehists[select];}savehists[select]=0;
 			
-			TH1* targ=*fInput;
+			TH1* targ=*fResult;
             if(!targ)return;
 			
 			savehists[select]=(TH1*)targ->Clone(jGateSelectFrame::Iterator("SavedHist"));

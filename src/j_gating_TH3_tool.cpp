@@ -81,7 +81,7 @@ void jGatingToolTH3::UpdateInput(TObject* input){
 jGatingFrameTH3::jGatingFrameTH3(TGWindow *parent,TH1* input) : TGHorizontalFrame(parent, 100, 100),
     fInputStore(nullptr),fProj(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),fBackFrac(0.0),
     xyz(0), suffix(jGateSelectFrame::Iterator("")),
-    fGateFrame(new jGateSubtractionFrame(this, fProj,3)),
+    fGateFrame(new jGateSubtractionFrame(this,3)),
     fResFrame(new jGatingFrameTH2(this, fResult, true)),
     UpdateLock(false),UpdateLockSetting(true)
 {
@@ -155,7 +155,7 @@ TGTransientFrame* PopUp=MakeTH3Popup(this);
 
     UpdateLock=false;
     
-    fGateFrame->UpdateInput(fProj);
+//     fGateFrame->UpdateInput(fProj);
     
 if(PopUp){PopUp->CloseWindow();}
 gPad=hold;
