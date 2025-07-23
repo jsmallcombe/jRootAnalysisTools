@@ -79,7 +79,7 @@ ClassImp(jGatingFrameTH2);
 jGatingFrameTH2::jGatingFrameTH2(TGWindow *parent,TH1* input,bool DeeThree) : TGHorizontalFrame(parent, 100, 100),
     fInputStore(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),
     fBackFrac(0.0),
-    ThreeDee(0), xyz(0), suffix(jGateSelectFrame::Iterator("")),
+    ThreeDee(0), 
     fBackTwo(nullptr), fResultTwo(nullptr), fResFullProjTwo(nullptr),
     fGateFrame(new jGateSubtractionFrame(this, 2)),
     fResFrame(new jGateResultFrame(this, &fResult, &fBack, &fResFullProj, &fBackFrac, fGateFrame->PointGateCentre(), DeeThree)){
@@ -112,7 +112,7 @@ jGatingFrameTH2::~jGatingFrameTH2(){
 
 void jGatingFrameTH2::ChangeProjection(const Int_t id)
 {  
-	xyz=id;
+// 	xyz=id;
 	UpdateInput();
 }
 
@@ -188,12 +188,12 @@ TVirtualPad* hold=gPad;
     // and to pass to the jGateSubtractionFrame functions by reference each time
     // rather than setting TH1** at fGateFrame initilisation time
     // this *should* make it easy to template functions for different matrix types ...
-  	if(fResult)delete fResult;
-    fResult=nullptr;
 	if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
     fBack=nullptr;  
+  	if(fResult)delete fResult;
+    fResult=nullptr;
 	if(fResFullProj)delete fResFullProj;
-
+    fResFullProj=nullptr;
     
     fGateFrame->UpdateInput(fInputStore, fResFullProj);
 //     jGateSubtractionFrame::UpdateInput() sets projection histogram and calls parent

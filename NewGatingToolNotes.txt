@@ -1,3 +1,28 @@
+
+------------------
+
+Rename ThreeDee integer to dimensionalioty / Ndim etc 
+
+Write a 3dim THnSparse generating function
+
+Th3 should have a 2 panel option, probably dividing into a main window class and a frame isn't needed for >2D
+
+The projections methods currently set to overflow off should have 4 options for 4 flow modes, global setting, local override
+Write an explanation of this for the manual
+
+Set backfracfrac to be an ajustable global parameter
+
+What happened to the TH3 popup?
+
+------------------
+
+Check overflow is currently working with our set range options :
+
+TH3::Project3D
+NOTE 4: underflow/overflow are included by default in the projection To exclude underflow and/or overflow (for both axis in case of a projection to a 1D histogram) use option "NUF" and/or "NOF" With SetRange() you can have all bins except underflow/overflow only if you set the axis bit range as following after having called SetRange: axis->SetRange(1, axis->GetNbins());
+
+------------------
+
 Updated the header notes
 
 Make THSparse gatting tool
@@ -20,24 +45,3 @@ Update the readme to use the updated class names
 
 
 ------------------
-
-
-
-Rename ThreeDee integer to dimensionalioty / Ndim etc 
-
-Test the re-used names are working with TH3 using the pointer checks (after implementing TH3)
-
-Backmode change function doesnt pass, should it?
-
-Remove "suffix" from TH2/TH3
-
-Write a 3dim THnSparse generating function
-
-
-Th3 should have a 2 panel option, probably dividing into a main window class and a frame isn't needed for >2D
-
-The projections methods currently set to overflow off should have 4 options for 4 flow modes, global setting, local override
-Write an explanation of this for the manual
-
-Set backfracfrac to be an ajustable global parameter
-

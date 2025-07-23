@@ -63,9 +63,6 @@ private:
     TH1 *fInputStore;
     TH1 *fProj, *fBack, *fResult, *fResFullProj;
     double fBackFrac;
-    
-    int xyz;
-    string suffix;
 	
 	jGateSubtractionFrame *fGateFrame;
 	jGatingFrameTH2 *fResFrame;
@@ -96,7 +93,7 @@ public:
     bool UpdateLockSetting;
     
     //Using instead of ClassDef because the above override was causing issues with "Steamer"
-	ClassDefOverride(jGatingFrameTH3, 3)
+	ClassDefOverride(jGatingFrameTH3, 4)
 };
 
 

@@ -64,10 +64,8 @@ private:
     double fBackFrac;
     
     bool ThreeDee;
-    int xyz;
-    TString suffix;
     
-    // For the 3D use-case
+    // For the 3D-parent use-case
 	TH1 **fBackTwo, **fResultTwo, **fResFullProjTwo;
 	double *fBackFracTwo;
 	
@@ -102,7 +100,7 @@ public:
     
     bool TestThreeDee(){return ThreeDee;}
     
-	ClassDef(jGatingFrameTH2, 2)
+	ClassDef(jGatingFrameTH2, 3)
 };
 
 

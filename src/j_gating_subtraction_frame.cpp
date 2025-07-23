@@ -29,7 +29,7 @@ void jGateSubtractionFrame::ResetRanges(TH1* hist,bool OverUnderFlow) {
 
 // All ranges are reset by the master GateAxisByBin, so only gating range needs setting 
 TH1* jGateSubtractionFrame::GateByBin(TH3* in,int xyz,int lower,int upper,TString name){
-	TString is[6]={"x","y","z","yz","zx","xy"};
+	TString is[6]={"yz","zx","xy","x","y","z"};
 	//Note "xz" not "zx" was used previously, so there will be some orientation differences
 
 	switch (xyz%3) { 
@@ -39,10 +39,16 @@ TH1* jGateSubtractionFrame::GateByBin(TH3* in,int xyz,int lower,int upper,TStrin
 	}
 	
 	TString Opt=is[xyz%6];
-	if(name.Length())Opt=name+"_"+Opt;
-	
-	
+// 	if(name.Length())Opt=name+"_"+Opt;
+// // Officially Project3D supports adding extra name portion
+// // Had problems combining this with filling-existing-histograms-by-name functionality
+// // Ended up with some overwrites that should have been possible resulting in deletions and segfaults
+// // This work around works	
+	TString Holdname=in->GetName();
+	in->SetName(name);
 	TH1* ret=in->Project3D(Opt);
+	in->SetName(Holdname);
+	
 	return ret;
 }
  //NOTE 1: The generated histogram is named th3name + option
@@ -141,12 +147,12 @@ void jGateSubtractionFrame::UpdateInput(TH1*&fInput, TH1*&fResFullProj){
  
 double jGateSubtractionFrame::DoGateSubtract(TH1*&fInput, TH1*&fResult, TH1*&fBack, TH1*&fResFullProj){
         
-    // Testing the name-based histogram recycling functions as intended
-	cout<<endl;
-    if(fResFullProj)cout<<" "<<fResFullProj->GetName()<<" ";
-	if(fBack)cout<<fBack->GetName()<<" ";
-	if(fResult)cout<<fResult->GetName()<<" ";
-    cout<<endl<<" "<<fResFullProj<<" "<<fBack<<" "<<fResult<<" ";
+//     // Testing the name-based histogram recycling functions as intended
+// 	cout<<endl;
+//     if(fResFullProj)cout<<" "<<fResFullProj->GetName()<<" ";
+// 	if(fBack)cout<<fBack->GetName()<<" ";
+// 	if(fResult)cout<<fResult->GetName()<<" ";
+//     cout<<endl<<" "<<fResFullProj<<" "<<fBack<<" "<<fResult<<" ";
     
 	// GateAxisByBin *should* nicely fill the histogram matching the name if the TH1 exists
 	// so we dont need to delete pointers except for when changing axis, handled by UpdateInput
@@ -203,8 +209,8 @@ double jGateSubtractionFrame::DoGateSubtract(TH1*&fInput, TH1*&fResult, TH1*&fBa
     }
     
     // Testing the name-based histogram recycling functions as intended
-    cout<<endl<<" "<<fResFullProj<<" "<<fBack<<" "<<fResult<<" ";
-    cout<<endl<<" "<<fResFullProj->GetName()<<" "<<fBack->GetName()<<" "<<fResult->GetName()<<endl;
+//     cout<<endl<<" "<<fResFullProj<<" "<<fBack<<" "<<fResult<<" ";
+//     cout<<endl<<" "<<fResFullProj->GetName()<<" "<<fBack->GetName()<<" "<<fResult->GetName()<<endl;
 
     return fBackFrac;
 }

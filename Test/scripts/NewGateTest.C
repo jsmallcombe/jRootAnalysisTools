@@ -1,6 +1,6 @@
 {
 
-	int a=2;
+	int a=3;
 
 	
 	TH1 *reta,*retb;
@@ -39,24 +39,85 @@
 		gROOT->cd();
 		retb=(TH3F*)MyFile->Get("Mult_alphaprotons_gamma");
 		
+		
+		// Define binning THnSparse
+		const Int_t nbins[3] = {20, 20, 20};
+		const Double_t xmin[3] = {0, 0, 0};
+		const Double_t xmax[3] = {20, 20, 20};
+		THnSparseI* sparse = new THnSparseI("sparse", "sparse", 3, nbins, xmin, xmax);
+		
 		TH3I* three=new TH3I("three","three",20,0,20,20,0,20,20,0,20);
+		
+		
 		TRandom r;
-		TF1 bob("bob","1+sin(x*3.14159/10.)",0,20);
+		TF1 fn("bob","1+sin(x*3.14159/10.)",0,20);
+		
+		Double_t coords[3];
+		
 		for(int i=0;i<20000;i++){
-			three->Fill(r.Gaus(10,3),bob.GetRandom(),r.Uniform()*20);
+			int a=r.Gaus(10,3);
+			int b=fn.GetRandom();
+			int c=r.Uniform()*20;
+			
+			// Put some gaps in the data to check the THnSparse bins are being selected correctly 
+			if(b==12)continue;
+			if(c==7)continue;
+			
+			// Turn off underoverflow
+// 			if(abs(a-10)>9)continue;
+// 			if(abs(b-10)>9)continue;
+// 			if(abs(c-10)>9)continue;
+			
+			three->Fill(a,b,c);
+			
+			coords[0] = a;
+			coords[1] = b;
+			coords[2] = c;
+			sparse->Fill(coords);
 		}
 		reta=three;
 		
 // 		b = new jgating_tool(reta);
 		
 		
-// 		new jGatingToolTH3(retb);
+		new jGatingToolTH3(three);
 // 		new jgating_tool(retb);
 		
 // 		new jGatingToolTH3("");
 		
-		jGatingToolTH3 *bill=new jGatingToolTH3("");
-		bill->UpdateInput(reta);
+// 		jGatingToolTH3 *bill=new jGatingToolTH3("");
+// 		bill->UpdateInput(reta);
+		
+// 		bill->Connect("CloseWindow()", "TApplication", gApplication, "Terminate()");
+		
+		
+		
+// Set slice condition on Z (axis 2)
+// sparse->GetAxis(2)->SetRange(sparse->GetAxis(2)->FindBin(5.0), sparse->GetAxis(2)->FindBin(10.0));
+
+sparse->GetAxis(0)->SetRange(1,4);
+sparse->GetAxis(1)->SetRange(1,4);
+// 		new TCanvas();
+// 		gPad->Update();
+// 		sparse->Projection(0)->DrawCopy();
+// 		new TCanvas();
+// 		gPad->Update();
+// 		sparse->Projection(1)->DrawCopy();
+		new TCanvas();
+		gPad->Update();
+		sparse->Projection(2)->DrawCopy();
+// projXY->Draw("COLZ");
+
+		
+		
+// 		GetAxis(d)->SetRange(...)
+		
+		
+		
+		
+		
+		
+		
 		
 		
 	}

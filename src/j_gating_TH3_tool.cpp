@@ -80,7 +80,6 @@ void jGatingToolTH3::UpdateInput(TObject* input){
 
 jGatingFrameTH3::jGatingFrameTH3(TGWindow *parent,TH1* input) : TGHorizontalFrame(parent, 100, 100),
     fInputStore(nullptr),fProj(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),fBackFrac(0.0),
-    xyz(0), suffix(jGateSelectFrame::Iterator("")),
     fGateFrame(new jGateSubtractionFrame(this,3)),
     fResFrame(new jGatingFrameTH2(this, fResult, true)),
     UpdateLock(false),UpdateLockSetting(true)
@@ -112,7 +111,7 @@ jGatingFrameTH3::~jGatingFrameTH3(){
 
 void jGatingFrameTH3::ChangeProjection(const Int_t id)
 {  
-	xyz=id;
+// 	xyz=id;
 	UpdateInput();
 }
 
@@ -133,29 +132,16 @@ if(fInputStore==nullptr)return;
 TVirtualPad* hold=gPad;
 TGTransientFrame* PopUp=MakeTH3Popup(this);
 
-	if(fProj)delete fProj;
-
-	fProj=fGateFrame->ProjectAxisByBin(fInputStore,xyz,"proj"+suffix);
-    // We decided to get rid of the overflow histgram view proj_flow from old class
-    
-    // May not be needed
-	fProj->SetStats(0);
-	fProj->SetTitle("");
-	fProj->SetLineColor(1);
-
+	if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
+    fBack=nullptr;  
+  	if(fResult)delete fResult;
+    fResult=nullptr;
 	if(fResFullProj)delete fResFullProj;
-	fResFullProj=fGateFrame->GateAxisByBin(fInputStore,xyz,1,0,"fResFullProj"+suffix);
-	fResFullProj->SetStats(0);	
-	fResFullProj->SetTitle("");
-	
-	if(fResult)delete fResult;
-	fResult=(TH1*)fResFullProj->Clone(("outputhist"+suffix).c_str());
-	fResult->SetLineColor(1);
-	fResult->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
-
+    fResFullProj=nullptr;
+    
     UpdateLock=false;
     
-//     fGateFrame->UpdateInput(fProj);
+    fGateFrame->UpdateInput(fInputStore, fResFullProj);
     
 if(PopUp){PopUp->CloseWindow();}
 gPad=hold;
@@ -166,66 +152,8 @@ void jGatingFrameTH3::DoHistogram(){
 if(fInputStore==nullptr)return;
 if(UpdateLock) return;
 	
-    // Some of these could have been set by jGateSelectFrame emits
-    // Or by having DoHistogram takes these as inputs and connecting though the signals
-    double backfrack=fGateFrame->GetBackFrac();
-    double backfrackfrac=fGateFrame->GetBackFracFrac();
-    int gate_down=fGateFrame->GetGateBinDown(), gate_up=fGateFrame->GetGateBinUp();
-    int background_mode=fGateFrame->GetBackMode();
-    int back_down=fGateFrame->GetBackBinDown(), back_up=fGateFrame->GetBackBinUp();
+    fBackFrac=fGateFrame->DoGateSubtract(fInputStore, fResult, fBack, fResFullProj);
     
-
-    if(fBack)delete fBack;
-	// fGateFrame->GateAxisByBin *should* nicely fill the histogram matching the name if the TH1 exists
-	// so we dont need to delete pointer fBack
-	fBack=fGateFrame->GateAxisByBin(fInputStore,xyz,gate_down,gate_up,"fBack"+suffix);
-    fBack->SetLineColor(1);
-	fBack->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
-	
-    // Note the "fResFullProj" projection used to make full and anti includes the overflow, but excludes the underflow bin
-    // This is an intentional choice as often intentionally zeroed data may be sorted into the underflow bin
-    // The underflow bin can be selected with manual sliders
-    
-	switch (background_mode) {
-		case 1://full
-            fGateFrame->scaled_back_subtract(fBack,fResFullProj,backfrack,fResult,backfrackfrac);
-			break;
-		case 2://compton
-            {
-                TH1* compton_hist=fGateFrame->GateAxisByBin(fInputStore,xyz,back_down,0,"c_gate");
-                fGateFrame->scaled_back_subtract(fBack,compton_hist,backfrack,fResult,backfrackfrac);
-                delete compton_hist;
-            }
-			break;
-		case 3://anti gate
-			{
-				TH1* anti_hist=(TH1*)fResFullProj->Clone("antiback");
-				anti_hist->Add(fBack,-1);
-				anti_hist->Sumw2(kFALSE);
-				fGateFrame->scaled_back_subtract(fBack,anti_hist,backfrack,fResult,backfrackfrac);
-				delete anti_hist;
-			}
-			break;
-		case 4://none
-			{
-				TString hpt=fResult->GetName();
-				fBack->Copy(*fResult);
-				fResult->SetName(hpt);
-			}
-			break;
-		default://manual // Compton // Antiate
-			{
-				TH1* manb_hist=fGateFrame->GateAxisByBin(fInputStore,xyz,back_down,back_up,"m_gate_2d");
-                if(gate_down>back_down&&gate_up<back_up)manb_hist->Add(fBack,-1);//In special case remove the gated part
-				manb_hist->Sumw2(kFALSE);
-				fGateFrame->scaled_back_subtract(fBack,manb_hist,backfrack,fResult,backfrackfrac);
-				delete manb_hist;				
-			}
-			break;
-	}
-	
-	fResult->SetTitle("");
-
     fResFrame->UpdateInput(fResult);
     
     if(UpdateLockSetting)UpdateLock=true;
