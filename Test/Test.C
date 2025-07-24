@@ -24,11 +24,12 @@ gROOT->ProcessLine((dir+"/data/LoadFiles.C").c_str());
 //  dir+="/scripts/jAngleTest.C";  
 //  dir+="/scripts/j2DPeakFitTest.C";  
 //   dir+="/scripts/CanTest.C";  
-
 // dir+="/scripts/GateTest.C";
-dir+="/scripts/NewGateTest.C";
+
 //  dir+="/scripts/GatingSelectTest.C";  
 //  dir+="/scripts/GateFrame.C";  
+// dir+="/scripts/NewGateTest.C"; 
+dir+="/scripts/THnTest.C";
 
 
 //Run that script

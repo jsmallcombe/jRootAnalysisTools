@@ -66,6 +66,7 @@ private:
 	TGButtonGroup	*fBgroup2;
 	TGRadioButton *fRButton4,*fRButton5,*fRButton6,*fRButton7,*fRButton8,*fRButton9;
 	TGComboBox *BackModeDrop;
+	TGTextEntry* NdimText;
 	
 	TH1 *raw_input; 
 	TH1 *proj,*selected,*b_man,*specback;
@@ -91,7 +92,8 @@ private:
 	int back_down,back_up;
 	bool SubtractGateFromBack;
 	
-	int set_for_3D;
+	int Ndim;
+	int NdimSel;		
     int RebinFactor;
 
 	double storef1,storef2;
@@ -106,6 +108,7 @@ private:
 	void FetchTextValues();
 	void ValuesToText();
 	void UpdateSpecBack();
+	void DoNdimText();
 
 	void DoAutoFit();
 	void UpdateDraw(bool overlay=false);
@@ -117,7 +120,7 @@ protected:
 
 public:
    jGateSelectFrame();
-   jGateSelectFrame(TGWindow* parent, TH1* input=nullptr, int ThreeDee=0);
+   jGateSelectFrame(TGWindow* parent, TH1* input=nullptr, int Ndim=0);
    virtual ~jGateSelectFrame();
    
    
@@ -146,6 +149,8 @@ public:
 
    void RebinPlus();
    void RebinMinus();
+   void NdimPlus();
+   void NdimMinus();
    
    //Input signals has to be public
    void ChangeProjection(const Int_t);

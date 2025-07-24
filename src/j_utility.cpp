@@ -145,7 +145,7 @@ void ExtractAsymError(string str,double& value,double& errorup,double& errordwn)
 	unsigned int l=str.size();
 	if(l<1)return;
 	
-	char symb[6]={'+','-',' ','(',')','\t'};
+	const char symb[6]={'+','-',' ','(',')','\t'};
 	vector<unsigned int> type;
 	vector<string> substr;
 	unsigned int lasttype=100;

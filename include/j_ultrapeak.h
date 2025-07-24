@@ -85,9 +85,9 @@ inline double DecGausArea(double& sig,double& dec){return 2*dec*exp(-((sig*sig)/
 // An analytical approach to the X value of decay peak maximum
 // Now using a TGraph, more accurate (and negligably faster)
 // Valid in the range 10^-4<=(sigma/decay)<=35
-double DecGausMaxX(double& sig,double& dec);
+double DecGausMaxX(const double& sig,const double& dec);
 
-double DecMaxCorrPow(double& sig,double& dec);
+double DecMaxCorrPow(const double& sig,const double& dec);
 
 ///////////////////////////////////
 //       DecGaus + UniGaus       //

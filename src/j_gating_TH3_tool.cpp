@@ -16,8 +16,8 @@ ClassImp(jGatingToolTH3);
 
 jGatingToolTH3::jGatingToolTH3(const char * input,bool detach) : jGatingToolTH3(gROOT->FindObject(input),detach){}
 
-jGatingToolTH3::jGatingToolTH3(TObject* input,bool detach) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
-    fInputStore(nullptr),fProj(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),fBackFrac(0.0),
+jGatingToolTH3::jGatingToolTH3(TObject* input,bool detach, TString OverrideName) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
+    fInputStore(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),fBackFrac(0.0),
     fGateFrame(new jGateSubtractionFrame(this,3)),
     UpdateLock(false),THnBaseType(false),
     DetachedHead(detach),child(nullptr),
@@ -61,7 +61,7 @@ TVirtualPad* hold=gPad;
     Init();
     
     // Moved the  histogram input out from the Constructor so Maping is done before the popup call etc. Maybe?
-	UpdateInput(input);
+	UpdateInput(input,OverrideName);
     
     RaiseWindow();
 gPad=hold;
@@ -70,9 +70,8 @@ gPad=hold;
 jGatingToolTH3::~jGatingToolTH3(){
 // 	Closed(this);
     
-	if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
+    CleanResHist();
 	if(fResFullProj)delete fResFullProj;
-	if(fResult)delete fResult;
     
     if(DetachedHead)if(child)delete child;
     
@@ -87,7 +86,7 @@ void jGatingToolTH3::UpdateInput(const char * input){
     UpdateInput(gROOT->FindObject(input));
 }
 
-void jGatingToolTH3::UpdateInput(TObject* input){
+void jGatingToolTH3::UpdateInput(TObject* input,TString OverrideName){
     if(input==nullptr)return;
     
     if(input->IsA()->InheritsFrom("THnBase")){
@@ -102,8 +101,10 @@ void jGatingToolTH3::UpdateInput(TObject* input){
         
         ///// Handle window naming /////
         TString FrameName=fInputStore->GetName();
-
-        if(gGlobalAskWindowName){
+        
+        if(OverrideName.Length()){
+            FrameName=OverrideName;
+        }else if(gGlobalAskWindowName){
             char* FrameReNamChar=new char[128];
             new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",FrameName,FrameReNamChar);
             FrameName=FrameReNamChar;
@@ -132,6 +133,13 @@ void jGatingToolTH3::ChangeProjection(const Int_t id)
 
 //______________________________________________________________________________
 
+void jGatingToolTH3::CleanResHist(){
+    if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
+    fBack=nullptr;  
+  	if(fResult)delete fResult;
+    fResult=nullptr;
+}
+
 // Replace histograms and pass new projection to gatingframe
 // Subsequently gatingframe will "emit" and this frame will do the gate
 // Called for new input histogram or change axis
@@ -140,10 +148,7 @@ if(fInputStore==nullptr)return;
 TVirtualPad* hold=gPad;
 TGTransientFrame* PopUp=MakeTH3Popup(this);
 
-	if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
-    fBack=nullptr;  
-  	if(fResult)delete fResult;
-    fResult=nullptr;
+    CleanResHist();
 	if(fResFullProj)delete fResFullProj;
     fResFullProj=nullptr;
     
@@ -162,18 +167,16 @@ if(fInputStore==nullptr)return;
 if(UpdateLock) return;
 
     if(THnBaseType){
-        // I dont think the THn Projection classes support the histogram-in-memort reuse
-        if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
-        fBack=nullptr;  
-        if(fResult)delete fResult;
-        fResult=nullptr;
+        // THn::Projection doesnt support the histogram-in-memory reuse of TH2/3
+        CleanResHist();
+        
+        fBackFrac=fGateFrame->DoGateSubtract((THnBase*)fInputStore, fResult, fBack, fResFullProj);
+    }else{
+        fBackFrac=fGateFrame->DoGateSubtract((TH1*)fInputStore, fResult, fBack, fResFullProj);
     }
-
-    if(THnBaseType)fBackFrac=fGateFrame->DoGateSubtract((THnBase*)fInputStore, fResult, fBack, fResFullProj);
-    else           fBackFrac=fGateFrame->DoGateSubtract((TH1*)fInputStore, fResult, fBack, fResFullProj);
     
-
-    
+    fResult->SetLineColor(1);
+    fResult->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
     fResFrame->UpdateInput(fResult);
 
     if(DetachedHead){

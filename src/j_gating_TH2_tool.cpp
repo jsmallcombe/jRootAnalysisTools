@@ -213,6 +213,8 @@ if(fInputStore==nullptr)return;
 	
     fBackFrac=fGateFrame->DoGateSubtract(fInputStore, fResult, fBack, fResFullProj);
     
+    fResult->SetLineColor(1);
+    fResult->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
     fResFrame->DrawHist();
     
 }

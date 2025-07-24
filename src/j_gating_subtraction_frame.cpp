@@ -41,6 +41,37 @@ void jGateSubtractionFrame::ResetRanges(THnBase* hist, bool UnderFlow,bool OverF
 	}
 }
 
+//////////////////////////////////////////
+
+// All ranges are reset by the master GateAxisByBin, so only gating range needs setting 
+TObject* jGateSubtractionFrame::GateByBin(THnBase* in,int xyz,int lower,int upper){
+
+	// If negative a 1D projection is requested 
+	if(xyz<0){// Return a TH1
+		return (TObject*)in->Projection(abs(xyz+1));
+	}
+	
+	int N=in->GetNdimensions();
+	if(N<=xyz)return nullptr;
+	
+	SetRangeAxis(in->GetAxis(xyz),lower,upper);
+
+	if(N==3){ // Return a TH2
+		return (TObject*)in->Projection((xyz+1)%3,(xyz+2)%3);
+	}
+	
+	// Fill the array of axis to project with all axis but xyz
+	int i=0;
+	for(int a=0;a<N;a++){
+		if(a==xyz)continue;
+		THnAxisHolder[i]=a;
+		i++;
+	}
+	
+	return in->ProjectionND(N-1,THnAxisHolder); //Return an THn
+}
+
+
 // All ranges are reset by the master GateAxisByBin, so only gating range needs setting 
 TH1* jGateSubtractionFrame::GateByBin(TH3* in,int xyz,int lower,int upper,TString name){
 	TString is[6]={"yz","zx","xy","x","y","z"};
@@ -86,32 +117,6 @@ TH1* jGateSubtractionFrame::GateByBin(TH2* in,int xyz,int lower,int upper,TStrin
 	return (TH1*)in->ProjectionY(name,lower,upper);
 }
 
-TObject* jGateSubtractionFrame::GateByBin(THnBase* in,int xyz,int lower,int upper,TString name){
-
-	if(xyz<0){// Return a TH1
-		return (TObject*)in->Projection(abs(xyz+1));
-	}
-	
-	int N=in->GetNdimensions();
-	
-	if(N<=xyz)return nullptr;
-	
-	SetRangeAxis(in->GetAxis(xyz),lower,upper);
-
-	if(N==3){// Return a TH2
-		return (TObject*)in->Projection((xyz+1)%3,(xyz+2)%3);
-	}
-	
-	// Return a THn
-	int i=0;
-	for(int a=0;a<N;a++){
-		if(a==xyz)continue;
-		THnAxisHolder[i]=a;
-		i++;
-	}
-	
-	return in->ProjectionND(N-1,THnAxisHolder);
-}
 
 ///////
 TH1* jGateSubtractionFrame::GateAxisByBin(TH1* in,int xyz,int lower,int upper,TString name){
@@ -123,24 +128,57 @@ TH1* jGateSubtractionFrame::GateAxisByBin(TH1* in,int xyz,int lower,int upper,TS
 
 TObject* jGateSubtractionFrame::GateAxisByBin(THnBase* in,int xyz,int lower,int upper,TString name){
 	ResetRanges(in); // Using gGlobalUnderlowBool/gGlobalOverflowBool to include/exclude under/overflows
-	TNamed* ob=(TNamed*)GateByBin(in,xyz,lower,upper,name);
-	ob->SetName(jGateSelectFrame::Iterator("THnProj"));
+	TNamed* ob=(TNamed*)GateByBin(in,xyz,lower,upper);
+// 	ob->SetName(jGateSelectFrame::Iterator("THnProj"));
+	ob->SetName(name);
 	return (TObject*)ob;
-// 	return nullptr;
 }
 
 
+
+
+
+double jGateSubtractionFrame::ScaledBackgroundSubtract(THnBase* gate,THnBase* back ,double backfrack,double uncertainfrac){
+	
+	// Integral is not in THnBase, but not sure ComputeIntegral gives the same results for overunderflow
+	double backcount=back->ComputeIntegral();
+	double forecount=gate->ComputeIntegral();
+	
+	backfrack*=forecount/backcount;
+	
+	if(!back->GetSumw2())back->Sumw2();
+	if(!gate->GetSumw2())gate->Sumw2();
+	
+	gate->Add(back,-backfrack);
+	
+	return backfrack;
+}
+
+double jGateSubtractionFrame::ScaledBackgroundSubtract(TH1* gate,TH1* back ,double backfrack,double uncertainfrac){
+	
+	double backcount=back->Integral();
+	double forecount=gate->Integral();
+	// ComputeIntegral for TH1 and THnBase have very different behaviour/return values
+	
+	backfrack*=forecount/backcount;
+	
+	if(!back->GetSumw2())back->Sumw2();
+	if(!gate->GetSumw2())gate->Sumw2();
+	
+	gate->Add(back,-backfrack);
+	
+	if(uncertainfrac>0){
+		static_cast< TH1ErrorErrorAdj* > (gate)->AdjustError(back,backfrack*uncertainfrac);
+	}
+	
+	return backfrack;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////
 ////////////// Template specialisation, only seen by this file ////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-
-template <>
-void jGateSubtractionFrame::AddBackfracErrors<TH1>(TH1* a,TH1* b,double e,double ee){
-		static_cast< TH1ErrorErrorAdj* > (a)->AdjustError(b,e*ee);
-}
 
 
 

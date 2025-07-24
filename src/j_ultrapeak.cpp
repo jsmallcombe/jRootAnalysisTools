@@ -561,7 +561,7 @@ Double_t _fy1[348] = {-40.7231,-40.6326,-40.5418,-40.4509,-40.3598,-40.2684,-40.
 
 TGraph Ultrapeak::DecayXR10(348,_fx1,_fy1);
 
-double DecGausMaxX(double& sig,double& dec){
+double DecGausMaxX(const double& sig,const double& dec){
   return Ultrapeak::DecayXR10.Eval(log10(sig/dec))*(sig/10.);
 }
 
@@ -576,6 +576,6 @@ Double_t _fy2[57] = {1,1.00158,1.00082,1.00251,1.00315,1.00397,1.00625,1.00964,1
 
 TGraph Ultrapeak::DecayCorrPow(57,_fx2,_fy2);
 
-double DecMaxCorrPow(double& sig,double& dec){
+double DecMaxCorrPow(const double& sig,const double& dec){
   return Ultrapeak::DecayCorrPow.Eval(sig/dec);
 }

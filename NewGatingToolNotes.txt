@@ -2,25 +2,15 @@
 ------------------
 
 Add globals:
-Overflow/Underflow Setting
 backfracfrac
 TH3head
 
-The underoverflow off should have 4 options for 4 flow modes
-Write an explanation of this for the manual
+Write an explanation of the globals for Overflow Underflow in the manual
 
 What happened to the TH3 popup?
 
 ------------------
 
-Check overflow is currently working with our set range options :
-
-TH3::Project3D
-NOTE 4: underflow/overflow are included by default in the projection To exclude underflow and/or overflow (for both axis in case of a projection to a 1D histogram) use option "NUF" and/or "NOF" With SetRange() you can have all bins except underflow/overflow only if you set the axis bit range as following after having called SetRange: axis->SetRange(1, axis->GetNbins());
-
-------------------
-
-Rename ThreeDee integer to dimensionalioty / Ndim etc 
 
 Updated the header notes
 

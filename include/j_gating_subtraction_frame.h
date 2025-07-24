@@ -58,6 +58,9 @@ private:
 	void ResetRanges(TH1*,bool=gGlobalUnderlowBool,bool=gGlobalOverflowBool);
 	void ResetRanges(THnBase*,bool=gGlobalUnderlowBool,bool=gGlobalOverflowBool);
 	
+	// THn gating functions
+	TObject* GateByBin(THnBase*,int=0,int=0,int=-1);
+	
 	//3D gating functions
 	// these will nicely overwrite any previously done projection OF THE SAME TYPE
 	// if you dont want that add a name in string
@@ -67,10 +70,8 @@ private:
 	// these will nicely overwrite/fill any previously done 2D projection add a name in string
 	TH1* GateByBin(TH2*,int=0,int=0,int=-1,TString="");
 	
-	// THn gating functions
-	TObject* GateByBin(THnBase*,int=0,int=0,int=-1,TString="");
 	
-	// This just forward to the correct above type after checking TH2/3/THnSparse inheritance 
+	// Resets the ranges and forward to the correct above type after checking TH2/3 inheritance 
 	TH1* GateAxisByBin(TH1*,int=0,int=0,int=-1,TString="");
 	TObject* GateAxisByBin(THnBase*,int=0,int=0,int=-1,TString="");
 	
@@ -91,11 +92,8 @@ private:
 	// Templated for TH1 and THn types
 	//
 
-	template <typename T>
-	double ScaledBackgroundSubtract(T* ,T*  ,double ,double=0);
-
-	template <typename T>
-	void AddBackfracErrors(T* a,T* b,double e,double ee){}
+	double ScaledBackgroundSubtract(THnBase* ,THnBase*  ,double ,double=0);
+	double ScaledBackgroundSubtract(TH1* ,TH1*  ,double ,double=0);
 
 public:
    jGateSubtractionFrame();
@@ -121,7 +119,7 @@ template <typename U,typename T>
 void jGateSubtractionFrame::UpdateInput(U*fInput, T*&fResFullProj){
     
 	fResFullProj=(T*)GateAxisByBin(fInput,xyz,1,-1,"ResFullProj"+IterSuffix);
-	fResFullProj->SetStats(0);	
+// 	fResFullProj->SetStats(0);	//Doesnt work with THnBase template, if need for drawing add in jGatingToolTH3
 	fResFullProj->SetTitle("");
 	
 	TH1* proj=ProjectAxisByBin(fInput,xyz,"proj"+IterSuffix);
@@ -129,25 +127,6 @@ void jGateSubtractionFrame::UpdateInput(U*fInput, T*&fResFullProj){
 	delete proj; //Cloned inside jGateSelectFrame::UpdateInput()
 }
     
-    
-template <typename T>
-double jGateSubtractionFrame::ScaledBackgroundSubtract(T* gate,T* back ,double backfrack,double uncertainfrac){
-	
-	double backcount=back->Integral();
-	double forecount=gate->Integral();
-	backfrack*=forecount/backcount;
-	
-	if(!back->GetSumw2())back->Sumw2();
-	if(!gate->GetSumw2())gate->Sumw2();
-	
-	gate->Add(back,-backfrack);
-	
-	if(uncertainfrac>0){
-		AddBackfracErrors(gate,back,backfrack,uncertainfrac);
-	}
-	
-	return backfrack;
-}
 
 template <typename U,typename T>
 double jGateSubtractionFrame::DoGateSubtract(U*fInput, T*&fResult, T*&fBack, T*&fResFullProj){
@@ -162,16 +141,14 @@ double jGateSubtractionFrame::DoGateSubtract(U*fInput, T*&fResult, T*&fBack, T*&
 	// GateAxisByBin *should* nicely fill the histogram matching the name if the TH1 exists
 	// so we dont need to delete pointers except for when changing axis, handled by UpdateInput
 	fResult=(T*)GateAxisByBin(fInput,xyz,GetGateBinDown(),GetGateBinUp(),"Gated"+IterSuffix);
-    fResult->SetLineColor(1);
-    fResult->GetXaxis()->SetTitleOffset(1.0);//Fixed a problem from other lib with Yaxis title
 	fResult->SetTitle("");
 
-    // Note the projection "fResFullProj" used to make "full" and "anti" background options
+    // Note: The projection "fResFullProj" used to make "full" and "anti" background options
     // include the overflow bins, but excludes the underflow bin.
     // This is an intentional choice, as often intentionally zeroed data may be sorted into the underflow bin
     // The underflow bin can be selected with manual sliders
 
-    TH1* fBackTidy=fBack;
+    T* fBackTidy=fBack;
 	switch (GetBackMode()) {
 		case 1://full
                 fBack=fResFullProj;
@@ -181,9 +158,10 @@ double jGateSubtractionFrame::DoGateSubtract(U*fInput, T*&fResult, T*&fBack, T*&
 			break;
 		case 3://anti gate
 			{
-				fBack=(TH1*)fResFullProj->Clone(TString(fResFullProj->GetName()).ReplaceAll("ResFullProj", "Back"));
+				fBack=(T*)fResFullProj->Clone(TString(fResFullProj->GetName()).ReplaceAll("ResFullProj", "Back"));
 				fBack->Add(fResult,-1);
-				fBack->Sumw2(kFALSE);//Important as the Add is *not* an arithmetic subtraction, but an exact data removal
+				// Doesnt work for THnBase, which has a different relationship with Sumw2 ...
+ 				//fBack->Sumw2(kFALSE);//Important as the Add is *not* an arithmetic subtraction, but an exact data removal
 			}
 			break;
 		case 4://none
@@ -196,7 +174,7 @@ double jGateSubtractionFrame::DoGateSubtract(U*fInput, T*&fResult, T*&fBack, T*&
 				fBack=(T*)GateAxisByBin(fInput,xyz,GetBackBinDown(),GetBackBinUp(),"Back"+IterSuffix);
                 if(GetGateBinDown()>GetBackBinDown()&&GetGateBinUp()<GetBackBinUp()){
                     fBack->Add(fResult,-1);//In special case remove the gated part
-                    fBack->Sumw2(kFALSE);
+//                     fBack->Sumw2(kFALSE);// See case 3
                 }				
 			}
 			break;

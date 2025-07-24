@@ -31,7 +31,7 @@ int jGateSelectFrame::jgating_iterator = 0;
 //______________________________________________________________________________
 jGateSelectFrame::jGateSelectFrame() : TGVerticalFrame(gClient->GetRoot(), 100, 100){}
 
-jGateSelectFrame::jGateSelectFrame(TGWindow * parent, TH1* input,int ThreeDee) : TGVerticalFrame(parent, 100, 100),peaknumremove(0),set_for_3D(ThreeDee),RebinFactor(1),xyz(0)
+jGateSelectFrame::jGateSelectFrame(TGWindow * parent, TH1* input,int ndim) : TGVerticalFrame(parent, 100, 100),peaknumremove(0),Ndim(ndim),RebinFactor(1),xyz(0)
 {
 TVirtualPad* hold=gPad;
 	char buf[32];	//A buffer for processing text through to text boxes
@@ -93,21 +93,44 @@ TVirtualPad* hold=gPad;
 		fCheck2->SetToolTipText("Show Fit Centroid\n Hide/Show the centroid of the Gaussian\n fit used to calculate background fraction.");
 		fHframe0->AddFrame(fCheck2, fBfly2);
 
-		if(ThreeDee>1){
-			TGButtonGroup* fBgroup1 = new TGButtonGroup(fHframe0,"Projection",kChildFrame);//create a group of buttons belonging (point) to the parent frame
-			TGRadioButton* fRButton1 = new TGRadioButton(fBgroup1,"X ");//create buttons belonging to the group
-			TGRadioButton* fRButton2 = new TGRadioButton(fBgroup1,"Y ");
-			fRButton1->SetToolTipText("Change Gating Projection\n Switch which side of the matrix\n is used for gating. Also useful\n to reset when glitch occurs.");
-			fRButton2->SetToolTipText("Change Gating Projection\n Switch which side of the matrix\n is used for gating. Also useful\n to reset when glitch occurs.");
-			TGRadioButton* fRButton3;
-			if(ThreeDee>2){
-				fRButton3 = new TGRadioButton(fBgroup1,"Z");
-				fRButton3->SetToolTipText("Change Gating Projection\n Switch which side of the matrix\n is used for gating. Also useful\n to reset when glitch occurs.");
+		if(Ndim>1){
+			if(Ndim<4){
+				TGButtonGroup* fBgroup1 = new TGButtonGroup(fHframe0,"Projection",kChildFrame);//create a group of buttons belonging (point) to the parent frame
+				TGRadioButton* fRButton1 = new TGRadioButton(fBgroup1,"X ");//create buttons belonging to the group
+				TGRadioButton* fRButton2 = new TGRadioButton(fBgroup1,"Y ");
+				fRButton1->SetToolTipText("Change Gating Projection\n Switch which side of the matrix\n is used for gating. Also useful\n to reset when glitch occurs.");
+				fRButton2->SetToolTipText("Change Gating Projection\n Switch which side of the matrix\n is used for gating. Also useful\n to reset when glitch occurs.");
+				if(Ndim>2){
+					TGRadioButton* fRButton3 = new TGRadioButton(fBgroup1,"Z");
+					fRButton3->SetToolTipText("Change Gating Projection\n Switch which side of the matrix\n is used for gating. Also useful\n to reset when glitch occurs.");
+				}
+				fRButton1->SetState(kButtonDown);//Set which is pressed
+				fBgroup1->Show();//Display/Add all the buttons
+				fBgroup1->Connect(" Clicked(Int_t)", "jGateSelectFrame", this,"ChangeProjection(Int_t)");
+				fHframe0->AddFrame(fBgroup1, fBfly1);
+			}else{
+
+				TGHorizontalFrame* fHframeNdim = new TGHorizontalFrame(fHframe0, 0, 0, 0); 
+				
+					TGTextButton *NdimPlusButton=new TGTextButton(fHframeNdim,"+");
+					TGTextButton *NdimMinusButton=new TGTextButton(fHframeNdim,"-");
+					NdimPlusButton->Connect("Clicked()","jGateSelectFrame",this,"NdimPlus()");
+					NdimMinusButton->Connect("Clicked()","jGateSelectFrame",this,"NdimMinus()");
+				
+					NdimText = new TGTextEntry(fHframeNdim, new TGTextBuffer(2));
+					NdimText->SetDefaultSize(25,25);
+					NdimText->SetAlignment(kTextCenterX);
+					NdimText->SetEnabled(kFALSE);
+					NdimSel=0;
+					DoNdimText();
+						
+				fHframeNdim->AddFrame(NdimPlusButton,fBfly2);
+				fHframeNdim->AddFrame(NdimMinusButton,fBfly2);
+				fHframeNdim->AddFrame(NdimText,fBfly2);
+				
+				fHframe0->AddFrame(fHframeNdim, fBfly2);
+					
 			}
-			fRButton1->SetState(kButtonDown);//Set which is pressed
-			fBgroup1->Show();//Display/Add all the buttons
-			fBgroup1->Connect(" Clicked(Int_t)", "jGateSelectFrame", this,"ChangeProjection(Int_t)");
-			fHframe0->AddFrame(fBgroup1, fBfly1);
 		}
 		
 		
@@ -198,7 +221,7 @@ TVirtualPad* hold=gPad;
 			minifvertrame->AddFrame(fHslider2, fBly);
 		fHframe2->AddFrame(minifvertrame, fBly);
 		
-		if(ThreeDee>2){
+		if(Ndim>2){
 			TGTextButton* fTButton1 = new TGTextButton(fHframe2,"&Update");
 			fTButton1->Connect("Clicked()","jGateSelectFrame",this,"Update3D()");
 			fTButton1->SetToolTipText("Update 1st Gate Result\n TH3s only gate upon clicked.");
@@ -857,8 +880,33 @@ void jGateSelectFrame::RebinMinus(){
     }
 }
 
+
+void jGateSelectFrame::NdimPlus(){
+    if(NdimSel+1<Ndim){
+        NdimSel++;
+		DoNdimText();
+        ChangeProjection(NdimSel+1);
+    }
+}
+
+void jGateSelectFrame::NdimMinus(){
+    if(NdimSel>0){
+        NdimSel--;
+		DoNdimText();
+        ChangeProjection(NdimSel+1); 
+    }
+}
+
+void jGateSelectFrame::DoNdimText(){
+	NdimText->SetText(Form("%d", NdimSel));
+// 	NdimText->SetCursorPosition(NdimText->GetCursorPosition());
+// 	NdimText->Deselect();
+	gClient->NeedRedraw(NdimText);
+}
+
 void jGateSelectFrame::ChangeProjection(const Int_t id)
 {  
+	// Set for the default TGButtonGroup output which is 1 indexed, but we use x=0
 	xyz=id-1;
     Emit("RequestProjection(Int_t)",xyz);
 }

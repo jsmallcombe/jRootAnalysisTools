@@ -79,11 +79,11 @@
 		
 // 		b = new jgating_tool(reta);
 		
-		new jGatingToolTH3(sparse);
+// 		new jGatingToolTH3(sparse);
 		
-// 		new jGatingToolTH3(retb);
-		new jGatingToolTH3(three,true);
-// 		new jgating_tool(retb);
+		new jGatingToolTH3(retb);
+// 		new jGatingToolTH3(three);
+// 		new jgating_tool(three);
 		
 // 		new jGatingToolTH3("");
 		

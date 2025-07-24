@@ -52,11 +52,13 @@ private:
     
     bool DetachedHead;
     
+    void CleanResHist();
+    
 //     TGMainFrame* child;
     TGTransientFrame* child;
     
 public:
-	jGatingToolTH3(TObject* = hist_capture(),bool=false);
+	jGatingToolTH3(TObject* = hist_capture(),bool=false,TString="");
 	jGatingToolTH3(const char *,bool=false);
 	virtual ~jGatingToolTH3();
     
@@ -64,7 +66,7 @@ public:
     void RequestTwoDee(Bool_t){};
     
 	void UpdateInput(const char *);
-	void UpdateInput(TObject*);
+	void UpdateInput(TObject*,TString="");
     void UpdateInput();
     void DoHistogram();
     
