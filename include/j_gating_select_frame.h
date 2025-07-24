@@ -44,6 +44,11 @@ using namespace std;
 
 extern bool gGlobalAskWindowName;
 void SetGlobalAskWindowName(bool set=true);
+extern bool gGlobalOverflowBool;
+void SetGlobalOverflowInclude(bool set=true);
+extern bool gGlobalUnderlowBool;
+void SetGlobalUnderflowInclude(bool set=true);
+
 
 class jGateSelectFrame : public TGVerticalFrame {
 

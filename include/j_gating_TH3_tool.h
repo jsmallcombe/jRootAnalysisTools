@@ -17,6 +17,7 @@
 #include "TMath.h"
 #include "TH2.h"
 #include "TH3.h"
+#include "THnBase.h"
 #include "TGInputDialog.h"
 #include "TGFrame.h"
 
@@ -38,7 +39,7 @@ class jGatingToolTH3 : public TGMainFrame {
 
 
 private:
-    TH1 *fInputStore;
+    TObject *fInputStore;
     TH1 *fProj, *fBack, *fResult, *fResFullProj;
     double fBackFrac;
 	
@@ -46,6 +47,8 @@ private:
 	jGatingFrameTH2 *fResFrame;
     
     bool UpdateLock;
+    
+    bool THnBaseType;
     
     bool DetachedHead;
     

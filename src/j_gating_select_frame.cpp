@@ -4,6 +4,24 @@ bool gGlobalAskWindowName=false;
 void SetGlobalAskWindowName(bool set){
 	gGlobalAskWindowName=set;
 }
+bool gGlobalOverflowBool=false;
+void SetGlobalOverflowInclude(bool set){
+	gGlobalOverflowBool=set;
+	if(!gGlobalOverflowBool&&gGlobalUnderlowBool){
+		std::cout<<std::endl<<"Setting UNDERflow ON with OVERflow OFF is problematic for gating classes."<<std::endl;
+	}
+}
+bool gGlobalUnderlowBool=false;
+void SetGlobalUnderflowInclude(bool set){
+	gGlobalUnderlowBool=set;
+	if(!gGlobalOverflowBool&&gGlobalUnderlowBool){
+		std::cout<<std::endl<<"Setting UNDERflow ON with OVERflow OFF is problematic for gating classes."<<std::endl;
+	}
+}
+
+
+
+
 
 ClassImp(jGateSelectFrame);
 

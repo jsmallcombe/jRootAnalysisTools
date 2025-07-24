@@ -19,7 +19,7 @@ jGatingToolTH3::jGatingToolTH3(const char * input,bool detach) : jGatingToolTH3(
 jGatingToolTH3::jGatingToolTH3(TObject* input,bool detach) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
     fInputStore(nullptr),fProj(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),fBackFrac(0.0),
     fGateFrame(new jGateSubtractionFrame(this,3)),
-    UpdateLock(false),
+    UpdateLock(false),THnBaseType(false),
     DetachedHead(detach),child(nullptr),
     UpdateLockSetting(true)
 {    
@@ -89,8 +89,16 @@ void jGatingToolTH3::UpdateInput(const char * input){
 
 void jGatingToolTH3::UpdateInput(TObject* input){
     if(input==nullptr)return;
+    
+    if(input->IsA()->InheritsFrom("THnBase")){
+        fInputStore=input; //Dont clone for a THn type
+        THnBaseType=true;
+    }
     if(input->IsA()->InheritsFrom("TH3")){
-        fInputStore=(TH1*)input; //Dont clone for a TH3 type
+        fInputStore=input; //Dont clone for a TH3 type
+        THnBaseType=false;
+    }
+    if(fInputStore){
         
         ///// Handle window naming /////
         TString FrameName=fInputStore->GetName();
@@ -112,7 +120,6 @@ void jGatingToolTH3::UpdateInput(TObject* input){
         
         UpdateInput(); //Actually Process the input
     }
-
 }
 
 
@@ -142,18 +149,30 @@ TGTransientFrame* PopUp=MakeTH3Popup(this);
     
     UpdateLock=false;
     
-    fGateFrame->UpdateInput(fInputStore, fResFullProj);
+    if(THnBaseType)fGateFrame->UpdateInput((THnBase*)fInputStore, fResFullProj);
+    else           fGateFrame->UpdateInput((TH1*)fInputStore, fResFullProj);
     
 if(PopUp){PopUp->CloseWindow();}
 gPad=hold;
 }
 
-// The main gating function, which is called when daugter select_frame says so
+// The main gating function, which is called when child select_frame says so
 void jGatingToolTH3::DoHistogram(){
 if(fInputStore==nullptr)return;
 if(UpdateLock) return;
-	
-    fBackFrac=fGateFrame->DoGateSubtract(fInputStore, fResult, fBack, fResFullProj);
+
+    if(THnBaseType){
+        // I dont think the THn Projection classes support the histogram-in-memort reuse
+        if(fBack)if(fBack!=fResult&&fBack!=fResFullProj) delete fBack;
+        fBack=nullptr;  
+        if(fResult)delete fResult;
+        fResult=nullptr;
+    }
+
+    if(THnBaseType)fBackFrac=fGateFrame->DoGateSubtract((THnBase*)fInputStore, fResult, fBack, fResFullProj);
+    else           fBackFrac=fGateFrame->DoGateSubtract((TH1*)fInputStore, fResult, fBack, fResFullProj);
+    
+
     
     fResFrame->UpdateInput(fResult);
 
