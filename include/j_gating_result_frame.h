@@ -40,6 +40,7 @@ using namespace std;
 #include "j_hist_formatting.h"
 #include "j_ultrafit_env.h"
 
+#include "j_gating_select_frame.h" // For itterator 
 
 class jGateResultFrame : public TGHorizontalFrame {
 private:

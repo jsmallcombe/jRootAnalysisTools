@@ -7,8 +7,8 @@
 // //
 // //
 // 
-#ifndef jGatingToolMaster_h
-#define jGatingToolMaster_h
+#ifndef jGatingToolTHn_h
+#define jGatingToolTHn_h
 
 #include "TROOT.h"
 #include "TBuffer.h"
@@ -33,7 +33,8 @@
 
 using namespace std;
 
-#include "j_gating_TH3_tool.h"
+
+
 
 class jGatingToolTHnMany : public TGMainFrame {
 
@@ -45,7 +46,6 @@ private:
     THnBase *fInputStore;
     THnBase *fBack, *fResult, *fResFullProj;
     double fBackFrac;
-    TString ChildName;
 	
 	jGateSubtractionFrame *fGateFrame;
 	jGatingToolTHnMany *fResFrameTHn;
@@ -56,11 +56,12 @@ private:
     void CleanResHist();
     
 public:
-	jGatingToolTHnMany(THnBase* input,TString OverrideName="");
+	jGatingToolTHnMany(THnBase* input);
 	virtual ~jGatingToolTHnMany();
     
+    void SetWindowName(const char* name) override;
     
-	void UpdateInput(THnBase* input, TString OverrideName="");
+	void UpdateInput(THnBase* input);
     void UpdateInput();
     void DoHistogram();
     
@@ -69,7 +70,7 @@ public:
        fGateFrame->HideManBar();
     }
     
-	ClassDef(jGatingToolTHnMany, 1)
+	ClassDefOverride(jGatingToolTHnMany, 2)
 };
 
 #endif

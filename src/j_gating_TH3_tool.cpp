@@ -1,26 +1,15 @@
-// //
-// //
-// //	James gating GUI tool 1.2
-// // 	27/10/16		16/10/2015
-// //	james.smallcombe@outlook.com
-// //
-// //
-// 
-
-#include "j_gating_TH3_tool.h"
-#include "j_gpad_tools.h"  // For gGlobalAskWindowName 
-
+#include "j_gating_master.h"
 
 ClassImp(jGatingToolTH3);
 
 
-jGatingToolTH3::jGatingToolTH3(const char * input,bool detach) : jGatingToolTH3(gROOT->FindObject(input),detach){}
+jGatingToolTH3::jGatingToolTH3(const char * input,int detach) : jGatingToolTH3(gROOT->FindObject(input),detach){}
 
-jGatingToolTH3::jGatingToolTH3(TObject* input,bool detach, TString OverrideName) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
+jGatingToolTH3::jGatingToolTH3(TObject* input,int detach) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
     fInputStore(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),fBackFrac(0.0),
     fGateFrame(new jGateSubtractionFrame(this,3)),
     UpdateLock(false),THnBaseType(false),
-    DetachedHead(detach),child(nullptr),
+    DetachedHead(gGlobalTH3UseHead),child(nullptr),
     UpdateLockSetting(true)
 {    
 TVirtualPad* hold=gPad;
@@ -28,7 +17,10 @@ TVirtualPad* hold=gPad;
     TGLayoutHints* ffExpandYLeft = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY | kLHintsLeft, 0, 0, 0, 0);
     TGLayoutHints* ffExpandRight = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY | kLHintsRight, 0, 0, 0, 0);
     AddFrame(fGateFrame,ffExpandYLeft);
-
+    
+    // default -1 uses gGlobalTH3UseHead setting
+    if(detach==0)DetachedHead=false;
+    if(detach==1)DetachedHead=true;
     if(DetachedHead){
 //         child = new TGMainFrame(gClient->GetRoot(), 200, 200);
         child = new TGTransientFrame(gClient->GetRoot(),this,  200, 200);
@@ -61,7 +53,12 @@ TVirtualPad* hold=gPad;
     Init();
     
     // Moved the  histogram input out from the Constructor so Maping is done before the popup call etc. Maybe?
-	UpdateInput(input,OverrideName);
+	UpdateInput(input);
+    
+    // Set (both) window name(s)
+    if(fInputStore){
+        SetWindowName(fInputStore->GetName());
+    }
     
     RaiseWindow();
 gPad=hold;
@@ -78,6 +75,16 @@ jGatingToolTH3::~jGatingToolTH3(){
 	Cleanup(); 
 }
 
+void jGatingToolTH3::SetWindowName(const char * input) {
+    TString FrameName=input;
+    
+    if(DetachedHead){
+        child->SetWindowName(FrameName+"_SecondAxis");
+        FrameName=FrameName+"_FirstAxis";
+    }
+    
+    TGMainFrame::SetWindowName(FrameName);
+}
 
 //______________________________________________________________________________
 
@@ -86,7 +93,7 @@ void jGatingToolTH3::UpdateInput(const char * input){
     UpdateInput(gROOT->FindObject(input));
 }
 
-void jGatingToolTH3::UpdateInput(TObject* input,TString OverrideName){
+void jGatingToolTH3::UpdateInput(TObject* input){
     if(input==nullptr)return;
     
     if(input->IsA()->InheritsFrom("THnBase")){
@@ -98,27 +105,7 @@ void jGatingToolTH3::UpdateInput(TObject* input,TString OverrideName){
         THnBaseType=false;
     }
     if(fInputStore){
-        
-        ///// Handle window naming /////
-        TString FrameName=fInputStore->GetName();
-        
-        if(OverrideName.Length()){
-            FrameName=OverrideName;
-        }else if(gGlobalAskWindowName){
-            char* FrameReNamChar=new char[128];
-            new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",FrameName,FrameReNamChar);
-            FrameName=FrameReNamChar;
-        }
-        
-        if(FrameName.Length()){
-            if(DetachedHead){
-                child->SetWindowName(FrameName+"_SecondAxis");
-                SetWindowName(FrameName+"_FirstAxis");
-            }else{
-                SetWindowName(FrameName);	
-            }
-        }
-        
+
         UpdateInput(); //Actually Process the input
     }
 }
@@ -146,7 +133,6 @@ void jGatingToolTH3::CleanResHist(){
 void jGatingToolTH3::UpdateInput(){       
 if(fInputStore==nullptr)return;
 TVirtualPad* hold=gPad;
-TGTransientFrame* PopUp=MakeTH3Popup(this);
 
     CleanResHist();
 	if(fResFullProj)delete fResFullProj;
@@ -157,7 +143,6 @@ TGTransientFrame* PopUp=MakeTH3Popup(this);
     if(THnBaseType)fGateFrame->UpdateInput((THnBase*)fInputStore, fResFullProj);
     else           fGateFrame->UpdateInput((TH1*)fInputStore, fResFullProj);
     
-if(PopUp){PopUp->CloseWindow();}
 gPad=hold;
 }
 

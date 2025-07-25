@@ -1,24 +1,20 @@
-// //
-// //
-// //	James gating GUI tool 1.2
-// // 	27/10/16		16/10/2015
-// //	james.smallcombe@outlook.com
-// //
-// //
-// 
-
-#include "j_gating_master_tool.h"
-#include "j_gpad_tools.h"  // For gGlobalAskWindowName 
+#include "j_gating_master.h"
 
 ClassImp(jGatingToolTHnMany);
 
 
-jGatingToolTHnMany::jGatingToolTHnMany(THnBase* input,TString OverrideName) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+jGatingToolTHnMany::jGatingToolTHnMany(THnBase* input) : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
     fInputStore(nullptr), fBack(nullptr), fResult(nullptr), fResFullProj(nullptr),fBackFrac(0.0),   
     fGateFrame(nullptr), fResFrameTHn(nullptr), fResFrameTH3(nullptr), child(nullptr)
 {    
 TVirtualPad* hold=gPad;
-if(!input)return;
+if(!input)return; //Unlike the lower Ndim classes, this must be initilised with input
+
 
 	Ndim=input->GetNdimensions();
     if(Ndim<4)return;
@@ -38,7 +34,7 @@ if(!input)return;
     MapWindow();
     Init();
     
-	UpdateInput(input,OverrideName);
+	UpdateInput(input);
     
     DoHistogram();// Calling manually for special case of initlisations
     // Need resultant THn/TH1 fResult to initilise child frames to correct dimensionality 
@@ -46,10 +42,10 @@ if(!input)return;
     if(fResult){
         if(Ndim>4){
 //new THnI("Dummy","Dummy",N-1,DummyBins,DummyLow,DummyHigh)
-            fResFrameTHn=new jGatingToolTHnMany(fResult,ChildName);
+            fResFrameTHn=new jGatingToolTHnMany(fResult);
             child=(TGMainFrame*)fResFrameTHn;
         }else{
-            fResFrameTH3=new jGatingToolTH3(fResult,false,ChildName);
+            fResFrameTH3=new jGatingToolTH3(fResult,false);
             child=(TGMainFrame*)fResFrameTH3;
         }
 //  child->MapSubwindows();child->Resize();child->MapWindow();
@@ -57,6 +53,10 @@ if(!input)return;
         child->DontCallClose();  // disables the default WM close handler
     }
     
+    // Set (both) window name(s)
+    if(fInputStore){
+        SetWindowName(fInputStore->GetName());
+    }
     
     RaiseWindow();
 gPad=hold;
@@ -73,37 +73,31 @@ jGatingToolTHnMany::~jGatingToolTHnMany(){
 }
 
 
+void jGatingToolTHnMany::SetWindowName(const char * input) {
+    TString FrameName=input;
+    FrameName=FrameName+"_"+Ndim;
+    
+    int ChildN=Ndim-1;
+    TString ChildName=FrameName;
+    
+    if(child==fResFrameTH3)ChildName=ChildName+"_"+ChildN;
+    
+    TGMainFrame::SetWindowName(FrameName);
+    if(child)child->SetWindowName(ChildName);
+}
+
 //______________________________________________________________________________
 
 
-void jGatingToolTHnMany::UpdateInput(THnBase* input, TString OverrideName){
+void jGatingToolTHnMany::UpdateInput(THnBase* input){
     if(input==nullptr)return;
     
-    if(input->IsA()->InheritsFrom("THnBase")){
+    // On the rare occasion of giving an updated input after initilisation Ndim must be the same as initilsation
+    if(Ndim==input->GetNdimensions()){
         fInputStore=input; //Dont clone for a THn type
     }
     
-    if(fInputStore){
-     
-        ///// Handle window naming /////
-        TString FrameName=fInputStore->GetName();
-        FrameName=FrameName+"_"+Ndim;
-
-        if(OverrideName.Length()){
-            FrameName=OverrideName;
-        }else if(gGlobalAskWindowName){
-            char* FrameReNamChar=new char[128];
-            new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",FrameName,FrameReNamChar);
-            FrameName=FrameReNamChar;
-        }
-        
-        if(FrameName.Length()){
-            SetWindowName(FrameName);
-        }
-        
-        int ChildN=Ndim-1;
-        ChildName=FrameName+"_"+ChildN;
-        
+    if(fInputStore){        
         UpdateInput(); //Actually Process the input
     }
 }
@@ -125,7 +119,6 @@ void jGatingToolTHnMany::CleanResHist(){
 void jGatingToolTHnMany::UpdateInput(){       
 if(fInputStore==nullptr)return;
 TVirtualPad* hold=gPad;
-TGTransientFrame* PopUp=MakeTH3Popup(this);
 
     CleanResHist();
 	if(fResFullProj)delete fResFullProj;
@@ -133,7 +126,6 @@ TGTransientFrame* PopUp=MakeTH3Popup(this);
        
     fGateFrame->UpdateInput(fInputStore, fResFullProj);
     
-if(PopUp){PopUp->CloseWindow();}
 gPad=hold;
 }
 
@@ -146,10 +138,11 @@ if(fInputStore==nullptr)return;
     
 //  When called during the constuctor, child is not yet set so this is skipped 
     if(child){
-        if(fResFrameTHn==child)fResFrameTHn->UpdateInput(fResult,ChildName);
-        else if(fResFrameTH3==child) fResFrameTH3->UpdateInput(fResult,ChildName);
+        if(fResFrameTHn==child)fResFrameTHn->UpdateInput(fResult);
+        else if(fResFrameTH3==child) fResFrameTH3->UpdateInput(fResult);
         child->RaiseWindow();
     }
         
 }
+
 

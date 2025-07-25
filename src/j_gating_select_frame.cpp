@@ -1,9 +1,15 @@
-#include "j_gating_select_frame.h"
+#include "j_gating_master.h"
 
-bool gGlobalAskWindowName=false;
-void SetGlobalAskWindowName(bool set){
-	gGlobalAskWindowName=set;
+bool gGlobalAskGateWindowName=false;
+void SetGlobalAskGateWindowName(bool set){
+	gGlobalAskGateWindowName=set;
 }
+
+bool gGlobalTH3UseHead=false;
+void SetGlobalTH3UseHead(bool set){
+	gGlobalTH3UseHead=set;
+}
+
 bool gGlobalOverflowBool=false;
 void SetGlobalOverflowInclude(bool set){
 	gGlobalOverflowBool=set;
@@ -19,6 +25,11 @@ void SetGlobalUnderflowInclude(bool set){
 	if(!gGlobalOverflowBool&&gGlobalUnderlowBool){
 		std::cout<<std::endl<<"Setting UNDERflow ON with OVERflow OFF is problematic for gating classes."<<std::endl;
 	}
+}
+
+double gGlobalSubtractionFractionError=0.04;
+void SetGlobalSubtractionFractionError(double set){
+	gGlobalSubtractionFractionError=set;
 }
 
 
@@ -51,7 +62,7 @@ TVirtualPad* hold=gPad;
 	gate_range=3;
 	fit_down=1;fit_up=39;
 	backfrac=0.1;
-	backfracfrac=0.05;
+	backfracfrac=gGlobalSubtractionFractionError;
 	storef1=1;storef2=1;
 	axis_down=0;axis_up=-1;
 	m_back_down=1;m_back_up=20;
@@ -801,11 +812,11 @@ void jGateSelectFrame::ClickedCanvasOne(Int_t event, Int_t px, Int_t py, TObject
 // Do the gating on the matrix and produce the output channel information
 void jGateSelectFrame::DoHistogram(){
 	
-	//Rough error on background fraction
-	if(backfit_mode==3)//If its manual increase it
-		backfracfrac=0.08;
+	// Rough error on background fraction
+	if(backfit_mode==3)// If the fraction set manually, double the error
+		backfracfrac=gGlobalSubtractionFractionError*2;
 	else
-		backfracfrac=0.04;
+		backfracfrac=gGlobalSubtractionFractionError;
 	
 	SubtractGateFromBack=false;
 
@@ -917,53 +928,3 @@ void jGateSelectFrame::ChangeProjection(const Int_t id)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-	
-#include <TGIcon.h>
-
-TGTransientFrame* MakeTH3Popup(const TGWindow* window){
-	
-	return nullptr;
-    TGTransientFrame* popup=new TGTransientFrame(window, gClient->GetRoot(), 400, 200, kHorizontalFrame);
-
-    TGLayoutHints *fL1 = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 5, 20, 0, 0);
-
-    TGIcon *fIcon = new TGIcon(popup, popup->GetClient()->GetPicture("mb_stop_s.xpm"),100, 100);
-    popup->AddFrame(fIcon,new TGLayoutHints(kLHintsCenterY, 20, 15, 20, 20));
-
-    TGVerticalFrame* fLabelFrame = new TGVerticalFrame(popup, 60, 20);
-    popup->AddFrame(fLabelFrame,fL1);
-   
-    TGLabel *label1 = new TGLabel(fLabelFrame,"====================================================");
-    TGLabel *label2 = new TGLabel(fLabelFrame,"========= Beginning Processing of Histogram ========");
-    TGLabel *label3 = new TGLabel(fLabelFrame,"================ Please Be Patient =================");
-    TGLabel *label4 = new TGLabel(fLabelFrame,"====================================================");
-//        label->SetTextJustify(text_align);
-    fLabelFrame->AddFrame(label1, fL1);    
-    fLabelFrame->AddFrame(label2, fL1);    
-    fLabelFrame->AddFrame(label3, fL1);    
-    fLabelFrame->AddFrame(label4, fL1);    
-        
-    cout<<endl<<endl<<" ============== Beginning Processing of Histogram ============ "<<endl<<" ====== Please be patient until window appears ====== "<<endl<<endl;
-    
-    popup->SetWindowName("LOADING");
-
-    popup->MapSubwindows();
-    popup->Resize(popup->GetDefaultSize());
-    popup->MapWindow();
-//     gClient->NeedRedraw(popup,kTRUE);
-    gClient->WaitFor(popup);
-
-    int waitc = 0;
-    while (!popup->IsMapped() && waitc++ < 100) {
-        gSystem->ProcessEvents();
-        gSystem->Sleep(20000); // Reduce sleep for better responsiveness
-        // Little loop to buy Xsystem time to draw the box before code moves on
-    }
-    popup->DontCallClose();
-    popup->CenterOnParent();// position relative to the parent's window
-    
-    return popup;
-}

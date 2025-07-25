@@ -42,13 +42,21 @@ using namespace std;
 #include "j_fitting.h"
 #include "j_hist_formatting.h"
 
-extern bool gGlobalAskWindowName;
-void SetGlobalAskWindowName(bool set=true);
+extern bool gGlobalAskGateWindowName;
+void SetGlobalAskGateWindowName(bool set=true);
+
+extern bool gGlobalTH3UseHead;
+void SetGlobalTH3UseHead(bool set=true);
+
 extern bool gGlobalOverflowBool;
 void SetGlobalOverflowInclude(bool set=true);
+
 extern bool gGlobalUnderlowBool;
 extern unsigned short gGlobalLowestBin;
 void SetGlobalUnderflowInclude(bool set=true);
+
+extern double gGlobalSubtractionFractionError;
+void SetGlobalSubtractionFractionError(double set=0.04);
 
 
 class jGateSelectFrame : public TGVerticalFrame {
@@ -198,13 +206,5 @@ public:
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-
-// But in a base level class of the gating classes so TH3 and THnSparse classes will both have use of it.
-// Could be relocated to >2D class if the they are unified later 
-
-TGTransientFrame* MakeTH3Popup(const TGWindow* window=gClient->GetRoot());
 
 #endif

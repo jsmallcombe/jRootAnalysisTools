@@ -1,11 +1,3 @@
-//
-//
-//	James functions for auto fitting and such 1.0
-// 	02/03/2019
-//	james.smallcombe@outlook.com
-//
-//
-
 #include "j_fitting.h"
 
 // No easy way to get if par fixed, TF1 doesnt actually store this info.

@@ -1,5 +1,4 @@
-#include "j_gating_result_frame.h"
-#include "j_gating_select_frame.h"
+#include "j_gating_master.h"
 
 ClassImp(jGateResultFrame);
 

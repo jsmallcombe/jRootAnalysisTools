@@ -1,11 +1,3 @@
-//
-//
-//	James gating GUI tool 1.2
-// 	27/10/16		16/10/2015
-//	james.smallcombe@outlook.com
-//
-//
-
 #include "j_gating_tool.h"
 #include "j_gpad_tools.h"
 
@@ -38,18 +30,18 @@ TVirtualPad* hold=gPad;
 		cout<<endl<<endl<<" ============== Beginning Loading of TH3 ============ "<<endl<<" ====== Please be patient until window appears ====== "<<endl<<endl;
 	}
 		
-	char* FrameReNamChar=new char[128];
-    string FrameReNamStr;
-	if(gGlobalAskWindowName){
-        new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",input->GetName(),FrameReNamChar);
-        FrameReNamStr=FrameReNamChar;
-    }
-    
-	if(FrameReNamStr.size()){
-		SetWindowName(FrameReNamStr.c_str());	
-	}else{
+// 	char* FrameReNamChar=new char[128];
+//     string FrameReNamStr;
+// 	if(gGlobalAskWindowName){
+//         new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",input->GetName(),FrameReNamChar);
+//         FrameReNamStr=FrameReNamChar;
+//     }
+//     
+// 	if(FrameReNamStr.size()){
+// 		SetWindowName(FrameReNamStr.c_str());	
+// 	}else{
 		SetWindowName(input->GetName());	
-	}
+// 	}
 	
     TH1* pass=(TH1*)input;
 

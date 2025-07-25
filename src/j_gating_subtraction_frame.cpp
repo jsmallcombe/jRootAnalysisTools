@@ -1,4 +1,4 @@
-#include "j_gating_subtraction_frame.h"
+#include "j_gating_master.h"
 
 ClassImp(jGateSubtractionFrame);
 

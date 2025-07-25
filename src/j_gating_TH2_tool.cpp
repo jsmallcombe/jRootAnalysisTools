@@ -1,15 +1,5 @@
-// //
-// //
-// //	James gating GUI tool 1.2
-// // 	27/10/16		16/10/2015
-// //	james.smallcombe@outlook.com
-// //
-// //
-// 
-
 #include "j_gating_TH2_tool.h"
-#include "j_gpad_tools.h"  // For gGlobalAskWindowName 
-
+#include "j_gating_master.h"
 
 ClassImp(jGatingToolTH2);
 
@@ -29,18 +19,10 @@ TVirtualPad* hold=gPad;
             FrameName=pass->GetName();
         }
     }
-    
-///// Handle window naming /////
-        if(gGlobalAskWindowName){
-            char* FrameReNamChar=new char[128];
-            new TGInputDialog(gClient->GetRoot(),gClient->GetRoot(),"Rename Gate Tool Window",FrameName,FrameReNamChar);
-            FrameName=FrameReNamChar;
-        }
-        
-        if(FrameName.Length()){
-            SetWindowName(FrameName);	
-        }
-/////    
+
+    if(FrameName.Length()){
+        SetWindowName(FrameName);	
+    }
 
     gJframe1=new jGatingFrameTH2(this,pass,false);
 

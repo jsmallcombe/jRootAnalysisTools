@@ -44,7 +44,7 @@ using namespace std;
 #include "j_ultrafit_env.h"
 #include "j_gating_frame.h"
 
-extern bool gGlobalAskWindowName;
+// extern bool gGlobalAskWindowName;
 
 class jgating_tool : public TGMainFrame {
 

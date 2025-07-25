@@ -37,5 +37,6 @@
     }
 
     
-    new jGatingToolTHnMany(hist);
+    jGatingToolSelector(hist);
+//     new jGatingToolTHnMany(hist);
 }

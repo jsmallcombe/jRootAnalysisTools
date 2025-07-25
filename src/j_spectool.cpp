@@ -1,11 +1,3 @@
-//
-//
-//	James data tweaking GUI tool 1.0
-// 	27/10/16		16/10/2015
-//	james.smallcombe@outlook.com
-//
-//
-
 #include "j_spectool.h"
 #include "j_hist_formatting.h"
 

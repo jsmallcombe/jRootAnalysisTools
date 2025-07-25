@@ -58,15 +58,17 @@ private:
     TGTransientFrame* child;
     
 public:
-	jGatingToolTH3(TObject* = hist_capture(),bool=false,TString="");
-	jGatingToolTH3(const char *,bool=false);
+	jGatingToolTH3(TObject* = hist_capture(),int=-1);
+	jGatingToolTH3(const char *,int=-1);
 	virtual ~jGatingToolTH3();
+    
+    void SetWindowName(const char* name) override;
     
     void ChangeProjection(const Int_t);
     void RequestTwoDee(Bool_t){};
     
 	void UpdateInput(const char *);
-	void UpdateInput(TObject*,TString="");
+	void UpdateInput(TObject*);
     void UpdateInput();
     void DoHistogram();
     
@@ -77,6 +79,7 @@ public:
        fGateFrame->HideManBar();
     }
     
+
     void Layout() override;
     
     bool UpdateLockSetting;

@@ -28,8 +28,8 @@ gROOT->ProcessLine((dir+"/data/LoadFiles.C").c_str());
 
 //  dir+="/scripts/GatingSelectTest.C";  
 //  dir+="/scripts/GateFrame.C";  
-dir+="/scripts/NewGateTest.C"; 
-// dir+="/scripts/THnTest.C";
+// dir+="/scripts/NewGateTest.C"; 
+dir+="/scripts/THnTest.C";
 
 
 //Run that script
