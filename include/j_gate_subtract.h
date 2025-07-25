@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Functions for handling root TH2/TH3 projection/gating in desired way
-//	17 Nov 2019
+//	Depreciated - functions for handling projection, gating and background subtractions of TH2/TH3
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

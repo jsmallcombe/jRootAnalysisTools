@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Histogram Y Graph manipulation gui tools
-//	17 Nov 2019
+//	Selection of independent graphical tools for analysing/manipulating/viewing histograms
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //
@@ -49,6 +49,9 @@ using namespace std;
 
 // RQ_OBJECT("MyClass") inside the MyClass body (IF MyClass not inherited from TQObject) allow class to use signal/slot communication
 
+// Tool for automatically scaling a TH1 based on a TGraph
+// Currently glitching when continuing an instance beyond the initial operation 
+// Suggest generalisation to include TF1
 class jScale : public TGMainFrame {
 
 private:
@@ -70,7 +73,9 @@ public:
 	ClassDef(jScale, 2)
 };
 
-
+// Graphical tool for running TGraph::Eval
+// example use case, extracting multiple efficiency values from a curve
+// Suggest generalisation to include TF1
 class jEval : public TGMainFrame {
 
 private:
@@ -95,6 +100,7 @@ public:
 };
 
 
+// Tool for projecting TH2s at arbitrary angles, graphical cuts can be included
 class jAngleAngel : public TGMainFrame {
 
 private:
@@ -147,7 +153,7 @@ public:
 };
 
 
-
+// 2D Gaussian semi-automated fitter, written for a very specific alpha calibration, in need of generalisation
 class j2DPeakFit : public TGMainFrame {
 
 private:
@@ -178,6 +184,7 @@ public:
 	ClassDef(j2DPeakFit, 0)
 };
 
+// Quick integrator by mouse click TH1
 class jIntegrator : public TGMainFrame {
 
 private:
@@ -196,7 +203,8 @@ public:
 	ClassDef(jIntegrator,1)
 };
 
-
+// TCanvas that automatically highlights Histograms on mouse-over
+// Useful for viewing multiple overlaid histograms 
 class jCompCanvas : public TCanvas {
 	
 private:

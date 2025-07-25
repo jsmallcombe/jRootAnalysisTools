@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	A root GUI panel for TH2/TH3 gating & subtraction, designed to be built/packages into other tools/applets 
-//	17 Nov 2019
+//	Depreciated -A root GUI panel for TH2/TH3 gating & subtraction, designed to be built/packages into other tools/applets 
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

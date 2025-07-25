@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Fit Holder Class, for storing full error matrix
-//	17 Nov 2019
+//	Fit Holder Class, for storing TF1 fit result with it's full error matrix (needed for covariance analysis)
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

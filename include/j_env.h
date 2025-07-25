@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Tool panel and helper enviroment for GUI working in root
-//	17 Nov 2019
+//	Tool panel and helper environment for GUI working in root
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

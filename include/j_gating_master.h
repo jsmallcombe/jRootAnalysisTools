@@ -1,12 +1,12 @@
-// //
-// //
-// //	jROOT Tools
-// //	An object that runs a root based gating and background subtraction environment for TH2 and TH3
-// //	17 Nov 2019
-// //	james.smallcombe@outlook.com
-// //
-// //
-// 
+//
+//
+//	jROOT Tools
+//	Master function for starting the new TH2/TH3/THn gating tools
+//	26 Jul 2025
+//	james.smallcombe@outlook.com
+//
+//
+
 #ifndef jGatingToolMaster_h
 #define jGatingToolMaster_h
 
@@ -18,7 +18,7 @@
 
 // THIS IS THE MAIN FUNCTION TO BE USED BY GUI ETC FOR LAUNCHING ANY GATER
 TGMainFrame* jGatingToolSelector(const char *);
-TGMainFrame* jGatingToolSelector(TObject*);
+TGMainFrame* jGatingToolSelector(TObject* = hist_capture());
 
 /////////////////////////////////////////////////////////////////////////////////////
 

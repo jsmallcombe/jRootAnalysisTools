@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Formatting tools for TH1/2/3
-//	17 Nov 2019
+//	Formatting/Drawing functions for drawing TH1/2/3 with the desired jTools styles 
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

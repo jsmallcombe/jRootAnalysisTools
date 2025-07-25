@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Functions for handling root TH2/TH3 projection/gating in desired way
-//	17 Nov 2019
+//	interstitial class between jGateSelectFrame and TH2/TH3/THn gating tools. All projection and subtraction logic is stored here
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

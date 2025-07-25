@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Interactive tools for use in-pad in a root environment
-//	17 Nov 2019
+//	Interactive helper tools for use in pad environments
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

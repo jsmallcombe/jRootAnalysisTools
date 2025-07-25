@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Class for fitting of tailed gaussians with step and polynomail background
-//	17 Nov 2019
+//	Automated fitting function for Ultrapeak class
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

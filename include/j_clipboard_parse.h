@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Utility functions and classes for Vectors, TF1s etc
-//	17 Nov 2019
+//	Tool for parsing TH1, TGraph & TGraphErrors data from the system clipboard via jEnv middle-click
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

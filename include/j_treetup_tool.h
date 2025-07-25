@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	An object that runs a root based gating and background subtraction environment for TH2 and TH3
-//	17 Nov 2019
+//	First attempt at a 3D gating tool based on TTuple input, quite single purpose design, not very adaptable
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

@@ -1,12 +1,12 @@
-// //
-// //
-// //	jROOT Tools
-// //	An object that runs a root based gating and background subtraction environment for TH2 and TH3
-// //	17 Nov 2019
-// //	james.smallcombe@outlook.com
-// //
-// //
-// 
+//
+//
+//	jROOT Tools
+//	A gating and background subtraction tool for THn histograms with Ndim>3. Beware memory usage, consider TTrees.
+//	26 Jul 2025
+//	james.smallcombe@outlook.com
+//
+//
+
 #ifndef jGatingToolTHn_h
 #define jGatingToolTHn_h
 

@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Very rough copy of j_gating_frame for selection only, no actual gating
-//	17 Nov 2025
+//	Frame for displaying results and doing basic analysis of TH2/TH3/THn gating tools, communicates with parent frame for siwtching between 2D & 1D display
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

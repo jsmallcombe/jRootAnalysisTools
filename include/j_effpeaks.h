@@ -2,7 +2,7 @@
 //
 //	jROOT Tools
 //	Gamma Efficiency Curve Functions
-//	17 Nov 2019
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

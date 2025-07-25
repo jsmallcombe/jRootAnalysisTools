@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Very rough copy of j_gating_frame for selection only, no actual gating
-//	17 Nov 2019
+//	Independent panel for determining background subtraction requirements from 1D projections, designed to be built into other tools using various signal-slots. Various gating globals live here.
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //
@@ -20,7 +20,7 @@
 #include "j_hist_formatting.h"
 
 extern bool gGlobalAskGateWindowName;
-void SetGlobalAskGateWindowName(bool set=true);
+void SetGlobalAskWindowName(bool set=true);
 
 extern bool gGlobalTH3UseHead;
 void SetGlobalTH3UseHead(bool set=true);

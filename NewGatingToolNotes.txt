@@ -1,27 +1,28 @@
 To do list
--Impliment Subtraction fraction error estimation for THn classes Ndim>3 
+-Simplify the TH3 update lock, like THn
+-ReImplement the sliding graphical divider
+-Add THn to the jEnv browser
+-Connect new gating tools to jEnv, depreciate the old ones from the codebase.
+-Implement Subtraction fraction error estimation for THn classes Ndim>3 
+-Make suggested updates to guitools
+-Rename sub-files of j_env like j_elements to j_env_elements     also fitting and  clipboard/X11 paste
+-Make a TTree/TTuple gating tool which uses jGateSelectFrame/jGateSubtractionFrame 
+-Tidy Test folders and  scripts
 
 Update Manual:
-Global for Subtraction Fraction Error in gating class (doubles for manual)  - gGlobalSubtractionFractionError
+Update the readme to use the updated class names
+
+Global exists for Subtraction Fraction Error in gating class (doubles for manual background option)  - gGlobalSubtractionFractionError
+Not currently used from THn Ndim>3
+
 Discussion of Overflow/Underflow changes and global settings
 
 SetGlobalOverflowInclude(bool);
 SetGlobalUnderflowInclude(bool);
-SetGlobalSubtractionFractionError(double);
+SetGlobalSubtractionFractionError(double); 
 
 ------------------
 
--Updated the header notes on all files
-
--Tidy the includes into master
-
--Simplify the TH3 update lock, like THn
-------------------
-
-Add THn to the jEnv browser
-
-Connect new gating tools to jEnv, depreiciate the old ones from the codebase.
-Update the readme to use the updated class names
 
 Reintrioduce the adjustable width from old class
 Maybe important :

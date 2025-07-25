@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Functions automated peak fitting
-//	17 Nov 2019
+//	Functions for use in automated peak fitting
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

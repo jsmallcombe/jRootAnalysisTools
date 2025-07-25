@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	An object that runs a root based gating and background subtraction environment for TH2 and TH3
-//	17 Nov 2019
+//	Tool for manipulating TH1s; re-binning, iterative-based-background removal and over-subtraction elimination.
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

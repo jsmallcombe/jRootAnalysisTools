@@ -2,7 +2,7 @@
 //
 //	jROOT Tools
 //	Code for interacting with the clipboard on an X11 windows system
-//	17 Nov 2019
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

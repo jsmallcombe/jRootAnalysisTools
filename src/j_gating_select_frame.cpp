@@ -1,7 +1,7 @@
 #include "j_gating_select_frame.h"
 
 bool gGlobalAskGateWindowName=false;
-void SetGlobalAskGateWindowName(bool set){
+void SetGlobalAskWindowName(bool set){
 	gGlobalAskGateWindowName=set;
 }
 

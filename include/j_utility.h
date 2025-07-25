@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Utility functions and classes for Vectors, TF1s etc
-//	17 Nov 2019
+//	Utility func. and classes for general use across library; inc. HistoClassDetect fn., AnalyticalFullCovError fn., ExtractError fn., TH1Efficiency class
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

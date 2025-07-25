@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	GUI tool for fitting and saving with ultrapeak fuction
-//	17 Nov 2019
+//	GUI tool for fitting and saving with Ultrapeak function
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //

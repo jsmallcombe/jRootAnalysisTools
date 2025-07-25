@@ -1,8 +1,8 @@
 //
 //
 //	jROOT Tools
-//	Class for fitting of tailed gaussians with step and polynomail background
-//	17 Nov 2019
+//	Ultrapeak Class for fitting of tailed Gaussians with stepped and polynomial backgrounds. Multi-peak and area-ratio fitting supported.
+//	26 Jul 2025
 //	james.smallcombe@outlook.com
 //
 //
