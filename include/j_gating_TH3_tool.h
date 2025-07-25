@@ -10,29 +10,6 @@
 #ifndef jGatingToolTH3_h
 #define jGatingToolTH3_h
 
-#include "TROOT.h"
-#include "TBuffer.h"
-#include "TGLayout.h"
-#include "TF1.h"
-#include "TMath.h"
-#include "TH2.h"
-#include "TH3.h"
-#include "THnBase.h"
-#include "TGInputDialog.h"
-#include "TGFrame.h"
-
-#include <RQ_OBJECT.h>
-
-#include <iostream>
-#include <iomanip> 
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-
-using namespace std;
-
 #include "j_gating_TH2_tool.h"
 
 class jGatingToolTH3 : public TGMainFrame {

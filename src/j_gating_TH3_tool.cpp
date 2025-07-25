@@ -1,4 +1,4 @@
-#include "j_gating_master.h"
+#include "j_gating_TH3_tool.h"
 
 ClassImp(jGatingToolTH3);
 

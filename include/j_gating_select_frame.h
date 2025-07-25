@@ -10,34 +10,11 @@
 #ifndef jGatingSelectFrame_h
 #define jGatingSelectFrame_h
 
-#include "TROOT.h"
-#include "TGButton.h"
-#include "TRootEmbeddedCanvas.h"
-#include "TGLayout.h"
-#include "TF1.h"
-#include "TMath.h"
-#include "TCanvas.h"
 #include "TGTextEntry.h"
 #include "TGSlider.h"
 #include "TGTripleSlider.h"
-#include "TGButtonGroup.h"
-#include "TGButton.h"
-#include "THashList.h"
-#include "TClass.h"
-#include "TText.h"
-#include "TGToolTip.h"
-#include "TGLabel.h"
 #include "TSpectrum.h"
 #include "TGComboBox.h"
-
-#include <iostream>
-#include <iomanip> 
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-using namespace std;
 
 #include "j_fitting.h"
 #include "j_hist_formatting.h"

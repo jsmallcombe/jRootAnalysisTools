@@ -1,5 +1,4 @@
 #include "j_gating_TH2_tool.h"
-#include "j_gating_master.h"
 
 ClassImp(jGatingToolTH2);
 

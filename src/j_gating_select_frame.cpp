@@ -1,4 +1,4 @@
-#include "j_gating_master.h"
+#include "j_gating_select_frame.h"
 
 bool gGlobalAskGateWindowName=false;
 void SetGlobalAskGateWindowName(bool set){

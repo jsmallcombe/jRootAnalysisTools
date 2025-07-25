@@ -1,4 +1,4 @@
-#include "j_gating_master.h"
+#include "j_gating_subtraction_frame.h"
 
 ClassImp(jGateSubtractionFrame);
 
@@ -173,11 +173,160 @@ double jGateSubtractionFrame::ScaledBackgroundSubtract(TH1* gate,TH1* back ,doub
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////
-////////////// Template specialisation, only seen by this file ////////////////////
-///////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Template with explicit declaration of limited types, so can appear in .cpp not .h ///////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Template to allow use with TH1* or THn* without casting up to TObject* 
+template <typename T>
+TH1* jGateSubtractionFrame::ProjectAxisByBin(T* input,int xyz,TString name, bool UnderFlow,bool OverFlow){
+	xyz++;
+	return (TH1*)GateAxisByBin(input,-xyz,!UnderFlow,-1*OverFlow,name); // Use globals
+	// For THn* input, GateAxisByBin can return THn* OR TH1* types, so it returns TObject* in general, and must be cast as we know it is TH1* here.
+}
+
+template TH1* jGateSubtractionFrame::ProjectAxisByBin<TH1>(TH1*,int,TString, bool,bool);
+template TH1* jGateSubtractionFrame::ProjectAxisByBin<THnBase>(THnBase*,int,TString, bool,bool);
 
 
+template <typename U,typename T>
+T* jGateSubtractionFrame::MakeBackWithGateGap(U*fInput, T*fResult, T*fResFullProj){
+
+	T* fBack=nullptr;
+	
+	// First test if fInput has not had its stats set. Then we can do a quick subtraction
+	if(!TestWeightsStatus(fInput)&&fResult){
+		// Important as the Add is *not* an arithmetic subtraction, but an exact data removal.
+		// If the statistics have already been set due to previous hisogram arithmatic, then a simple subtraction cant work
+		if(fResFullProj){
+			fBack=(T*)fResFullProj->Clone(TString(fResFullProj->GetName()).ReplaceAll("ResFullProj", "Back"));
+		}else{
+			fBack=(T*)GateAxisByBin(fInput,xyz,GetBackBinDown(),GetBackBinUp(),"Back"+IterSuffix);
+		}
+		
+		fBack->Add(fResult,-1);
+
+// // // Not used anymore
+// // // This removed the additional errors from THIS subtraction, but also deletes any previously present >sqrt(N) errors
+// // // ResetWeights(fBack)
+		
+	}else{ // We must do the slower option of 2 gates, 1 above and 1 below, to preserve statistics
+		
+		// Test if we are at the very edge of the range and so can do 1 gate
+		// This test has actually already been done for manual-type at jGateSelectFrame::DoHistogram(), but not for anti-type
+		if(GetGateBinDown()<=GetBackBinDown()){
+			fBack=(T*)GateAxisByBin(fInput,xyz,GetGateBinUp()+1,GetBackBinUp(),"Back"+IterSuffix);
+		}else if(GetGateBinUp()>=GetBackBinUp()){
+			fBack=(T*)GateAxisByBin(fInput,xyz,GetBackBinDown(),GetBackBinDown()-1,"Back"+IterSuffix);
+		}else{
+			fBack=(T*)GateAxisByBin(fInput,xyz,GetGateBinUp()+1,GetBackBinUp(),"Back"+IterSuffix);
+			T* fBackTwo=(T*)GateAxisByBin(fInput,xyz,GetBackBinDown(),GetBackBinDown()-1,"BackTwo"+IterSuffix);
+			if(fBack&&fBackTwo){
+				fBack->Add(fBackTwo);
+				delete fBackTwo;
+			}
+		}
+	}
+	return fBack;
+}
+
+template TH1* jGateSubtractionFrame::MakeBackWithGateGap<TH1,TH1>(TH1*,TH1*,TH1*);
+template TH1* jGateSubtractionFrame::MakeBackWithGateGap<THnBase,TH1>(THnBase*,TH1*,TH1*);
+template THnBase* jGateSubtractionFrame::MakeBackWithGateGap<THnBase,THnBase>(THnBase*,THnBase*,THnBase*);
+
+
+
+template <typename U,typename T>
+void jGateSubtractionFrame::UpdateInput(U*fInput, T*&fResFullProj){
+	// fResFullProj expected to be nullptr as fResFullProj is only created on input/axis change
+	// Hence expect fResFullProj do have changed binning etc, so it is *always* deleted, and not making use name-based overwritting.
+    
+	fResFullProj=(T*)GateAxisByBin(fInput,xyz,gGlobalLowestBin,-1*gGlobalOverflowBool,"ResFullProj"+IterSuffix);
+// 	fResFullProj->SetStats(0);	// No support for THnBase template. If need for drawing reason, add in jGatingToolTH3
+	fResFullProj->SetTitle("");
+	
+	TH1* proj=ProjectAxisByBin(fInput,xyz,"proj"+IterSuffix);
+    jGateSelectFrame::UpdateInput(proj);// call base class version
+	delete proj; //Cloned inside jGateSelectFrame::UpdateInput()
+}
+
+template void jGateSubtractionFrame::UpdateInput<TH1,TH1>(TH1*,TH1*&);
+template void jGateSubtractionFrame::UpdateInput<THnBase,TH1>(THnBase*,TH1*&);
+template void jGateSubtractionFrame::UpdateInput<THnBase,THnBase>(THnBase*,THnBase*&);
+
+    
+template <typename U,typename T>
+double jGateSubtractionFrame::DoGateSubtract(U*fInput, T*&fResult, T*&fBack, T*&fResFullProj){
+	
+	// In the case of TH2::ProjectionX()/TH3::Project3D efficiently re-using in-memory histogram of same name
+	// There is an issue whereby the sumw2 is not reset, so if fInput does NOT have weights,
+	// The resultant projections, which should not have weights set, will have weights set that are incorrect!
+	// The reset is called on the previous histogram if it exists, before it is overwritten, to avoid removing weights if fInput DOES have weights 
+	if(fResult)ResetWeights(fResult);
+	if(fBack)ResetWeights(fBack);
+    
+	// GateAxisByBin *should* nicely fill the histogram matching the name if the TH1 exists
+	// so we dont need to delete pointers except for when changing axis, handled by UpdateInput
+	fResult=(T*)GateAxisByBin(fInput,xyz,GetGateBinDown(),GetGateBinUp(),"Gated"+IterSuffix);
+	fResult->SetTitle("");
+
+    // Note: The projection "fResFullProj" used to make "full" and "anti" background options
+    // include the overflow bins, but excludes the underflow bin.
+    // This is an intentional choice, as often intentionally zeroed data may be sorted into the underflow bin
+    // The underflow bin can be selected with manual sliders
+
+	
+    T* fBackTidy=fBack;
+	switch (GetBackMode()) {
+		case 1://full
+                fBack=fResFullProj;
+			break;
+		case 2://compton
+                fBack=(T*)GateAxisByBin(fInput,xyz,GetBackBinDown(),-1,"Back"+IterSuffix);
+			break;
+		case 3://anti gate
+			{
+				// In gated part from the full projection
+				fBack=MakeBackWithGateGap(fInput,fResult,fResFullProj);
+			}
+			break;
+		case 4://none
+			{
+                fBack=fResult;
+			}
+			break;
+		default:  //manual 
+			{
+                if(SubtractGate()){
+					// In special case remove the gated part
+					fBack=MakeBackWithGateGap(fInput,fResult);
+				}else{
+					fBack=(T*)GateAxisByBin(fInput,xyz,GetBackBinDown(),GetBackBinUp(),"Back"+IterSuffix);
+				}		
+			}
+			break;
+	}
+	
+//    The method GateAxisByBin, used for fResult, and for the backgrounds Compton & manual
+//    will reuse the exiting histogram in memory, the other options do not.
+//    So we catch those and delete the abandoned fBack histgram
+    if(fBackTidy&&fBack!=fBackTidy){
+        if(fBackTidy!=fResult&&fBackTidy!=fResFullProj) delete fBackTidy;
+    }
+	
+	// The gated "histogram" fResult* and a background "histogram" fBack* are now clearly defined
+	// Do the actual subtraction and propagate errors 
+	
+	double fBackFrac=1;
+	if(fResult!=fBack)fBackFrac=ScaledBackgroundSubtract(fResult,fBack,GetBackFrac(),GetBackFracFrac());
+    
+
+    return fBackFrac;
+}
+
+template double jGateSubtractionFrame::DoGateSubtract<TH1,TH1>(TH1*,TH1*&,TH1*&,TH1*&);
+template double jGateSubtractionFrame::DoGateSubtract<THnBase,TH1>(THnBase*,TH1*&,TH1*&,TH1*&);
+template double jGateSubtractionFrame::DoGateSubtract<THnBase,THnBase>(THnBase*,THnBase*&,THnBase*&,THnBase*&);
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////

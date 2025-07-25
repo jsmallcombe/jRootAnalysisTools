@@ -10,25 +10,6 @@
 #ifndef jGatingToolTH2_h
 #define jGatingToolTH2_h
 
-#include "TROOT.h"
-#include "TGLayout.h"
-#include "TF1.h"
-#include "TMath.h"
-#include "TH2.h"
-#include "TGInputDialog.h"
-
-#include <RQ_OBJECT.h>
-
-#include <iostream>
-#include <iomanip> 
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-
-using namespace std;
-
 #include "j_gating_result_frame.h"
 #include "j_gating_subtraction_frame.h"
 

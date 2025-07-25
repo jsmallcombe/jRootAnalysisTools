@@ -10,36 +10,7 @@
 #ifndef jGatingResultFrame_h
 #define jGatingResultFrame_h
 
-
-#include "TGButton.h"
-#include "TRootEmbeddedCanvas.h"
-#include "TGLayout.h"
-#include "TF1.h"
-#include "TMath.h"
-#include "TCanvas.h"
-#include "TGTextEntry.h"
-#include "TGSlider.h"
-#include "TGButtonGroup.h"
-#include "TGButton.h"
-#include "THashList.h"
-#include "TClass.h"
-#include "TText.h"
-#include "TGToolTip.h"
-#include "TGLabel.h"
-
-#include <iostream>
-#include <iomanip> 
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-using namespace std;
-
-#include "j_fitting.h"
-#include "j_hist_formatting.h"
 #include "j_ultrafit_env.h"
-
 #include "j_gating_select_frame.h" // For itterator 
 
 class jGateResultFrame : public TGHorizontalFrame {

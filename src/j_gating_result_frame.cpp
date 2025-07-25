@@ -1,4 +1,6 @@
-#include "j_gating_master.h"
+#include "j_gating_result_frame.h"
+#include "j_gating_select_frame.h" // For iterator
+
 
 ClassImp(jGateResultFrame);
 
