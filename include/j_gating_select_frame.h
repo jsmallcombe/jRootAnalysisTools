@@ -47,6 +47,7 @@ void SetGlobalAskWindowName(bool set=true);
 extern bool gGlobalOverflowBool;
 void SetGlobalOverflowInclude(bool set=true);
 extern bool gGlobalUnderlowBool;
+extern unsigned short gGlobalLowestBin;
 void SetGlobalUnderflowInclude(bool set=true);
 
 

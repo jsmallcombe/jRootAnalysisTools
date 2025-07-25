@@ -77,12 +77,14 @@
 		}
 		reta=three;
 		
+		
+// 	cout<<endl<<"IS IT STATS "<<three->GetName()<<" "<<three->GetSumw2().fN<<endl;
 // 		b = new jgating_tool(reta);
 		
 // 		new jGatingToolTH3(sparse);
 		
-		new jGatingToolTH3(retb);
-// 		new jGatingToolTH3(three);
+// 		new jGatingToolTH3(retb);
+		new jGatingToolTH3(three);
 // 		new jgating_tool(three);
 		
 // 		new jGatingToolTH3("");

@@ -169,7 +169,6 @@ if(UpdateLock) return;
     if(THnBaseType){
         // THn::Projection doesnt support the histogram-in-memory reuse of TH2/3
         CleanResHist();
-        
         fBackFrac=fGateFrame->DoGateSubtract((THnBase*)fInputStore, fResult, fBack, fResFullProj);
     }else{
         fBackFrac=fGateFrame->DoGateSubtract((TH1*)fInputStore, fResult, fBack, fResFullProj);

@@ -37,17 +37,13 @@ if(!input)return;
     Resize(GetDefaultSize());
     MapWindow();
     Init();
-
-    
-//         child->MapSubwindows();
-//         child->Resize();
-//         child->MapWindow();
     
 	UpdateInput(input,OverrideName);
-    DoHistogram();//Calling manually for special case of initlisations
+    
+    DoHistogram();// Calling manually for special case of initlisations
+    // Need resultant THn/TH1 fResult to initilise child frames to correct dimensionality 
     
     if(fResult){
-
         if(Ndim>4){
 //new THnI("Dummy","Dummy",N-1,DummyBins,DummyLow,DummyHigh)
             fResFrameTHn=new jGatingToolTHnMany(fResult,ChildName);
@@ -56,6 +52,7 @@ if(!input)return;
             fResFrameTH3=new jGatingToolTH3(fResult,false,ChildName);
             child=(TGMainFrame*)fResFrameTH3;
         }
+//  child->MapSubwindows();child->Resize();child->MapWindow();
         
         child->DontCallClose();  // disables the default WM close handler
     }
@@ -149,7 +146,6 @@ if(fInputStore==nullptr)return;
     
 //  When called during the constuctor, child is not yet set so this is skipped 
     if(child){
-        cout<<endl<<"ChildName "<<ChildName;;
         if(fResFrameTHn==child)fResFrameTHn->UpdateInput(fResult,ChildName);
         else if(fResFrameTH3==child) fResFrameTH3->UpdateInput(fResult,ChildName);
         child->RaiseWindow();

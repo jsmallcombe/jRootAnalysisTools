@@ -1,4 +1,13 @@
 
+It seems the old vs new tools have stopped agreeing, was this the result of an overflow setting or the templating changes?
+
+
+We dont know if sumw2 is done proprly in THnBase version ....
+THnBase has no error errors
+
+Currently the removal of sumw2 for certain background subtractions is off due templating conflict, but these were for a reason
+This needs fixing possibly by de-templating
+
 ------------------
 
 Add globals:
@@ -7,18 +16,19 @@ TH3head
 
 Write an explanation of the globals for Overflow Underflow in the manual
 
-What happened to the TH3 popup?
+What happened to the TH3 popup? (they are disabled by a return nullptr at the start, why? check/fix)
 
 ------------------
 
-
-Updated the header notes
+Updated the header notes on all files
 
 ------------------
 
-Make THSparse gatting tool
+Make a wrapper class to call the correct gating tool of the many avaialble.
+Can fold the text input into that.
 
-Make A 2D OR 3D sensing gating wrapper class
+Add THn to the jEnv browser
+
 
 Reintrioduce the adjustable width from old class
 Maybe important :

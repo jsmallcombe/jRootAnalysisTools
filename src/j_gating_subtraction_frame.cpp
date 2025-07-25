@@ -136,8 +136,6 @@ TObject* jGateSubtractionFrame::GateAxisByBin(THnBase* in,int xyz,int lower,int 
 
 
 
-
-
 double jGateSubtractionFrame::ScaledBackgroundSubtract(THnBase* gate,THnBase* back ,double backfrack,double uncertainfrac){
 	
 	// Integral is not in THnBase, but not sure ComputeIntegral gives the same results for overunderflow
@@ -146,8 +144,8 @@ double jGateSubtractionFrame::ScaledBackgroundSubtract(THnBase* gate,THnBase* ba
 	
 	backfrack*=forecount/backcount;
 	
-	if(!back->GetSumw2())back->Sumw2();
-	if(!gate->GetSumw2())gate->Sumw2();
+	if(!back->GetCalculateErrors())back->Sumw2();// Or CalculateErrors()()
+	if(!gate->GetCalculateErrors())gate->Sumw2();
 	
 	gate->Add(back,-backfrack);
 	
@@ -162,8 +160,8 @@ double jGateSubtractionFrame::ScaledBackgroundSubtract(TH1* gate,TH1* back ,doub
 	
 	backfrack*=forecount/backcount;
 	
-	if(!back->GetSumw2())back->Sumw2();
-	if(!gate->GetSumw2())gate->Sumw2();
+	if(!back->GetSumw2N())back->Sumw2();
+	if(!gate->GetSumw2N())gate->Sumw2();
 	
 	gate->Add(back,-backfrack);
 	
@@ -203,6 +201,3 @@ void TH1ErrorErrorAdj::AdjustError(const TH1* back,double frac){
 	}
 }
 // NOTE: This relies on fSumw2 being protected in TH1 (ROOT). If ROOT changes this to private, this will break.
-
-
-

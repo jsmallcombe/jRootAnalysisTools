@@ -12,8 +12,10 @@ void SetGlobalOverflowInclude(bool set){
 	}
 }
 bool gGlobalUnderlowBool=false;
+unsigned short gGlobalLowestBin=1;
 void SetGlobalUnderflowInclude(bool set){
 	gGlobalUnderlowBool=set;
+	gGlobalLowestBin=!gGlobalUnderlowBool;
 	if(!gGlobalOverflowBool&&gGlobalUnderlowBool){
 		std::cout<<std::endl<<"Setting UNDERflow ON with OVERflow OFF is problematic for gating classes."<<std::endl;
 	}
@@ -807,13 +809,16 @@ void jGateSelectFrame::DoHistogram(){
 	
 	SubtractGateFromBack=false;
 
-    // Note the "Full" projection used to make full and anti includes the overflow but excludes the underflow bin
-    // This is an intentional choice as often intentionally zeroed data may be sorted into the underflow bin
-    // The underflow bin can be selected with manual sliders
+	
+    // Note: the "Full" projection used to make full- and anti- gates now uses global settings
+	// to includes or the overflow and underflow bins_smooth.
+	// Previously these settings were set to include overflow but exclude underflow
+    // as underflow often contains intentionally zeroed data may which was sorted into it.
+    // The global underflow/overflow bin settings can be overridden with the manual background slider
 	switch (background_mode) {
 		case 1://full
-			back_down=1;
-			back_up=proj->GetNbinsX()+1; //include overflow
+			back_down=gGlobalLowestBin;
+			back_up=proj->GetNbinsX()+gGlobalOverflowBool; //include overflow based on global
 			break;
 		case 2://compton
 			//set the compton background cut to 3sigma above centroid
@@ -826,12 +831,12 @@ void jGateSelectFrame::DoHistogram(){
 				if(compton_offset>proj->GetNbinsX())compton_offset=proj->GetNbinsX();
 					
 				back_down=compton_offset;
-				back_up=proj->GetNbinsX()+1; //include overflow
+				back_up=proj->GetNbinsX()+1; //always include overflow for Compton regardless of gGlobalOverflowBool
 			}
 			break;
 		case 3://anti gate
-			back_down=1;
-			back_up=proj->GetNbinsX()+1; //include overflow
+			back_down=gGlobalLowestBin;
+			back_up=proj->GetNbinsX()+gGlobalOverflowBool; //include overflow based on global
 			SubtractGateFromBack=true;
 			break;
 		case 4://none
@@ -841,7 +846,7 @@ void jGateSelectFrame::DoHistogram(){
 		default://manual
 			back_down=m_back_down;
 			back_up=m_back_up;
-			if(gate_down>m_back_down&&gate_up<m_back_up){
+			if(gate_down>back_down&&gate_up<back_up){
 				SubtractGateFromBack=true;
 			}
 			break;				
