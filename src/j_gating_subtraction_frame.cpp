@@ -136,13 +136,15 @@ TObject* jGateSubtractionFrame::GateAxisByBin(THnBase* in,int xyz,int lower,int 
 
 
 
-double jGateSubtractionFrame::ScaledBackgroundSubtract(THnBase* gate,THnBase* back ,double backfrack,double uncertainfrac){
+double jGateSubtractionFrame::ScaledBackgroundSubtract(THnBase* gate,THnBase* back ,double backfrack,double uncertainfrac,bool scale){
 	
-	// Integral is not in THnBase, but not sure ComputeIntegral gives the same results for overunderflow
-	double backcount=back->ComputeIntegral();
-	double forecount=gate->ComputeIntegral();
-	
-	backfrack*=forecount/backcount;
+	if(scale){
+		// Integral is not in THnBase, but not sure ComputeIntegral gives the same results for overunderflow
+		double backcount=back->ComputeIntegral();
+		double forecount=gate->ComputeIntegral();
+		
+		backfrack*=forecount/backcount;
+	}
 	
 	if(!back->GetCalculateErrors())back->Sumw2();// Or CalculateErrors()()
 	if(!gate->GetCalculateErrors())gate->Sumw2();
@@ -152,13 +154,15 @@ double jGateSubtractionFrame::ScaledBackgroundSubtract(THnBase* gate,THnBase* ba
 	return backfrack;
 }
 
-double jGateSubtractionFrame::ScaledBackgroundSubtract(TH1* gate,TH1* back ,double backfrack,double uncertainfrac){
+double jGateSubtractionFrame::ScaledBackgroundSubtract(TH1* gate,TH1* back ,double backfrack,double uncertainfrac,bool scale){
 	
-	double backcount=back->Integral();
-	double forecount=gate->Integral();
-	// ComputeIntegral for TH1 and THnBase have very different behaviour/return values
-	
-	backfrack*=forecount/backcount;
+	if(scale){
+		double backcount=back->Integral();
+		double forecount=gate->Integral();
+		// ComputeIntegral for TH1 and THnBase have very different behaviour/return values
+		
+		backfrack*=forecount/backcount;
+	}
 	
 	if(!back->GetSumw2N())back->Sumw2();
 	if(!gate->GetSumw2N())gate->Sumw2();

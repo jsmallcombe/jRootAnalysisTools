@@ -10,33 +10,24 @@
 #ifndef JUtility
 #define JUtility
 
-#include <sstream>
 #include <iomanip>
-
+// 
 #include <TMatrixD.h>
 #include <TMatrixDSym.h>
 #include <vector>
-#include <utility>
 #include <TF1.h>
 #include <TH1.h>
 #include <TH2.h>
 #include <TH3.h>
-#include <TClass.h>
 #include <TKey.h>
 #include <TFile.h>
 #include <TGraph.h>
-#include <TMultiGraph.h>
-#include <TArray.h>
 #include <iostream>
 #include <fstream>
-#include <algorithm>
-#include <TGraphErrors.h>
-#include <TFitResult.h>
 #include <TROOT.h>
 #include <TSystem.h> 
 #include <TRootEmbeddedCanvas.h>
 #include <TGLabel.h>
-#include <TStopwatch.h>
 
 
 using namespace std;

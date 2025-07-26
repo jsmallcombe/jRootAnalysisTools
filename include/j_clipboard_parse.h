@@ -10,22 +10,13 @@
 #ifndef JParseClip
 #define JParseClip
 
-#include <algorithm>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <vector>
-
 #include <TClass.h>
 #include <TH1.h>
-#include <TGraph.h>
 #include <TGraphErrors.h>
 #include <TMultiGraph.h>
 #include <TCanvas.h>
 
 #include "j_X11paste.h"
-
-using namespace std;
 
 // Trys TMultiGraph, then TH1, then TGraph
 // Most selective input to least

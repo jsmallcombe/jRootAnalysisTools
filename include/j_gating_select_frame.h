@@ -16,7 +16,6 @@
 #include "TSpectrum.h"
 #include "TGComboBox.h"
 
-#include "j_fitting.h"
 #include "j_hist_formatting.h"
 
 extern bool gGlobalAskGateWindowName;

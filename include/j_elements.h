@@ -10,38 +10,15 @@
 #ifndef jameselements_h
 #define jameselements_h
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <vector>
 
-#include <TBrowser.h>
-#include <TCanvas.h>
-#include <TText.h>
-#include <TLatex.h>
-#include <TStyle.h>
-#include <TBox.h>
-#include <TROOT.h>
-#include <TFile.h>
 #include <TTree.h>
-#include <TBranch.h>
 #include <TStopwatch.h>
 #include <TGListTree.h>
 #include <TSystemFile.h>
 #include <TSystemDirectory.h>
-#include <TGSlider.h>
-#include <TGTextEntry.h>
-#include <TKey.h>
-#include <THnBase.h>
 
+#include "j_gating_subtraction_frame.h"
 
-#include "j_utility.h"
-#include "j_gpad_tools.h"
-#include "j_hist_formatting.h"
-#include "j_gate_subtract.h"
-
-using namespace std;
 
 //current_capture_frame
 class CCframe : public TRootEmbeddedCanvas {

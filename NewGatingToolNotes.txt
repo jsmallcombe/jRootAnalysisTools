@@ -1,7 +1,7 @@
 To do list
--Depreciate the old gatter classes from the codebase.
 -Rename sub-files of j_env like j_elements to j_env_elements     also fitting and  clipboard/X11 paste
--Tidy Test folders and  scripts
+-Reintroduced a depreciate the old gatter classes to the codebase.
+-Tidy Test folders and scripts
 -Fix the glitch with select frame rebin viewing
 
 -ReImplement the sliding graphical divider

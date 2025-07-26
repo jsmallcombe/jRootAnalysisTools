@@ -16,61 +16,20 @@
 //  sScope - Defined in a smaller scope e.g. while loop
 
 // ROOT
-#include <TStyle.h>
-#include <TCanvas.h>
-#include <TRootCanvas.h>
-#include <TPad.h>
-#include <TH1.h>
-#include <TF1.h>
-#include <TAxis.h>
-#include <TMath.h>
-#include <TLine.h>
-#include <TLegend.h>
-#include <TString.h>
-#include <TGraphErrors.h>
-#include <TGButton.h>
-#include <TControlBar.h>
-#include <TGFrame.h>
-#include <TROOT.h>
-#include <TSystem.h>
 #include <TGTextEntry.h>
-#include <TGLabel.h>
-#include <TQObject.h>
 #include <TRootHelpDialog.h>
-#include <TGFileDialog.h>
-#include <TGClient.h>
-#include <TRootEmbeddedCanvas.h>
-#include <TBrowser.h>
-#include <TText.h>
-#include <TLatex.h>
-#include <TBox.h>
-#include <TFile.h>
-#include <TTree.h>
-#include <TBranch.h>
 #include <TGComboBox.h>
 #include <TStopwatch.h>
+#include <TLine.h>
 
 #include <KeySymbols.h>
 
 // #include "Math/GSLIntegrator.h"
 // #include "Math/WrappedTF1.h"
 
-
-#include "j_utility.h"
-#include "j_gpad_tools.h"
 #include "j_ultrapeak.h"
 #include "j_hist_formatting.h"
 
-// C++
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
-#include <vector>
-#include <cmath>
-#include <string>
-#include <sstream>
-
-using namespace std;
 
 class UltraFitEnv : public TGCompositeFrame
 { 

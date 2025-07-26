@@ -10,10 +10,10 @@
 #ifndef jamesenv_h
 #define jamesenv_h
 
-
 #include <TApplication.h>
 #include <TGTab.h>
 #include <TTreeViewer.h>
+#include <TBrowser.h>
 
 #include "j_spectool.h"
 #include "j_elements.h"

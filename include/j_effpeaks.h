@@ -9,26 +9,13 @@
 #ifndef eff_func_h
 #define eff_func_h
 
-#include <TAxis.h>
-#include <TCanvas.h>
-#include <TF1.h>
-#include <TH3.h>
-#include <TH2.h>
-#include <TH1.h>
-#include <TMatrixDSym.h>
-#include <TFitResult.h>
 #include <TGraphErrors.h>
-#include <TList.h>
+
 #include "Math/MinimizerOptions.h"
 
-#include <cmath>
-#include <TMath.h>
-
-#include "j_utility.h"
 #include "j_fitholder.h"
 
-#include <iostream>
-using namespace std;
+
 
 // Fit all of the below functions
 vector<TF1*> MegaEffAuto(TGraphErrors * graph);

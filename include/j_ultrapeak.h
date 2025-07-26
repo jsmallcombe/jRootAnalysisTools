@@ -10,27 +10,10 @@
 #ifndef ultrapeak_func_h
 #define ultrapeak_func_h
 
-#include "j_utility.h"
-#include "j_fitting.h"    
-
-#include <TAxis.h>
 #include <TCanvas.h>
-#include <TF1.h>
-#include <TH3.h>
-#include <TH2.h>
-#include <TH1.h>
-#include <TMatrixDSym.h>
-#include <TFitResult.h>
-#include <TList.h>
-#include <TKey.h>
 #include <TMinuit.h>
 
-#include <cmath>
-#include <TMath.h>
-
-#include <iostream>
-#include <iomanip>
-using namespace std;
+#include "j_fitting.h"    
 
 extern bool gGlobalForceMinuitOldMinimiser;
 

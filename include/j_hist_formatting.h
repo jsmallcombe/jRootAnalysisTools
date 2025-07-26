@@ -10,34 +10,15 @@
 #ifndef jameshistfor_h
 #define jameshistfor_h
 
-#include <iostream>
-#include <cmath>
-#include <vector>
-#include <sstream>
-
-#include <TH1.h>
-#include <TH2.h>
-#include <TCanvas.h>
-#include <TPad.h>
-#include <TVirtualPad.h>
-#include <TBox.h>
-#include <TLatex.h>
-#include <TLine.h>
+#include <TStyle.h>
+#include <TGraphErrors.h>
 #include <TMarker.h>
-#include <TROOT.h>
-#include <TPolyLine.h>
 #include <TGFileDialog.h>
-#include <TGClient.h>
-#include <TRootEmbeddedCanvas.h>
-#include <TSystem.h>
 #include <TFrame.h>
-#include <RtypesCore.h>
 
 #include "j_gpad_tools.h"
 #include "j_fitting.h"
 
-
-using namespace std;
 
 extern bool gGlobalNegativeDraw;
 extern Color_t gGlobalBackColor;

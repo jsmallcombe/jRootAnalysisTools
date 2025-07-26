@@ -10,32 +10,13 @@
 #ifndef jamesfunc_spectool
 #define jamesfunc_spectool
 
-#include "TROOT.h"
-#include "TGButton.h"
-#include "TRootEmbeddedCanvas.h"
-#include "TGLayout.h"
-#include "TF1.h"
-#include "TMath.h"
-#include "TCanvas.h"
-#include "TGTextEntry.h"
-#include "TGSlider.h"
-#include "TGLabel.h"
-//#include "TGTripleSlider.h"
-#include "TH2F.h"
-#include "TGButtonGroup.h"
-#include "TGButton.h"
-#include "THashList.h"
-#include "TStyle.h"
-#include "TSpectrum.h"
+#include <TGButton.h>
+#include <TRootEmbeddedCanvas.h>
+#include <TGTextEntry.h>
+#include <TGSlider.h>
 
-#include <iostream>
-#include <iomanip> 
+#include <TSpectrum.h>
 
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
 using namespace std;
 
 

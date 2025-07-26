@@ -10,29 +10,9 @@
 #ifndef j_fitting_h
 #define j_fitting_h
 
-// C++
-
-#include <iostream>
-#include <cmath>
-#include <vector>
-#include <cstdlib>
-#include <sstream>
-
-#include <TAxis.h>
-#include <TCanvas.h>
-#include <TF1.h>
-#include <TH3.h>
-#include <TH2.h>
-#include <TH1.h>
-#include <TMatrixDSym.h>
-#include <TFitResult.h>
-#include <TList.h>
-
 #include "Math/MinimizerOptions.h"
 
-#include "j_utility.h"
 #include "j_fitholder.h"
-#include "Math/MinimizerOptions.h"
 
 using namespace std;
 

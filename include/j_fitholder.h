@@ -10,24 +10,10 @@
 #ifndef FullFitHold
 #define FullFitHold
 
-#include <TMatrixD.h>
-#include <TMatrixDSym.h>
-#include <vector>
-#include <utility>
-#include <TF1.h>
-#include <TMath.h>
-#include <TH1.h>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <TGraphErrors.h>
 #include <TMultiGraph.h>
 #include <TFitResult.h>
 
-
 #include "j_utility.h"
-
-using namespace std;
 
 //////////////////////////////////////////
 //	FIT FUNCTION HOLDER CLASS	//

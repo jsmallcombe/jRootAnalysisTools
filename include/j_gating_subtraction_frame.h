@@ -73,14 +73,6 @@ private:
 	// Template to allow use with TH1* or THn* without casting up to TObject* 
 	template <typename T>
 	TH1* ProjectAxisByBin(T*,int,TString, bool=gGlobalUnderlowBool,bool=gGlobalOverflowBool);
-
-	//
-	// Scaled subtraction functions
-	// Templated for TH1 and THn types
-	//
-
-	double ScaledBackgroundSubtract(THnBase* ,THnBase*  ,double ,double=0);
-	double ScaledBackgroundSubtract(TH1* ,TH1*  ,double ,double=0);
 		
 	// THnBase has a different relationship with Sumw2 ...
 	// THnBase doesnt have GetSumw2N()
@@ -112,7 +104,14 @@ public:
 	template <typename U,typename T>
 	double DoGateSubtract(U*, T*&, T*&, T*&);
 	
-   ClassDef(jGateSubtractionFrame, 4)
+	//
+	// Scaled subtraction functions
+	// De-templated for TH1 and THn types
+	//
+	static double ScaledBackgroundSubtract(THnBase* ,THnBase*  ,double ,double=0,bool=true);
+	static double ScaledBackgroundSubtract(TH1* ,TH1*  ,double ,double=0,bool=true);
+	
+   ClassDef(jGateSubtractionFrame, 5)
 };
 
 ///////////////////////////////////////////////////

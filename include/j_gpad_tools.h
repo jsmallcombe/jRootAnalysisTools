@@ -10,36 +10,14 @@
 #ifndef jamesgpad_h
 #define jamesgpad_h
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <vector>
-
-#include <TBrowser.h>
 #include <TCanvas.h>
-#include <TText.h>
 #include <TLatex.h>
-#include <TStyle.h>
-#include <TBox.h>
-#include <TROOT.h>
-#include <TFile.h>
-#include <TTree.h>
-#include <TBranch.h>
 #include <TRootCanvas.h>
-#include "TGButton.h"
-#include "TRootEmbeddedCanvas.h"
-#include "TGButtonGroup.h"
-#include "TGToolTip.h"
-#include "TROOT.h"
-#include "TSystem.h"
+#include <TGButton.h>
+#include <TGButtonGroup.h>
+#include <TGToolTip.h>
 
 #include "j_utility.h"
-#include "j_hist_formatting.h"
-
-
-using namespace std;
-
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////

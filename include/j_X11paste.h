@@ -15,7 +15,6 @@
 
 using namespace std;
 
-
 int ReadX11CopyBufferAsText(stringstream &ss, bool clip=true);
 
 #endif

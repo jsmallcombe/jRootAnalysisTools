@@ -10,42 +10,11 @@
 #ifndef jamesextragui_h
 #define jamesextragui_h
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <vector>
-
-#include <TBrowser.h>
-#include <TCanvas.h>
-#include <TText.h>
-#include <TLatex.h>
-#include <TStyle.h>
-#include <TBox.h>
-#include <TROOT.h>
-#include <TFile.h>
-#include <TTree.h>
-#include <TBranch.h>
-#include <TStopwatch.h>
-#include <TApplication.h>
-#include <TGTab.h>
 #include <TF2.h>
-#include <RtypesCore.h>
-#include <TCutG.h>
 
-#include "j_utility.h"
-#include "j_ultrafit_env.h"
-#include "j_gpad_tools.h"
-#include "j_gating_tool.h"
-#include "j_gate_subtract.h"
 #include "j_hist_formatting.h"
-#include "j_spectool.h"
-#include "j_elements.h"
-#include "j_clipboard_parse.h"
 #include "j_env.h"
 
-
-using namespace std;
 
 // RQ_OBJECT("MyClass") inside the MyClass body (IF MyClass not inherited from TQObject) allow class to use signal/slot communication
 

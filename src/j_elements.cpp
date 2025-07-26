@@ -428,7 +428,7 @@ void jAddSubTool::DoSlider(){
     
     int slidepos=fHslider1->GetPosition();
 	double frac=slidepos/500.0;
-	double fracfrac=0.03;//Arbitrary summing fraction error 
+	double fracfrac=gGlobalSubtractionFractionError;//Arbitrary summing fraction error. Default = 0.04
 	
 	UpdateText();
 	
@@ -479,7 +479,9 @@ void jAddSubTool::DoSlider(){
 // with aproiate scaling as needed to account for integral:Y_height ratio i.e. bin width
 
     switch(gSubtract) {
-        case 1 :    SumHist=scaled_addition(AHist,BSet,frac,fracfrac);  // Normalised Scaled Addition
+		
+        case 1 :    SumHist=(TH1*)AHist->Clone();
+					jGateSubtractionFrame::ScaledBackgroundSubtract(SumHist,BSet,-frac,fracfrac);  // Normalised Scaled Addition
                     break;
         case 2 :    SumHist=(TH1*)BHist->Clone();   //Scaled Comparison
                     SumHist->Scale(frac+1);
@@ -490,7 +492,8 @@ void jAddSubTool::DoSlider(){
         case 4 :    SumHist=(TH1*)BHist->Clone();
                     SumHist->GetXaxis()->SetLimits(BHist->GetXaxis()->GetXmin(),(frac+1)*BHist->GetXaxis()->GetXmax()); 
                     break; 
-        default :   SumHist=scaled_addition(AHist,BSet,frac,fracfrac,false); // Simple Addition
+        default :   SumHist=(TH1*)AHist->Clone();
+					jGateSubtractionFrame::ScaledBackgroundSubtract(SumHist,BSet,-frac,fracfrac,false);  // Simple Addition
                     break;
     }
     
