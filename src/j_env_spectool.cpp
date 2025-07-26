@@ -1,4 +1,4 @@
-#include "j_spectool.h"
+#include "j_env_spectool.h"
 #include "j_hist_formatting.h"
 
 ClassImp(jSpecTool);

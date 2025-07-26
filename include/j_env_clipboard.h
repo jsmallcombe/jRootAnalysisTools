@@ -16,7 +16,7 @@
 #include <TMultiGraph.h>
 #include <TCanvas.h>
 
-#include "j_X11paste.h"
+#include "j_env_clipboard_X11paste.h"
 
 // Trys TMultiGraph, then TH1, then TGraph
 // Most selective input to least

@@ -10,7 +10,7 @@
 #ifndef jGatingResultFrame_h
 #define jGatingResultFrame_h
 
-#include "j_ultrafit_env.h"
+#include "j_ultrapeak_env.h"
 #include "j_gating_select_frame.h" // For itterator 
 
 class jGateResultFrame : public TGHorizontalFrame {

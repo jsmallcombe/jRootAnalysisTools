@@ -15,9 +15,9 @@
 #include <TTreeViewer.h>
 #include <TBrowser.h>
 
-#include "j_spectool.h"
-#include "j_elements.h"
-#include "j_clipboard_parse.h"
+#include "j_env_spectool.h"
+#include "j_env_elements.h"
+#include "j_env_clipboard.h"
 #include "j_gating_master.h"
 
 // RQ_OBJECT("MyClass") inside the MyClass body (IF MyClass not inherited from TQObject) allow class to use signal/slot communication

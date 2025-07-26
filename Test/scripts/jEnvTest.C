@@ -1,5 +1,5 @@
 { 
-//     SetGlobalNegative();
+//  SetGlobalNegative();
     TCanvas* C1=new TCanvas();
     C1->Divide(2,3);
     C1->cd(1);
@@ -27,11 +27,15 @@
     
     new jEnv();
     
-//    new jScale();
-//    new jEval();
-
     
     C1->SetWindowPosition(1000,200);
     C1->Modified();
     C1->Update();
+	
+	new jSpecTool(oversub);
+	new jAngleAngel(dedx);
+	new j2DPeakFit(ydots,11);
+	new jCompCanvas(sili);C->Draw("same");
+	new jScale();
+	new jEval();
 }

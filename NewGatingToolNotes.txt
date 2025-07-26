@@ -1,12 +1,7 @@
 To do list
--Rename sub-files of j_env like j_elements to j_env_elements     also fitting and  clipboard/X11 paste
--Reintroduced a depreciate the old gatter classes to the codebase.
--Tidy Test folders and scripts
--Fix the glitch with select frame rebin viewing
-
 -ReImplement the sliding graphical divider
 -Implement Subtraction fraction error estimation for THn classes Ndim>3 
--Make suggested updates to guitools. And add initial text CCframes using the new function.
+-Make suggested updates to gui-tools. And add initial text CCframes using the new function.
 -Make a TTree/TTuple gating tool which uses jGateSelectFrame/jGateSubtractionFrame 
 
 Update Manual:
@@ -29,10 +24,6 @@ Maybe important :
         gJframe1->ChangeOptions(kFixedWidth);
         Connect("ProcessedConfigure(Event_t*)","jgating_tool", this,"ProcessedConfigure(Event_t*)");
 Overriding the Layout command seems to be a better way
-        
-The rebinning of the gating select frame has a glitch (common to old code).
-when rebinning the selection jumps to the old bin number, now wrong.
-Similar behaviour error on change project or updated input?
-Review and fix
+
 
 ------------------

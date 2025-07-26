@@ -1,4 +1,4 @@
-#include "j_elements.h"
+#include "j_env_elements.h"
 
 CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t options,Pixel_t back):TRootEmbeddedCanvas(name,p,w,h,options,back),current(0),currentpad(0),currentcan(0),currenttrust(0){TVirtualPad* hold=gPad;
 	this->GetCanvas()->SetMargin(0,0,0,0);
@@ -44,9 +44,9 @@ void CCframe::TrackCaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 
 		if(obj){
 			TObject* fH=0;
-			if(obj->InheritsFrom(fClass))fH=obj;//If click was exactly on a "histogram"?
-			else fH=obj_capture(fClass,pad);//Else find first object this pad has
-// 			else fH=hist_capture(pad);//Else find first histogram this pad has
+			if(obj->InheritsFrom(fClass))fH=obj;// If click was exactly on a "histogram"?
+			else fH=obj_capture(fClass,pad);// Else find first object this pad has
+// 			else fH=hist_capture(pad);// Else find first histogram this pad has
 			
 			if(fH)SetNewObject(fH,pad,sender);
 			return;
@@ -65,7 +65,7 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,bool Trust){
 			TVirtualPad* hold=gPad;
 			this->GetCanvas()->cd();
 		
-		//Drawing Options for all possible CCframe instances, so not only for current fClass setting
+		// Drawing Options for all possible CCframe instances, so not only for current fClass setting
 			if(HType(fH)){
                 if(HType(fH)==3 || (HType(fH)==2&&(((TH1*)fH)->GetNbinsX()*((TH1*)fH)->GetNbinsY()>1000000))){
                     PrintMessageInternal(fH->ClassName(),fH->GetName());

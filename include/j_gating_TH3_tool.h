@@ -56,6 +56,10 @@ public:
     
     void Layout() override;
     
+    void Closed(TObject* obj){
+        Emit("Closed(TObject*)", (Long_t)obj);
+    }
+    
     //Using instead of ClassDef because the above override was causing issues with "Steamer"
 	ClassDefOverride(jGatingToolTH3, 6)
 };

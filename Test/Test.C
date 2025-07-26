@@ -11,25 +11,15 @@ gSystem->Load(load.c_str());
 gROOT->ProcessLine((dir+"/data/1Dhist.C").c_str());
 gROOT->ProcessLine((dir+"/data/1Dhistlow.C").c_str());
 gROOT->ProcessLine((dir+"/data/1Doversub.C").c_str());
-
 gROOT->ProcessLine((dir+"/data/LoadFiles.C").c_str());
 
 
-//Pick a script by commenting
-// dir+="/scripts/EfficiencyCurves.C";
-// dir+="/scripts/UltraFitTest.C";
-//  dir+="/scripts/Massage.C";
-//  dir+="/scripts/gPadTest.C";
-//  dir+="/scripts/jEnvTest.C";    
-//  dir+="/scripts/jAngleTest.C";  
-//  dir+="/scripts/j2DPeakFitTest.C";  
-//   dir+="/scripts/CanTest.C";  
-// dir+="/scripts/GateTest.C";
-
-//  dir+="/scripts/GatingSelectTest.C";  
-//  dir+="/scripts/GateFrame.C";  
-// dir+="/scripts/NewGateTest.C"; 
-dir+="/scripts/THnTest.C";
+// Pick a script by commenting
+// dir+="/scripts/jEnvTest.C";    // Test jEnv and gui tools
+// dir+="/scripts/UltraFitTest.C"; // Test Ultrapeak fitting environment
+dir+="/scripts/NewGateTest.C"; // Test gating tool
+// dir+="/scripts/THnTest	.C"; // Gating THnSparse test
+// dir+="/scripts/EfficiencyCurves.C"; // Test automated gamma efficiency curve functions 
 
 
 //Run that script

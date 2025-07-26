@@ -41,9 +41,12 @@ public:
     void UpdateInput();
     void DoHistogram();
     
-
     void Init(){
        fGateFrame->HideManBar();
+    }
+    
+    void Closed(TObject* obj){
+        Emit("Closed(TObject*)", (Long_t)obj);
     }
     
 	ClassDefOverride(jGatingToolTHnMany, 2)

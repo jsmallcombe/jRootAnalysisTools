@@ -64,7 +64,7 @@ gPad=hold;
 }
     
 jGatingToolTH3::~jGatingToolTH3(){
-// 	Closed(this);
+	Closed(this);
     
     CleanResHist();
 	if(fResFullProj)delete fResFullProj;

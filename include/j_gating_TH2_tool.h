@@ -81,6 +81,10 @@ public:
     
     bool TestThreeDee(){return ThreeDee;}
     
+    void Closed(TObject* obj){
+        Emit("Closed(TObject*)", (Long_t)obj);
+    }
+    
 	ClassDef(jGatingFrameTH2, 3)
 };
 

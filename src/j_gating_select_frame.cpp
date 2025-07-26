@@ -889,12 +889,34 @@ void jGateSelectFrame::UpdateDraw(bool overlay){
 
 
 void jGateSelectFrame::RebinPlus(){
+	
+	// These arent perfect, but close enough
+	// 	ValidateValues() and ValuesToSliders(); get called somewhere in the UpdateInput() process
+	double BinScale=RebinFactor+1;
+	BinScale/=RebinFactor;
+	target_bin=round(target_bin/BinScale);
+	gate_range=round(gate_range/BinScale);
+	m_back_down=round(m_back_down/BinScale);
+	m_back_up=round(m_back_up/BinScale);
+	fit_down=round(fit_down/BinScale);
+	fit_up=round(fit_up/BinScale);
+	
     RebinFactor++;
 	UpdateInput();	
 }
 
 void jGateSelectFrame::RebinMinus(){
     if(RebinFactor>1){
+		
+		double BinScale=RebinFactor-1;
+		BinScale/=RebinFactor;		
+		target_bin=round(target_bin/BinScale);
+		gate_range=round(gate_range/BinScale);
+		m_back_down=round(m_back_down/BinScale);
+		m_back_up=round(m_back_up/BinScale);
+		fit_down=round(fit_down/BinScale);
+		fit_up=round(fit_up/BinScale);
+		
         RebinFactor--;
         UpdateInput();
     }

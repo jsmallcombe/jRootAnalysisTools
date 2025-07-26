@@ -1,7 +1,6 @@
 { 
-//    UltraFitEnv* bob=new UltraFitEnv(C);
-   UltraFitEnv* bob=new UltraFitEnv(sili);
-//    UltraFitEnv* bob=new UltraFitEnv(sililow);
-   
-    bob->Connect("Closed(TObject*)", "TApplication", gApplication, "Terminate()");
+	UltraFitEnv* bob=new UltraFitEnv(C); // Gammas
+// 	UltraFitEnv* bob=new UltraFitEnv(sili);
+// 	UltraFitEnv* bob=new UltraFitEnv(sililow);
+	bob->Connect("Closed(TObject*)", "TApplication", gApplication, "Terminate()");
 }
