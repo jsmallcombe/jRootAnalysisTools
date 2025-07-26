@@ -63,19 +63,11 @@ TVirtualPad* hold=gPad;
         OneOnly.push_back(fitter);
 
         ///// Spec Tool Buttons
-        drawduelbuttons = new TGHorizontalFrame(controlframe1);
-            TGTextButton* Spect = new TGTextButton(drawduelbuttons,"SpecTool");
+		TGTextButton* Spect = new TGTextButton(controlframe1,"SpecTool");
             Spect->SetFont(ft);
             Spect->Connect("Clicked()","jEnv",this,"Spectrum()");
-            drawduelbuttons->AddFrame(Spect,ExpandX);
-			fPictureBut = new TGPictureButton(drawduelbuttons,gClient->GetPicture("newcanvas.xpm"));
-            fPictureBut->SetMinWidth(30);
-            fPictureBut->SetWidth(35);
-			fPictureBut->Connect("Clicked()","jEnv",this,"FreeSpectrum()");
-			drawduelbuttons->AddFrame(fPictureBut,new TGLayoutHints(kLHintsExpandY,0,5,3,2));
-		controlframe1->AddFrame(drawduelbuttons,new TGLayoutHints(kLHintsExpandX,0,0,0,0));
+		controlframe1->AddFrame(Spect,ExpandX);    
         OneOnly.push_back(Spect);
-        OneOnly.push_back(fPictureBut);
         
         //// Draw Buttons
 		drawduelbuttons = new TGHorizontalFrame(controlframe1);
@@ -94,7 +86,8 @@ TVirtualPad* hold=gPad;
 		TGTextButton* Drawsm = new TGTextButton(controlframe1,"DrawSame");
         Drawsm->SetFont(ft);
 		Drawsm->Connect("Clicked()","jEnv",this,"DrawSm()");
-		controlframe1->AddFrame(Drawsm,ExpandX);       
+		controlframe1->AddFrame(Drawsm,ExpandX);     
+        OneOnly.push_back(Drawsm);  
         
         //// Gating tool button
 		TGTextButton* gatter = new TGTextButton(controlframe1,"Gate");
@@ -162,9 +155,11 @@ TVirtualPad* hold=gPad;
 // #endif
 
     //// Connect the various TObject grabbing systems
-    //// If the jDirList has a new selection this is passed to the CCframe to update it's graphics and reference
-    //// jDirList also passed directly to the jEnv to allow for extra objects outside the scope of CCframe
-    //// CCframe will pass to jEnv when it has a new object either from CCframe or from TCanvas
+    //// When (jDirList)DirList has a new selection, this is passed to the (CCframe)fCanvas1 to update it's graphics and reference
+    //// (CCframe)fCanvas1 will pass to (jEnv)this when it has a VALID new object EITHER from CCframe or from TCanvas
+	//// (CCframe)fCanvas1 is set to only accept TH1 Inheriting objects
+    //// (jDirList)DirList also passed directly to the (jEnv), to allow for objects types outside the scope of (CCframe)fCanvas1
+	//// jEnv::NewDirObject should NOT parse objects directly if they are valid for the current (CCframe)fCanvas1 instance (e.g. histograms)
     DirList->Connect("NewObject(TObject*)","CCframe",fCanvas1,"NonGuiNew(TObject*)");
     DirList->Connect("NewObject(TObject*)","jEnv",this,"NewDirObject(TObject*)");
     fCanvas1->Connect("NewObject(TObject*)","jEnv",this,"NewCanvasObject(TObject*)");
@@ -180,22 +175,25 @@ gPad=hold;
 }
 
 
+// The button to exit the root session is clicked
 void jEnv::Terminate(){
-    FreeObjects.SetOwner();//Will delete list objects irrespective of kCanDelete
+    FreeObjects.SetOwner();// Will delete list objects irrespective of kCanDelete
     delete this;
-//     delete gChiefCustodian;// For simplicity got rid of custodian class, files no longer closed manually, meh.
     gApplication->Terminate(0);
 }
 
 
 void jEnv::ClearFreeObjects(){
-    // Disconnected signals from FreeObjects, objects in list will be deleted along with jEnv depenendent on individual kCanDelete values
+    // Disconnected signals from FreeObjects
+	// Objects in list will be deleted along with jEnv depenendent on individual kCanDelete values
     
     TObject *obj;
     TIter next(&FreeObjects);
     while((obj= next())){
         if(obj->InheritsFrom("TQObject")){
-            dynamic_cast<TQObject*>(obj)->Disconnect(0,this,0);
+			if (auto qobj = dynamic_cast<TQObject*>(obj)) {
+				qobj->Disconnect(0, this, 0);
+			}
         }
     }
     
@@ -204,12 +202,12 @@ void jEnv::ClearFreeObjects(){
 
 void jEnv::AddFreeObject(TObject* obj,bool CanDelete){
 
-    //The dynamic cast is crucial here apparently 
-    dynamic_cast<TQObject*>(obj)->Connect("Closed(TObject*)","jEnv", this,"ClosedObject(TObject*)");
-    //TQObject::Connect(dynamic_cast<TQObject*>(obj)->Connect("Closed(TObject*)","jEnv", this,"ClosedObject(TObject*)");
-    
-    // This would link ALL of the class
-    // TQObject::Connect(obj->ClassName(),"Closed(TObject*)","jEnv", this,"ClosedObject(TObject*)");
+    // The dynamic cast is crucial here apparently 
+	if (auto qobj = dynamic_cast<TQObject*>(obj)) {
+		qobj->Connect("Closed(TObject*)","jEnv", this,"ClosedObject(TObject*)");
+		// This would link ALL of the class
+		// TQObject::Connect(qobj->ClassName(),"Closed(TObject*)","jEnv", this,"ClosedObject(TObject*)");
+	}
     
     // Sets if it is allowed to be deleted by TLists it is added to
     if(CanDelete)obj->SetBit(kCanDelete,kTRUE);
@@ -219,20 +217,25 @@ void jEnv::AddFreeObject(TObject* obj,bool CanDelete){
 }
 
 void jEnv::Browser(){
-	new TBrowser;
-	if(fCanvas1->Type()>0&&fCanvas1->Type()<3)fCanvas1->Hist()->DrawCopy("colz");
+	new TBrowser();
+	if(fCanvas1->Type()>0&&fCanvas1->Type()<3){
+		// Will have moved into the TCanvas of the TBrowser at creation time
+		fCanvas1->Hist()->DrawCopy("colz");
+	}
 }
 
 void jEnv::FitPanel(){
-    if(fCanvas1->Type()==1){
-        if(fFitPanel){
+    if(fCanvas1->Type()==1){ //If valid TH1 input
+        if(fFitPanel){ //If we already initialised fFitPanel
             fFitPanel->PassNewHist(fCanvas1->Hist());
-            for(int i=0;i<fTabs->GetNumberOfTabs();i++)if(fFitPanel==fTabs->GetTabContainer(i)){fTabs->SetTab(i,kFALSE);break;}
-            if(!IsVisible(fTabs))ShowTabs();
+            for(int i=0;i<fTabs->GetNumberOfTabs();i++){
+				if(fFitPanel==fTabs->GetTabContainer(i)){fTabs->SetTab(i,kFALSE);break;}// Switch to the fFitPanel tab, dont "emit"
+			}
+            if(!IsVisible(fTabs))ShowTabs();// Open the tabs pane if they are minimised
 		}else {
             fFitPanel=new UltraFitEnv(fTabs,fCanvas1->Hist(),0,1);
             fTabs->AddTab("FitPanel",fFitPanel);
-            fTabs->SetTab(fTabs->GetNumberOfTabs()-1,kFALSE);
+            fTabs->SetTab(fTabs->GetNumberOfTabs()-1,kFALSE); 
             ShowTabs();
 		}
 	}
@@ -265,18 +268,10 @@ void jEnv::Spectrum(){
 }
 
 
-void jEnv::FreeSpectrum(){
-    if(fCanvas1->Type()==1){
-        AddFreeObject(new jSpecTool(fCanvas1->Hist()),true);
-    }
-}
-
-
-
 void jEnv::Gatter(){
 	if(fCanvas1->Type()>1){
-        jgating_tool* gate=new jgating_tool(fCanvas1->Hist(),1);
-        AddFreeObject(gate,false);
+        TGMainFrame* gate=jGatingToolSelector(fCanvas1->Hist());
+		if(gate)AddFreeObject(gate,false);
     }
 };
 
@@ -471,10 +466,21 @@ void jEnv::NewDirObject(TObject* obj){
         new TTreeViewer((TTree*)obj);
         return;
 	}		
+	
+	if(obj->IsA()->InheritsFrom(THnBase::Class())){
+		// I am surprised the conversion to TObject* for the associated key worked,
+		// THnBase *h = dynamic_cast<THnBase*>obj  etc wasnt needed at any point
+        TGMainFrame* gate=jGatingToolSelector(obj);
+		if(gate)AddFreeObject(gate,false);
+        return;
+	}	
+	
 }
 
 void jEnv::NewCanvasObject(TObject* obj){
-    //Shouldnt actually use that object pointer
+    // Shouldnt actually use that object pointer
+	// Functions that interact with histograms will make a new request to CCframe
+	// This function just configures jEnv for the fact CCframe has a new histogram of type "c"
 
     int c=fCanvas1->Type();
     for (auto i : OneOnly){

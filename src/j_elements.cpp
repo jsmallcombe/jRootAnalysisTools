@@ -44,7 +44,7 @@ void CCframe::TrackCaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 
 		if(obj){
 			TObject* fH=0;
-			if(obj->InheritsFrom(fClass))fH=obj;//If click was exactly on a histogram?
+			if(obj->InheritsFrom(fClass))fH=obj;//If click was exactly on a "histogram"?
 			else fH=obj_capture(fClass,pad);//Else find first object this pad has
 // 			else fH=hist_capture(pad);//Else find first histogram this pad has
 			
@@ -65,17 +65,10 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,bool Trust){
 			TVirtualPad* hold=gPad;
 			this->GetCanvas()->cd();
 		
-		//Drawing Options
+		//Drawing Options for all possible CCframe instances, so not only for current fClass setting
 			if(HType(fH)){
                 if(HType(fH)==3 || (HType(fH)==2&&(((TH1*)fH)->GetNbinsX()*((TH1*)fH)->GetNbinsY()>1000000))){
-                    this->GetCanvas()->Clear();
-                    TText t;
-                    t.SetTextAlign(22);
-                    t.SetTextSize(.45);
-                    t.DrawTextNDC(.5,.5,fH->ClassName());
-                    string s=fH->GetName();
-                    t.SetTextSize(1.5/(s.size()+1));
-                    t.DrawTextNDC(.5,0.12,fH->GetName());
+                    PrintMessageInternal(fH->ClassName(),fH->GetName());
                 }else{
                     TH1* H=DrawCopyHistOpt((TH1*)fH);
                     H->GetXaxis()->SetLabelSize(0);
@@ -91,6 +84,29 @@ void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,bool Trust){
 		NewObject();
 		NewObject(fH);
 	}
+}
+
+
+void CCframe::PrintMessage(TString main,TString sub){
+	TVirtualPad* hold=gPad;
+	this->GetCanvas()->cd();
+	
+	PrintMessageInternal(main,sub);
+	
+	this->GetCanvas()->Modified();
+	this->GetCanvas()->Update();
+	gPad=hold;
+}
+
+void CCframe::PrintMessageInternal(TString main,TString sub){
+	this->GetCanvas()->Clear();
+	TText t;
+	t.SetTextAlign(22);
+	t.SetTextSize(.45);
+	t.DrawTextNDC(.5,.5,main);
+	
+	t.SetTextSize(1.5/(sub.Length()+1));
+	t.DrawTextNDC(.5,0.12,sub);
 }
 
 void CCframe::NonGuiNew(TObject* obj){
@@ -134,12 +150,12 @@ TObject* CCframe::Object(){
 		
 		if(currenttrust){
             return current;
-			// We trust the memory management system that although we havent located 
-            // current it's pointer is still valid
+			// We trust the memory management system that 
+			// although we haven't located current, it's pointer is still valid
 		}
 		
 		if(fNamed&&fName.size()){
-            //Re-arranged to put this last as it is susceptible to duplicate name errors
+            // Re-arranged to put this last as it is susceptible to duplicate name errors
 			Ob = gROOT->FindObject(fName.c_str());
 	// 		cout<<endl<<"Checking if histogram pointer "<<current<<" is valid: "<<Ob<<endl;
 			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
@@ -596,6 +612,7 @@ jDirList::jDirList(const TGWindow* p, UInt_t w, UInt_t h, UInt_t options):TGComp
    fIconH1 = gClient->GetPicture("h1_t.xpm");
    fIconH2 = gClient->GetPicture("h2_t.xpm");
    fIconH3 = gClient->GetPicture("h3_t.xpm");
+   fIconTHn = gClient->GetPicture("geohype_t.xpm");
    fIconGr = gClient->GetPicture("bld_embedcanvas.xpm");
 // fIconGr = gClient->GetPicture("profile_t.xpm");
    fIconMGr = gClient->GetPicture("selection_t.xpm");
@@ -645,6 +662,7 @@ jDirList::~jDirList()
    gClient->FreePicture(fIconH1);
    gClient->FreePicture(fIconH2);
    gClient->FreePicture(fIconH3);
+   gClient->FreePicture(fIconTHn);
    gClient->FreePicture(fIconGr);
    gClient->FreePicture(fIconMGr);
    gClient->FreePicture(fIconTF);
@@ -778,13 +796,14 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
     
     if(key){
         
-        bool IsTree=false;
+        bool IsSkipFolder=false;
 		TClass* tCl=gROOT->GetClass(key->GetClassName());
         if(tCl!=nullptr){
-            if(tCl->InheritsFrom(TTree::Class())){IsTree=true;}
+            if(tCl->InheritsFrom(TTree::Class())){IsSkipFolder=true;}
+            if(tCl->InheritsFrom(THnBase::Class())){IsSkipFolder=true;}
         }
         
-		if (key->IsFolder()&&!IsTree) { //Because TTrees are technically folders (but we dont want to interact with that way
+		if(key->IsFolder()&&!IsSkipFolder) { // !IsSkipFolder is because TTrees and THn present as folders, but we dont want to interact with that way
             if((Bool_t)item->GetUserData()){
                 OpenClose(item);
                 return;
@@ -808,19 +827,20 @@ void jDirList::ProcessRootFileObject(TGListTreeItem* item){
 }
     
 void jDirList::AddTDir(TGListTreeItem* item, TDirectory* dir){
-    //Add all the content of a rootfile TDirectory to the *fContents* list as *items*
+//  Add all the content of a rootfile TDirectory to the *fContents* list as *items*
 //     TDirectory *dirsav = gDirectory;
     TIter next(dir->GetListOfKeys());
     TKey *key;
     while ((key = (TKey*)next())) {
         
-        bool IsTree=false;
+        bool IsSkipFolder=false;
 		TClass* tCl=gROOT->GetClass(key->GetClassName());
         if(tCl!=nullptr){
-            if(tCl->InheritsFrom(TTree::Class())){IsTree=true;}
+            if(tCl->InheritsFrom(TTree::Class())){IsSkipFolder=true;}
+            if(tCl->InheritsFrom(THnBase::Class())){IsSkipFolder=true;}
         }
         
-		if (key->IsFolder()&&!IsTree) { //Because TTrees are technically folders (but we dont want to interact with that way
+		if (key->IsFolder()&&!IsSkipFolder) { // !IsSkipFolder is because TTrees and THn present as folders, but we dont want to interact with that way
             fContents->AddItem(item,key->GetName());
 			continue;
 		}
@@ -835,29 +855,31 @@ void jDirList::AddTDir(TGListTreeItem* item, TDirectory* dir){
 //             cout<<"NAME IS "<<tCl->Class_Name()<<endl;
             
             switch(HistoClassDetect(tCl)) {
-                case 1 :
-                    fContents->AddItem(item,key->GetName(),fIconH1,fIconH1);
+                case 1 : 
+                    fContents->AddItem(item,key->GetName(),fIconH1,fIconH1); // TH1
                     continue;
-                case 2 :
-                    fContents->AddItem(item,key->GetName(),fIconH2,fIconH2);
+                case 2 : // TH2
+                    fContents->AddItem(item,key->GetName(),fIconH2,fIconH2); // TH2
                     continue;
-                case 3 :
-                    fContents->AddItem(item,key->GetName(),fIconH3,fIconH3);
+                case 3 : // TH3
+                    fContents->AddItem(item,key->GetName(),fIconH3,fIconH3); // TH3
                     continue;
                 default :
                     break;
             }
             
-            if(IsTree){
-                fContents->AddItem(item,key->GetName(),fIconTree,fIconTree);
-            }if(tCl->InheritsFrom(TCanvas::Class())){
-                fContents->AddItem(item,key->GetName(),fIconCan,fIconCan);
+            if(tCl->InheritsFrom(TTree::Class())){
+                fContents->AddItem(item,key->GetName(),fIconTree,fIconTree); // TTree
+            }else if(tCl->InheritsFrom(TCanvas::Class())){
+                fContents->AddItem(item,key->GetName(),fIconCan,fIconCan);// TCanvas
             }else if(tCl->InheritsFrom(TGraph::Class())){
-                fContents->AddItem(item,key->GetName(),fIconGr,fIconGr);
+                fContents->AddItem(item,key->GetName(),fIconGr,fIconGr); // TGraph
             }else if(tCl==TMultiGraph::Class()){
-                fContents->AddItem(item,key->GetName(),fIconMGr,fIconMGr);
+                fContents->AddItem(item,key->GetName(),fIconMGr,fIconMGr); // TMultiGraph, does NOT Inherit from TGraph
             }else if(tCl->InheritsFrom(TF1::Class())){
-                fContents->AddItem(item,key->GetName(),fIconTF,fIconTF);
+                fContents->AddItem(item,key->GetName(),fIconTF,fIconTF); // TF1
+            }else if(tCl->InheritsFrom(THnBase::Class())){
+                fContents->AddItem(item,key->GetName(),fIconTHn,fIconTHn); // THnBase / THnSparse etc
             }
         }
     }

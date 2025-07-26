@@ -33,6 +33,7 @@
 #include <TGSlider.h>
 #include <TGTextEntry.h>
 #include <TKey.h>
+#include <THnBase.h>
 
 
 #include "j_utility.h"
@@ -49,6 +50,8 @@ class CCframe : public TRootEmbeddedCanvas {
 		TPad* currentpad;//Never owns
 		TCanvas* currentcan;//Never owns
 		
+		void PrintMessageInternal(TString,TString);
+
 		bool currenttrust;
 		string fName;
 		void SetNewObject(TObject* fH,TPad* Pad=0,TCanvas* Can=0,bool Trust=0);
@@ -69,6 +72,8 @@ class CCframe : public TRootEmbeddedCanvas {
 		void TrackCaptureHistogram(TPad*,TObject*,Int_t);
         
         void NonGuiNew(TObject* obj);
+		
+		void PrintMessage(TString,TString);
 	
 		std::vector< TCanvas* > CFriends;
         
@@ -79,8 +84,10 @@ class CCframe : public TRootEmbeddedCanvas {
             Emit("NewObject(TObject*)", (Long_t)obj);
         }
 		
-	ClassDef(CCframe, 2)
+	ClassDef(CCframe, 3)
 };
+
+
 
 ////////////////////////////////////////////////////////////////
 
@@ -170,6 +177,7 @@ protected:
    const TGPicture  *fIconH1;
    const TGPicture  *fIconH2;
    const TGPicture  *fIconH3;
+   const TGPicture  *fIconTHn;
    const TGPicture  *fIconGr;
    const TGPicture  *fIconMGr;
    const TGPicture  *fIconTF;

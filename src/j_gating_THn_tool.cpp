@@ -12,7 +12,7 @@ jGatingToolTHnMany::jGatingToolTHnMany(THnBase* input) : TGMainFrame(gClient->Ge
     fGateFrame(nullptr), fResFrameTHn(nullptr), fResFrameTH3(nullptr), child(nullptr)
 {    
 TVirtualPad* hold=gPad;
-if(!input)return; //Unlike the lower Ndim classes, this must be initilised with input
+if(!input)return; //Unlike the lower Ndim classes, this MUST be initilised with input
 
 
 	Ndim=input->GetNdimensions();
@@ -24,7 +24,7 @@ if(!input)return; //Unlike the lower Ndim classes, this must be initilised with 
 
     fGateFrame->Connect("BackModeChange()","jGatingToolTHnMany",this,"DoHistogram()");
     fGateFrame->Connect("UpdateClicked()","jGatingToolTHnMany",this,"DoHistogram()");
-    fGateFrame->Connect("RequestProjection(Int_t)","jGatingToolTHnMany",this,"UpdateInput()");
+    fGateFrame->Connect("RequestProjection(Int_t)","jGatingToolTHnMany",this,"UpdateInput()"); // Changes displayed projection, but doesnt call DpHistograms 
     // In this version UpdateInput will NOT call result frame Update, that only comes from DoHistogram
     // which is NOT called automatically except at initilisation
 

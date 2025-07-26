@@ -23,7 +23,7 @@ private:
 	jGateSubtractionFrame *fGateFrame;
 	jGatingFrameTH2 *fResFrame;
     
-    bool UpdateLock;
+    bool UpdateLockSetting;
     
     bool THnBaseType;
     
@@ -35,8 +35,8 @@ private:
     TGTransientFrame* child;
     
 public:
-	jGatingToolTH3(TObject* = hist_capture(),int=-1);
 	jGatingToolTH3(const char *,int=-1);
+	jGatingToolTH3(TObject* = hist_capture(),int=-1,bool=gGlobalTH3UpdateLock);
 	virtual ~jGatingToolTH3();
     
     void SetWindowName(const char* name) override;
@@ -48,21 +48,16 @@ public:
 	void UpdateInput(TObject*);
     void UpdateInput();
     void DoHistogram();
-    
-    void CallDoHistogram();
 
     void Init(){
        fResFrame->Init(); 
        fGateFrame->HideManBar();
     }
     
-
     void Layout() override;
     
-    bool UpdateLockSetting;
-    
     //Using instead of ClassDef because the above override was causing issues with "Steamer"
-	ClassDefOverride(jGatingToolTH3, 5)
+	ClassDefOverride(jGatingToolTH3, 6)
 };
 
 #endif

@@ -1,13 +1,13 @@
 To do list
--Simplify the TH3 update lock, like THn
--ReImplement the sliding graphical divider
--Add THn to the jEnv browser
--Connect new gating tools to jEnv, depreciate the old ones from the codebase.
--Implement Subtraction fraction error estimation for THn classes Ndim>3 
--Make suggested updates to guitools
+-Depreciate the old gatter classes from the codebase.
 -Rename sub-files of j_env like j_elements to j_env_elements     also fitting and  clipboard/X11 paste
--Make a TTree/TTuple gating tool which uses jGateSelectFrame/jGateSubtractionFrame 
 -Tidy Test folders and  scripts
+-Fix the glitch with select frame rebin viewing
+
+-ReImplement the sliding graphical divider
+-Implement Subtraction fraction error estimation for THn classes Ndim>3 
+-Make suggested updates to guitools. And add initial text CCframes using the new function.
+-Make a TTree/TTuple gating tool which uses jGateSelectFrame/jGateSubtractionFrame 
 
 Update Manual:
 Update the readme to use the updated class names

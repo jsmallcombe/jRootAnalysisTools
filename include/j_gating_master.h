@@ -18,7 +18,7 @@
 
 // THIS IS THE MAIN FUNCTION TO BE USED BY GUI ETC FOR LAUNCHING ANY GATER
 TGMainFrame* jGatingToolSelector(const char *);
-TGMainFrame* jGatingToolSelector(TObject* = hist_capture());
+TGMainFrame* jGatingToolSelector(TObject* = (TObject*)hist_capture());
 
 /////////////////////////////////////////////////////////////////////////////////////
 

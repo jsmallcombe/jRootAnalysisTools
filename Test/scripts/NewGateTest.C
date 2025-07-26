@@ -1,6 +1,6 @@
 {
 
-	int a=2;
+	int a=3;
 
 	
 	TH1 *reta,*retb;
@@ -75,7 +75,7 @@
 		}
 		
 // 		new jGatingToolTH3(sparse);
-		new jGatingToolTH3(three);
+		new jGatingToolTH3(three,1,0);
 // 		new jgating_tool(three);
 		
 // 		new jGatingToolTH3(reta);

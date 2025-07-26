@@ -35,7 +35,7 @@
 
         hist->Fill(coords);
     }
-
+hist->SaveAs("THn.root");
     
     jGatingToolSelector(hist);
 //     new jGatingToolTHnMany(hist);

@@ -10,43 +10,17 @@
 #ifndef jamesenv_h
 #define jamesenv_h
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <vector>
 
-#include <TVirtualX.h>
-#include <TBrowser.h>
-#include <TCanvas.h>
-#include <TText.h>
-#include <TLatex.h>
-#include <TStyle.h>
-#include <TBox.h>
-#include <TROOT.h>
-#include <TFile.h>
-#include <TTree.h>
-#include <TBranch.h>
-#include <TStopwatch.h>
 #include <TApplication.h>
 #include <TGTab.h>
 #include <TTreeViewer.h>
 
-#include "j_utility.h"
-#include "j_ultrafit_env.h"
-#include "j_gpad_tools.h"
-#include "j_gating_tool.h"
-#include "j_gate_subtract.h"
-#include "j_hist_formatting.h"
 #include "j_spectool.h"
 #include "j_elements.h"
 #include "j_clipboard_parse.h"
-
-
-using namespace std;
+#include "j_gating_master.h"
 
 // RQ_OBJECT("MyClass") inside the MyClass body (IF MyClass not inherited from TQObject) allow class to use signal/slot communication
-
 
 class jEnv : public TGMainFrame {
 
@@ -98,7 +72,6 @@ public:
 	void FreeFitPanel();
 	void FitPanelClose(){fFitPanel=0;}
 	void Spectrum();
-	void FreeSpectrum();
 	void SpecToolClose(){fSpecTool=0;}
 	void Browser();
 	void Gatter();

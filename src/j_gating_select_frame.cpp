@@ -9,6 +9,10 @@ bool gGlobalTH3UseHead=false;
 void SetGlobalTH3UseHead(bool set){
 	gGlobalTH3UseHead=set;
 }
+bool gGlobalTH3UpdateLock=true;
+void SetGlobalTH3UpdateLock(bool set){
+	gGlobalTH3UpdateLock=set;
+}
 
 bool gGlobalOverflowBool=false;
 void SetGlobalOverflowInclude(bool set){

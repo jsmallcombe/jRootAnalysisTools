@@ -22,6 +22,9 @@
 extern bool gGlobalAskGateWindowName;
 void SetGlobalAskWindowName(bool set=true);
 
+extern bool gGlobalTH3UpdateLock;
+void SetGlobalTH3UpdateLock(bool set=true);
+
 extern bool gGlobalTH3UseHead;
 void SetGlobalTH3UseHead(bool set=true);
 
