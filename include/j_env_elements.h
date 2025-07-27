@@ -23,36 +23,43 @@
 //current_capture_frame
 class CCframe : public TRootEmbeddedCanvas {
 	private:
-		TObject* current;//Never owns
+		static int CCframeIterator;
+		
+        vector<TClass*> fClass;
+        bool fNamed;
+		std::vector< TCanvas* > CFriends;
+		
+		TObject* currentob;//Never owns
 		TPad* currentpad;//Never owns
 		TCanvas* currentcan;//Never owns
-		
-		void PrintMessageInternal(TString,TString);
-
 		bool currenttrust;
-		string fName;
+		TString fName;
+		
 		void SetNewObject(TObject* fH,TPad* Pad=0,TCanvas* Can=0,bool Trust=0);
-		bool pause;
-        TClass *fClass;
-        bool fNamed;
-        
+		void PrintMessageInternal(TString,TString);
+        bool IsA(TObject*);
+        TObject* GetA(TPad*);
+		
 	public:
-		CCframe(const char * name = 0,const TGWindow * p = 0,UInt_t w = 10,UInt_t h = 10,UInt_t options = kSunkenFrame | kDoubleBorder,Pixel_t 	back = GetDefaultFrameBackground());
+		CCframe(const TGWindow * p = 0,UInt_t w = 10,UInt_t h = 10,TClass* iClass=TH1::Class());
 		~CCframe();
         void SetClass(TClass*);
+        void AddClass(TClass*);
+		void AddFriend(TCanvas* can){
+			if(can)CFriends.push_back(can);
+		}
         
-		TH1* Hist();
 		TObject* Object();
 		
-		int Type();
+		TH1* GetHistogram();
+		int HistogramType();
 
 		void TrackCaptureHistogram(TPad*,TObject*,Int_t);
         
-        void NonGuiNew(TObject* obj);
+        void NonGuiNew(TObject*);
 		
 		void PrintMessage(TString,TString);
 	
-		std::vector< TCanvas* > CFriends;
         
         void NewObject(){
             Emit("NewObject()");
@@ -61,7 +68,7 @@ class CCframe : public TRootEmbeddedCanvas {
             Emit("NewObject(TObject*)", (Long_t)obj);
         }
 		
-	ClassDef(CCframe, 3)
+	ClassDef(CCframe, 4)
 };
 
 

@@ -44,7 +44,7 @@ TVirtualPad* hold=gPad;
 		controlframe1->AddFrame(jbrowser,ExpandX);
         
         ////// Click Grab Window
-		fCanvas1 = new CCframe("Embedded1", controlframe1, fDefaultGrabSize, fDefaultGrabSize);
+		fCanvas1 = new CCframe(controlframe1, fDefaultGrabSize, fDefaultGrabSize);//Default grab class TH1*
         fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jEnv", 0,"Clipboard(Int_t,Int_t,Int_t,TObject*)");
 		controlframe1->AddFrame(fCanvas1);
 		
@@ -218,22 +218,22 @@ void jEnv::AddFreeObject(TObject* obj,bool CanDelete){
 
 void jEnv::Browser(){
 	new TBrowser();
-	if(fCanvas1->Type()>0&&fCanvas1->Type()<3){
+	if(fCanvas1->HistogramType()>0&&fCanvas1->HistogramType()<3){
 		// Will have moved into the TCanvas of the TBrowser at creation time
-		fCanvas1->Hist()->DrawCopy("colz");
+		fCanvas1->GetHistogram()->DrawCopy("colz");
 	}
 }
 
 void jEnv::FitPanel(){
-    if(fCanvas1->Type()==1){ //If valid TH1 input
+    if(fCanvas1->HistogramType()==1){ //If valid TH1 input
         if(fFitPanel){ //If we already initialised fFitPanel
-            fFitPanel->PassNewHist(fCanvas1->Hist());
+            fFitPanel->PassNewHist(fCanvas1->GetHistogram());
             for(int i=0;i<fTabs->GetNumberOfTabs();i++){
 				if(fFitPanel==fTabs->GetTabContainer(i)){fTabs->SetTab(i,kFALSE);break;}// Switch to the fFitPanel tab, dont "emit"
 			}
             if(!IsVisible(fTabs))ShowTabs();// Open the tabs pane if they are minimised
 		}else {
-            fFitPanel=new UltraFitEnv(fTabs,fCanvas1->Hist(),0,1);
+            fFitPanel=new UltraFitEnv(fTabs,fCanvas1->GetHistogram(),0,1);
             fTabs->AddTab("FitPanel",fFitPanel);
             fTabs->SetTab(fTabs->GetNumberOfTabs()-1,kFALSE); 
             ShowTabs();
@@ -242,14 +242,14 @@ void jEnv::FitPanel(){
 };
 
 void jEnv::FreeFitPanel(){
-        if(fCanvas1->Type()==1)AddFreeObject(new UltraFitEnv(fCanvas1->Hist()),true);
+        if(fCanvas1->HistogramType()==1)AddFreeObject(new UltraFitEnv(fCanvas1->GetHistogram()),true);
 		else AddFreeObject(new UltraFitEnv(),true);
 }
 
 void jEnv::Spectrum(){
-	if(fCanvas1->Type()==1){
+	if(fCanvas1->HistogramType()==1){
 		if(fSpecTool){
-			fSpecTool->NewInput(fCanvas1->Hist());
+			fSpecTool->NewInput(fCanvas1->GetHistogram());
 //          fSpecTool->RaiseWindow();
             
             for(int i=0;i<fTabs->GetNumberOfTabs();i++)if(fSpecTool==fTabs->GetTabContainer(i)){fTabs->SetTab(i,kFALSE);break;}
@@ -259,7 +259,7 @@ void jEnv::Spectrum(){
 //          fSpecTool=;
 // 			fSpecTool->Connect("Destroyed()", "jEnv", this,"SpecToolClose()");
             
-            fSpecTool=new jSpecTool(fTabs,fCanvas1->Hist());
+            fSpecTool=new jSpecTool(fTabs,fCanvas1->GetHistogram());
             fTabs->AddTab("SpecTool",fSpecTool);
             fTabs->SetTab(fTabs->GetNumberOfTabs()-1,kFALSE);
             ShowTabs();
@@ -269,19 +269,19 @@ void jEnv::Spectrum(){
 
 
 void jEnv::Gatter(){
-	if(fCanvas1->Type()>1){
-        TGMainFrame* gate=jGatingToolSelector(fCanvas1->Hist());
+	if(fCanvas1->HistogramType()>1){
+        TGMainFrame* gate=jGatingToolSelector(fCanvas1->GetHistogram());
 		if(gate)AddFreeObject(gate,false);
     }
 };
 
 
 void jEnv::DrawCpy(){
-	DrawCopyCanvas(fCanvas1->Hist());
+	DrawCopyCanvas(fCanvas1->GetHistogram());
 };
 
 void jEnv::DrawCpyTab(){
-	TH1* H=fCanvas1->Hist();
+	TH1* H=fCanvas1->GetHistogram();
 	if(!H)return;
 	TCanvas* Can= AddCanvasTab(H->GetName());
 	Can->cd();
@@ -292,8 +292,8 @@ void jEnv::DrawCpyTab(){
 void jEnv::DrawSm(){
 	gDrawSame=false;
 	if(SameSave){delete SameSave;SameSave=0;}
-	TH1* h=fCanvas1->Hist();
-	if(fCanvas1->Type()==1&&h){
+	TH1* h=fCanvas1->GetHistogram();
+	if(fCanvas1->HistogramType()==1&&h){
 		SameSave=(TH1*)h->Clone();
 		gDrawSame=true;
 		TQObject::Connect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", "jEnv", this,"DrawSmHere(TPad*,TObject*,Int_t)");
@@ -320,7 +320,7 @@ void jEnv::DrawSmHere(TPad* pad,TObject* obj,Int_t event){
 
 
 void jEnv::jSaveAs(){
-	if(fCanvas1->Type())HistSaveAs(fCanvas1->Hist(),this);
+	if(fCanvas1->HistogramType())HistSaveAs(fCanvas1->GetHistogram(),this);
 };
 
 
@@ -482,7 +482,7 @@ void jEnv::NewCanvasObject(TObject* obj){
 	// Functions that interact with histograms will make a new request to CCframe
 	// This function just configures jEnv for the fact CCframe has a new histogram of type "c"
 
-    int c=fCanvas1->Type();
+    int c=fCanvas1->HistogramType();
     for (auto i : OneOnly){
         if(c==1){
             i->SetEnabled();

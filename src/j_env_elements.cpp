@@ -1,12 +1,20 @@
 #include "j_env_elements.h"
 
-CCframe::CCframe(const char * name,const TGWindow* p,UInt_t w,UInt_t h,UInt_t options,Pixel_t back):TRootEmbeddedCanvas(name,p,w,h,options,back),current(0),currentpad(0),currentcan(0),currenttrust(0){TVirtualPad* hold=gPad;
+int CCframe::CCframeIterator = 0;
+
+		
+CCframe::CCframe(const TGWindow* p,UInt_t w,UInt_t h,TClass* iClass):
+	TRootEmbeddedCanvas(TString("CCframe"+CCframeIterator),p,w,h,kSunkenFrame | kDoubleBorder,GetDefaultFrameBackground()),
+	fNamed(0),currentob(0),currentpad(0),currentcan(0),currenttrust(0),fName("")
+{TVirtualPad* hold=gPad;
+	AddFriend(GetCanvas());
 	this->GetCanvas()->SetMargin(0,0,0,0);
+	CCframeIterator++;
+	SetClass(iClass);
 	TQObject::Connect("TCanvas", "Selected(TVirtualPad*,TObject*,Int_t)", "CCframe", this,"TrackCaptureHistogram(TPad*,TObject*,Int_t)");
-	gPad=hold;
-    fClass=TH1::Class();
-    fNamed=TH1::Class()->InheritsFrom("TNamed");
+gPad=hold;
 }
+
 
 CCframe::~CCframe(){
 	TQObject::Disconnect(this);
@@ -18,21 +26,45 @@ CCframe::~CCframe(){
 
 
 void CCframe::SetClass(TClass* iClass){
-    fClass=iClass;
-    fNamed=iClass->InheritsFrom("TNamed");
-    this->GetCanvas()->Clear();
-    current=0;
-    currentpad=0;
-    currentcan=0;
-    currenttrust=0;
+	if(iClass){
+		fClass.clear();
+		fClass.push_back(iClass);
+		fNamed=iClass->InheritsFrom("TNamed");
+		this->GetCanvas()->Clear();
+		currentob=0;
+		currentpad=0;
+		currentcan=0;
+		currenttrust=0;
+		fName="";
+	}
+}
+void CCframe::AddClass(TClass* iClass){
+	if(iClass){
+		fClass.push_back(iClass);
+		fNamed*=iClass->InheritsFrom("TNamed");
+	}
 }
 
+bool CCframe::IsA(TObject* obj){
+	if(!obj)return false;
+	for(auto iClass : fClass){
+		if(obj->InheritsFrom(iClass))return true;
+	}
+	return false;
+}
+TObject* CCframe::GetA(TPad* pad){
+	if(!pad)return nullptr;
+	for(auto iClass : fClass){
+		if(TObject* obj=obj_capture(iClass,pad))return obj;
+	}
+	return nullptr;
+}
 
 void CCframe::TrackCaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 	//Called by ALL TCanvas
 	TCanvas* sender=(TCanvas*)gTQSender;
 	
-	//To make this ignore certain pads
+	// To make this ignore certain pads
 	for(unsigned int i=0;i<CFriends.size();i++){if(pad==CFriends[i])return;}
 	
 	
@@ -44,9 +76,8 @@ void CCframe::TrackCaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 
 		if(obj){
 			TObject* fH=0;
-			if(obj->InheritsFrom(fClass))fH=obj;// If click was exactly on a "histogram"?
-			else fH=obj_capture(fClass,pad);// Else find first object this pad has
-// 			else fH=hist_capture(pad);// Else find first histogram this pad has
+			if(IsA(obj))fH=obj;// If click was exactly on a "histogram"?
+			else fH=GetA(pad);// Else find first object this pad has
 			
 			if(fH)SetNewObject(fH,pad,sender);
 			return;
@@ -55,37 +86,39 @@ void CCframe::TrackCaptureHistogram(TPad* pad,TObject* obj,Int_t event){
 }
 
 void CCframe::SetNewObject(TObject* fH,TPad* Pad,TCanvas* Can,bool Trust){
-	if(fH!=current){
-		current=fH;
+	if(fH!=currentob){
+		currentob=fH;
 		currentpad=Pad;
 		currentcan=Can;
 		currenttrust=Trust;
-        
-		if(fNamed)fName=current->GetName();
-			TVirtualPad* hold=gPad;
-			this->GetCanvas()->cd();
+		if(fNamed)fName=currentob->GetName();
+			
+		TVirtualPad* hold=gPad;
+		this->GetCanvas()->cd();
 		
 		// Drawing Options for all possible CCframe instances, so not only for current fClass setting
-			if(HType(fH)){
-                if(HType(fH)==3 || (HType(fH)==2&&(((TH1*)fH)->GetNbinsX()*((TH1*)fH)->GetNbinsY()>1000000))){
-                    PrintMessageInternal(fH->ClassName(),fH->GetName());
-                }else{
-                    TH1* H=DrawCopyHistOpt((TH1*)fH);
-                    H->GetXaxis()->SetLabelSize(0);
-                    H->GetYaxis()->SetLabelSize(0);
-                    H->SetStats(kFALSE);
-                }
-			}else if(fH->IsA()->InheritsFrom(TGraph::Class())){
-                DrawCopyGraphOpt((TGraph*)fH);
-            }
-			this->GetCanvas()->Modified();
-			this->GetCanvas()->Update();
-			gPad=hold;
+		if(HType(fH)){
+			if(HType(fH)==3 || (HType(fH)==2&&(((TH1*)fH)->GetNbinsX()*((TH1*)fH)->GetNbinsY()>1000000))){
+				PrintMessageInternal(fH->ClassName(),fName);
+			}else{
+				TH1* H=DrawCopyHistOpt((TH1*)fH);
+				H->GetXaxis()->SetLabelSize(0);
+				H->GetYaxis()->SetLabelSize(0);
+				H->SetStats(kFALSE);
+			}
+		}else if(fH->IsA()->InheritsFrom(TGraph::Class())){
+			DrawCopyGraphOpt((TGraph*)fH);
+		}else if(fH->IsA()->InheritsFrom(TF1::Class())){
+			((TF1*)fH)->DrawCopy();
+		}
+		this->GetCanvas()->Modified();
+		this->GetCanvas()->Update();
+		
+		gPad=hold;
 		NewObject();
 		NewObject(fH);
 	}
 }
-
 
 void CCframe::PrintMessage(TString main,TString sub){
 	TVirtualPad* hold=gPad;
@@ -110,66 +143,66 @@ void CCframe::PrintMessageInternal(TString main,TString sub){
 }
 
 void CCframe::NonGuiNew(TObject* obj){
-	if(obj->InheritsFrom(fClass)){
+	if(IsA(obj)){
 		SetNewObject(obj,0,0,1);
 	}
 	return;
 }
 
-TH1* CCframe::Hist(){
-        if(fClass->InheritsFrom("TH1")){
-            return (TH1*)Object();
-        }
-        return 0;
+TH1* CCframe::GetHistogram(){
+	if(TObject* Obj=Object()){
+		if(Obj->InheritsFrom("TH1")) return (TH1*)Obj;
+	}
+	return nullptr;
 }
     
     
 TObject* CCframe::Object(){
-	if(current){
+	if(currentob){
 		TObject* Ob;
         
 		TPad* Pad=(TPad*)gROOT->GetListOfCanvases()->FindObject(currentpad);
 // 		cout<<endl<<"Checking if pad pointer "<<currentpad<<" is in gROOT->GetListOfCanvases() :"<<Pad<<endl;
 		if(Pad){
-			Ob=Pad->GetListOfPrimitives()->FindObject(current);
-			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
+			Ob=Pad->GetListOfPrimitives()->FindObject(currentob);
+			if(Ob)if(IsA(Ob))return Ob;
 		}
 		
 		TCanvas* Can=(TCanvas*)gROOT->GetListOfCanvases()->FindObject(currentcan);
 // 		cout<<endl<<"Checking if canvas pointer "<<currentcan<<" is in gROOT->GetListOfCanvases() :"<<Can<<endl;
 		if(Can){
-			Ob=Can->GetListOfPrimitives()->FindObject(current);
-			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
+			Ob=Can->GetListOfPrimitives()->FindObject(currentob);
+			if(Ob)if(IsA(Ob))return Ob;
 			
 			Pad=(TPad*)Can->GetListOfPrimitives()->FindObject(currentpad);
 			if(Pad){
-				Ob=Pad->GetListOfPrimitives()->FindObject(current);
-				if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
+				Ob=Pad->GetListOfPrimitives()->FindObject(currentob);
+				if(Ob)if(IsA(Ob))return Ob;
 			}
 		}
 		
 		if(currenttrust){
-            return current;
+            return currentob;
 			// We trust the memory management system that 
 			// although we haven't located current, it's pointer is still valid
 		}
 		
-		if(fNamed&&fName.size()){
+		if(fNamed){
             // Re-arranged to put this last as it is susceptible to duplicate name errors
-			Ob = gROOT->FindObject(fName.c_str());
-	// 		cout<<endl<<"Checking if histogram pointer "<<current<<" is valid: "<<Ob<<endl;
-			if(Ob)if(Ob->InheritsFrom(fClass))return Ob;
-			//Often fails because FindObject has limitations in terms of directories and drawn histograms we might have grabbed.
+			Ob = gROOT->FindObject(fName);
+	// 		cout<<endl<<"Checking if histogram pointer "<<currentob<<" is valid: "<<Ob<<endl;
+			if(Ob)if(IsA(Ob))return Ob;
+			// Often fails because FindObject has limitations in terms of directories and drawn histograms we might have grabbed.
 		}
 	}
 	
-// 	cout<<endl<<"CHECKING gObjectTable "<<gObjectTable->PtrIsValid(current)<<endl;
+// 	cout<<endl<<"CHECKING gObjectTable "<<gObjectTable->PtrIsValid(currentob)<<endl;
 	
-	return 0;
+	return nullptr;
 }
 
-int CCframe::Type(){
-	return HType(Hist());
+int CCframe::HistogramType(){
+	return HType(GetHistogram());
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -273,8 +306,8 @@ jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p, UInt_t w, UInt_t h, 
 // 	Resize(GetDefaultSize());
 // 	MapWindow();
 
-	fGrabFrame->CFriends.push_back(A->GetCanvas());
-	fGrabFrame->CFriends.push_back(B->GetCanvas());
+	fGrabFrame->AddFriend(A->GetCanvas());
+	fGrabFrame->AddFriend(B->GetCanvas());
     
 	A->GetCanvas()->SetMargin(0,0,0,0);
 	B->GetCanvas()->SetMargin(0,0,0,0);
@@ -288,10 +321,10 @@ void jAddSubTool::Grab(int i){
     
 	TH1** H=&AHist;string S="AddSubHoldHistA";
 	if(i){H=&BHist;S="AddSubHoldHistB";}
-	int type=fGrabFrame->Type();
+	int type=fGrabFrame->HistogramType();
 	if(type && type<3){
 		if(*H)delete *H;
-		*H=(TH1*)fGrabFrame->Hist()->Clone(S.c_str());
+		*H=(TH1*)fGrabFrame->GetHistogram()->Clone(S.c_str());
         if(type==1){
             (*H)->SetBinContent((*H)->GetNbinsX(),0);//Empty TH1 over/overflows
             (*H)->SetBinContent(0,0);

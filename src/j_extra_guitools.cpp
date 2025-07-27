@@ -12,11 +12,10 @@ TVirtualPad* hold=gPad;
 	TGLayoutHints* ExpandX= new TGLayoutHints(kLHintsExpandX,5,5,3,2);
 	
 	TGHorizontalFrame* inputframe = new TGHorizontalFrame(this);
-		fCanvas1 = new CCframe("Embedded1", inputframe, 100, 100);
+		fCanvas1 = new CCframe(inputframe, 100, 100);
         fCanvas1->Connect("NewObject()","jScale",this,"NewInput()");
 		inputframe->AddFrame(fCanvas1);
-		fCanvas2 = new CCframe("Embedded2", inputframe, 100, 100);
-        fCanvas2->SetClass(TGraph::Class());
+		fCanvas2 = new CCframe(inputframe, 100, 100, TGraph::Class());
         fCanvas2->Connect("NewObject()","jScale",this,"NewInput()");
 		inputframe->AddFrame(fCanvas2);
             
@@ -40,18 +39,17 @@ TVirtualPad* hold=gPad;
 	MapWindow();
     
     
-    
-	fCanvas1->CFriends.push_back(fCanvas2->GetCanvas());
-	fCanvas1->CFriends.push_back(result->GetCanvas());
-	fCanvas2->CFriends.push_back(fCanvas1->GetCanvas());
-	fCanvas2->CFriends.push_back(result->GetCanvas());
+	fCanvas1->AddFriend(fCanvas2->GetCanvas());
+	fCanvas1->AddFriend(result->GetCanvas());
+	fCanvas2->AddFriend(fCanvas1->GetCanvas());
+	fCanvas2->AddFriend(result->GetCanvas());
 	
 gPad=hold;
 }
 
 
 void jScale::NewInput(){
-    TH1* H=fCanvas1->Hist();
+    TH1* H=fCanvas1->GetHistogram();
     TGraph* G=(TGraph*)fCanvas2->Object();
     
     if(G){
@@ -136,8 +134,7 @@ TVirtualPad* hold=gPad;
     FontStruct_t ft =jEnv::GetFont();
 
 
-    fCanvas1 = new CCframe("Embedded1", this, 100, 100);
-    fCanvas1->SetClass(TGraph::Class());
+    fCanvas1 = new CCframe(this, 100, 100, TGraph::Class());
     fCanvas1->Connect("NewObject()","jEval",this,"NewInput()");
     this->AddFrame(fCanvas1);
         
