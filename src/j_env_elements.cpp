@@ -135,7 +135,7 @@ void CCframe::PrintMessageInternal(TString main,TString sub){
 	this->GetCanvas()->Clear();
 	TText t;
 	t.SetTextAlign(22);
-	t.SetTextSize(.45);
+	t.SetTextSize(2.0/(main.Length()+2));
 	t.DrawTextNDC(.5,.5,main);
 	
 	t.SetTextSize(1.5/(sub.Length()+1));

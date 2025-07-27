@@ -2,28 +2,47 @@
 
 ////////////////////////////////////////////////////////////////
 
-jScale::jScale() : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),gg(0),IsLocked(0){
+jScale::jScale() : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),
+	gg(nullptr),ff(nullptr),hh(nullptr),IsLocked(0),IsInvert(1),IsNorm(0){
 TVirtualPad* hold=gPad;
 	SetWindowName("jScale");
 	SetCleanup(kDeepCleanup);
 	
     FontStruct_t ft =jEnv::GetFont();
+    gClient->GetColorByName("red", red);
+	gClient->GetColorByName("black", black);
 
 	TGLayoutHints* ExpandX= new TGLayoutHints(kLHintsExpandX,5,5,3,2);
 	
 	TGHorizontalFrame* inputframe = new TGHorizontalFrame(this);
 		fCanvas1 = new CCframe(inputframe, 100, 100);
-        fCanvas1->Connect("NewObject()","jScale",this,"NewInput()");
+		fCanvas1->PrintMessage("TH1","or TH2");
+		fCanvas1->Connect("NewObject(TObject*)","jScale",this,"NewHist(TObject*)");
 		inputframe->AddFrame(fCanvas1);
+		
 		fCanvas2 = new CCframe(inputframe, 100, 100, TGraph::Class());
-        fCanvas2->Connect("NewObject()","jScale",this,"NewInput()");
+		fCanvas2->AddClass(TF1::Class());
+		fCanvas2->PrintMessage("TGraph","or TF1");
+		fCanvas2->Connect("NewObject(TObject*)","jScale",this,"NewFunc(TObject*)");
 		inputframe->AddFrame(fCanvas2);
             
-        lockbutton = new TGTextButton(inputframe,"  Lock  ");
+        lockbutton = new TGTextButton(inputframe,"     Lock     ");
         lockbutton->SetFont(ft);
         lockbutton->Connect("Clicked()","jScale",this,"Lock()");	
 		inputframe->AddFrame(lockbutton,new TGLayoutHints(kLHintsCenterY, 1, 1, 1, 1));
-        
+		
+        invertbutton = new TGTextButton(inputframe,"     Divide     ");
+        invertbutton->SetState(kButtonDown);
+        invertbutton->SetTextColor(red);
+        invertbutton->SetFont(ft);
+        invertbutton->Connect("Clicked()","jScale",this,"Invert()");	
+		inputframe->AddFrame(invertbutton,new TGLayoutHints(kLHintsCenterY, 1, 1, 1, 1));
+		
+        normbutton = new TGTextButton(inputframe,"    Absolute   ");
+        normbutton->SetFont(ft);
+        normbutton->Connect("Clicked()","jScale",this,"Norm()");	
+		inputframe->AddFrame(normbutton,new TGLayoutHints(kLHintsCenterY, 1, 1, 1, 1));
+	
 	this->AddFrame(inputframe,ExpandX);
 	
     
@@ -38,32 +57,54 @@ TVirtualPad* hold=gPad;
 	Resize(GetDefaultSize());
 	MapWindow();
     
-    
 	fCanvas1->AddFriend(fCanvas2->GetCanvas());
 	fCanvas1->AddFriend(result->GetCanvas());
 	fCanvas2->AddFriend(fCanvas1->GetCanvas());
 	fCanvas2->AddFriend(result->GetCanvas());
 	
+	
 gPad=hold;
 }
 
+void jScale::NewHist(TObject* Obj){
+	NewInput();//Decided we did want to be cloning TH2s constantly 
+}
+void jScale::NewFunc(TObject* Obj){
+	if(Obj->InheritsFrom("TGraph")){
+        if(ff)delete ff;
+		ff=nullptr;
+        if(gg)delete gg;
+        gg=(TGraph*)Obj->Clone();
+		gfname=Obj->GetName();
+		gfname+"x"+gfname;
+	}
+	if(Obj->InheritsFrom("TF1")){
+        if(ff)delete ff;
+        if(gg)delete gg;
+		gg=nullptr;
+        ff=(TF1*)Obj->Clone();
+		gfname=Obj->GetName();
+		gfname+"x"+gfname;
+	}
+	NewInput();
+}
+
+double jScale::Eval(double x){
+	double S=0;
+	if(gg) S=gg->Eval(x);
+	if(ff) S=ff->Eval(x);
+	if(IsInvert&&S)S=1/S;
+	return S;
+}
 
 void jScale::NewInput(){
-    TH1* H=fCanvas1->GetHistogram();
-    TGraph* G=(TGraph*)fCanvas2->Object();
-    
-    if(G){
-        if(gg)delete gg;
-        gg=(TGraph*)G->Clone();
-    }
-    
     if(IsLocked) return;
+	   
+    TH1* H=fCanvas1->GetHistogram();
     
 //     cout<<endl<<H<<endl<<gg<<endl;
-    if(HType(H)&&gg&&HType(H)<3){
-        stringstream nn;
-        nn<<H->GetName()<<"x"<<gg->GetName();
-        TH1* scaled=(TH1*)H->Clone(nn.str().c_str());
+    if(HType(H)&&HType(H)<3&&(gg||ff)){
+        TH1* scaled=(TH1*)H->Clone(H->GetName()+gfname);
         scaled->Reset();
         bool Y=(HType(H)==2);
         int NX=H->GetNbinsX();
@@ -75,7 +116,7 @@ void jScale::NewInput(){
         }
         
         for(int x=1;x<=NX;x++){
-            double efX=gg->Eval(H->GetXaxis()->GetBinCenter(x));
+            double efX=Eval(H->GetXaxis()->GetBinCenter(x));
             
             for(int y=ny;y<=NY;y++){
                 int bin=H->GetBin(x,y);
@@ -83,28 +124,30 @@ void jScale::NewInput(){
                 double e=H->GetBinError(bin);
                 double efY=1;
                 if(Y){
-                    efY=gg->Eval(H->GetYaxis()->GetBinCenter(y));
+                    efY=Eval(H->GetYaxis()->GetBinCenter(y));
                 }
-                double scale=1/(efY*efX);
+                double scale=(efY*efX);
                 scaled->SetBinContent(bin,n*scale);
                 scaled->SetBinError(bin,e*scale);
             }
         }
         
-//         Draw new results with and adjust axis
+        if(IsNorm){
+			scaled->Scale(H->Integral()/scaled->Integral());
+			scaled->Sumw2(kFALSE);
+		}
+//     Draw new results with and adjust axis
         TVirtualPad* hold=gPad;
         result->GetCanvas()->cd();
             hformat(scaled,0);
-            scaled->DrawCopy("hiscol");
-            delete scaled;
-//             gPad->Update();
-//             G->DrawClone("al");
+            scaled->Draw("hiscol");
+			// Trying this rather than DrawCopy as, apparently, that doesnt give Canvas ownership!
+            scaled->SetBit(kCanDelete);
         result->GetCanvas()->Modified();
         result->GetCanvas()->Update();
         gPad=hold;
-        stringstream ss;
-        ss<<"jScale : "<<H->GetName()<<" x "<<gg->GetName();
-        SetWindowName(ss.str().c_str());
+        SetWindowName(TString("jScale : ")+scaled->GetName());
+		
     }
 }
 
@@ -113,14 +156,42 @@ void jScale::Lock(){
     IsLocked=!IsLocked;
     if(IsLocked){
         lockbutton->SetText("Unlock");
-        lockbutton->SetTextColor(2);
+        lockbutton->SetTextColor(red);
         lockbutton->SetState(kButtonDown);
     }else{
         lockbutton->SetText("  Lock  ");
-        lockbutton->SetTextColor(1);
+        lockbutton->SetTextColor(black);
         lockbutton->SetState(kButtonUp);
         NewInput();
     }
+}
+
+void jScale::Invert(){
+    IsInvert=!IsInvert;
+    if(IsInvert){
+        invertbutton->SetText("  Divide  ");
+        invertbutton->SetTextColor(red);
+        invertbutton->SetState(kButtonDown);
+    }else{
+		invertbutton->SetText("  Multiply ");	
+        invertbutton->SetTextColor(black);
+        invertbutton->SetState(kButtonUp);
+    }
+	NewInput();
+}
+
+void jScale::Norm(){
+    IsNorm=!IsNorm;
+    if(IsNorm){
+        normbutton->SetText(" Normalise ");
+        normbutton->SetTextColor(red);
+        normbutton->SetState(kButtonDown);
+    }else{
+		normbutton->SetText("   Abs.  ");
+        normbutton->SetTextColor(black);
+        normbutton->SetState(kButtonUp);
+    }
+	NewInput();
 }
 
 

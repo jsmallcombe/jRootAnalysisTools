@@ -20,6 +20,7 @@
 #include "j_gating_subtraction_frame.h"
 
 
+
 //current_capture_frame
 class CCframe : public TRootEmbeddedCanvas {
 	private:
@@ -60,7 +61,6 @@ class CCframe : public TRootEmbeddedCanvas {
 		
 		void PrintMessage(TString,TString);
 	
-        
         void NewObject(){
             Emit("NewObject()");
         }
