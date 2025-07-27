@@ -1,4 +1,4 @@
-#include "j_extra_guitools.h"
+#include "j_env_extratools.h"
 
 ////////////////////////////////////////////////////////////////
 
@@ -197,7 +197,8 @@ void jScale::Norm(){
 
 ////////////////////////////////////////////////////////////////
 
-jEval::jEval() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),gg(0),GG(0),IsLocked(0){
+jEval::jEval() : TGMainFrame(gClient->GetRoot(), 100, 100,kHorizontalFrame),
+gg(0),ff(0),IsLocked(0),Xin(0){
 TVirtualPad* hold=gPad;
     SetWindowName("jEval");
     SetCleanup(kDeepCleanup);
@@ -206,7 +207,10 @@ TVirtualPad* hold=gPad;
 
 
     fCanvas1 = new CCframe(this, 100, 100, TGraph::Class());
-    fCanvas1->Connect("NewObject()","jEval",this,"NewInput()");
+	fCanvas1->PrintMessage("TGraph","or TF1");
+	fCanvas1->AddClass(TF1::Class());
+	fCanvas1->Connect("NewObject(TObject*)","jEval",this,"NewInput(TObject*)");
+//     fCanvas1->Connect("NewObject()","jEval",this,"NewInput()");
     this->AddFrame(fCanvas1);
         
     lockbutton = new TGTextButton(this,"  Lock  ");
@@ -219,7 +223,7 @@ TVirtualPad* hold=gPad;
     fTeh1->SetAlignment (kTextRight);
 //     fTeh1->Connect("ReturnPressed()", "jEval", this,"Eval()");
 //     fTeh1->Connect("TabPressed()", "jEval", this,"Eval()");
-    fTeh1->Connect("TextChanged(char*)", "jEval", this,"Eval(char*)");
+    fTeh1->Connect("TextChanged(char*)", "jEval", this,"Input(char*)");
     this->AddFrame(fTeh1,new TGLayoutHints(kLHintsCenterY, 1, 1, 1, 1));
     
     fTeh2 = new TGTextEntry(this,new TGTextBuffer(6));
@@ -235,23 +239,23 @@ gPad=hold;
 }
 
 
-void jEval::NewInput(){
-    TGraph* G=(TGraph*)fCanvas1->Object();
-    
-    if(G){
-        if(gg)delete gg;
-        gg=(TGraph*)G->Clone();
-    }
-    
+void jEval::NewInput(TObject* Obj){
     if(IsLocked) return;
-    
-    if(gg){
-        if(GG)delete GG;
-        GG=(TGraph*)gg->Clone();
-        stringstream ss;
-        ss<<"jEval : "<<gg->GetName();
-        SetWindowName(ss.str().c_str());
-    }
+    if(!Obj) return;
+	if(Obj->InheritsFrom("TGraph")){
+        if(ff)delete ff;
+		ff=nullptr;
+        if(gg)delete gg;
+        gg=(TGraph*)Obj->Clone();
+	}
+	if(Obj->InheritsFrom("TF1")){
+        if(ff)delete ff;
+        if(gg)delete gg;
+		gg=nullptr;
+        ff=(TF1*)Obj->Clone();
+	}
+	SetWindowName(TString("jEval : ")+Obj->GetName());
+	Eval();
 }
 
 
@@ -259,23 +263,34 @@ void jEval::Lock(){
     IsLocked=!IsLocked;
     if(IsLocked){
         lockbutton->SetText("Unlock");
-        lockbutton->SetTextColor(2);
         lockbutton->SetState(kButtonDown);
     }else{
         lockbutton->SetText("  Lock  ");
-        lockbutton->SetTextColor(1);
         lockbutton->SetState(kButtonUp);
-        NewInput();
+        NewInput(fCanvas1->Object());
+		Eval();
     }
 }
 
-void jEval:: Eval(char* cha){
+void jEval:: Input(char* cha){
     stringstream in;
     in<<cha;
-    double input;
-    in>>input;
-    if(GG){
-        double Y=GG->Eval(input);
+    in>>Xin;
+	Eval();
+}
+
+void jEval:: Eval(){
+	double Y=0;
+	TString N;
+	if(gg){
+		Y=gg->Eval(Xin);
+		N=gg->GetName();
+	}
+	if(ff){
+		Y=ff->Eval(Xin);
+		N=ff->GetName();
+	}
+    if(gg||ff){
         char buf[32];
         sprintf(buf, "%.5f", Y);
         TGTextBuffer* fTbh2=fTeh2->GetBuffer();
@@ -283,7 +298,7 @@ void jEval:: Eval(char* cha){
         fTeh2->SetCursorPosition(fTeh2->GetCursorPosition());
         fTeh2->Deselect();
         gClient->NeedRedraw(fTeh2);
-        cout<<endl<<GG->GetName()<<" Eval at "<<input<<" = "<<Y<<flush;
+        cout<<endl<<N<<" Eval at "<<Xin<<" = "<<Y<<flush;
     }
 }
 

@@ -24,11 +24,16 @@ public:
 	jGatingToolTH2(const char *);
 	jGatingToolTH2(TObject* = hist_capture());
 	virtual ~jGatingToolTH2(){
+		Closed(this);
         Cleanup();
     };
 
 	void UpdateInput(const char *);
 	void UpdateInput(TObject* = hist_capture());
+    
+    void Closed(TObject* obj){
+        Emit("Closed(TObject*)", (Long_t)obj);
+    }
     
 	ClassDef(jGatingToolTH2, 2)
 };
@@ -81,9 +86,6 @@ public:
     
     bool TestThreeDee(){return ThreeDee;}
     
-    void Closed(TObject* obj){
-        Emit("Closed(TObject*)", (Long_t)obj);
-    }
     
 	ClassDef(jGatingFrameTH2, 3)
 };

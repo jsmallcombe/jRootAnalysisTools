@@ -82,7 +82,6 @@ jGatingFrameTH2::jGatingFrameTH2(TGWindow *parent,TH1* input,bool DeeThree) : TG
 }
     
 jGatingFrameTH2::~jGatingFrameTH2(){
-	Closed(this);
 	
     if(fInputStore){delete fInputStore;}
     

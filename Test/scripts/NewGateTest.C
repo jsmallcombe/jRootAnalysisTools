@@ -3,16 +3,16 @@
 ///// TH2
 // 	new jEnv;
 // 	O=A;//yy // TH2
-	O=B;//ey // TH2
+// 	O=B;//ey // TH2
 	
 
-// 	O=A3;//ymm // TH3
+	O=A3;//ymm // TH3
 // 	O=B3;//rrr // TH3
 // 	O=S3;//rrr // THnSparse
 
 //// Change overflow underflow settings
-		SetGlobalOverflowInclude(true);
-		SetGlobalUnderflowInclude(false);
+	SetGlobalOverflowInclude(true);
+	SetGlobalUnderflowInclude(false);
 ////////////////////
 	
 	TGMainFrame* tool=nullptr;

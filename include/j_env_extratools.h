@@ -19,7 +19,6 @@
 // RQ_OBJECT("MyClass") inside the MyClass body (IF MyClass not inherited from TQObject) allow class to use signal/slot communication
 
 // Tool for automatically scaling a TH1/TH2 based on a TGraph/TF1
-// Previously glitching when continuing an instance beyond the initial operation 
 class jScale : public TGMainFrame {
 
 private:
@@ -57,28 +56,31 @@ public:
 	ClassDef(jScale, 3)
 };
 
-// Graphical tool for running TGraph::Eval
+// Graphical tool for running TGraph::Eval and TF1::Eval
 // example use case, extracting multiple efficiency values from a curve
-// Suggest generalisation to include TF1
 class jEval : public TGMainFrame {
 
 private:
 	CCframe *fCanvas1;
-    TGraph *gg,*GG;
+    TGraph *gg;
+	TF1* ff;
     TGTextButton* lockbutton;
     bool IsLocked;
     TGTextEntry *fTeh1,*fTeh2;
-    
+    double Xin;
+	
+    void Eval();
+	
 public:
 	jEval();
 	virtual ~jEval(){
         if(gg)delete gg;
-        if(GG)delete GG;
+        if(ff)delete ff;
     };
     
-	void NewInput();
+	void NewInput(TObject*);
     void Lock();
-    void Eval(char*);
+    void Input(char*);
 
 	ClassDef(jEval, 1)
 };

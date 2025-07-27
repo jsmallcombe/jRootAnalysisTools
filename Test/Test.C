@@ -18,7 +18,7 @@ gROOT->ProcessLine((dir+"/data/LoadFiles.C").c_str());
 dir+="/scripts/jEnvTest.C";    // Test jEnv and gui tools
 // dir+="/scripts/UltraFitTest.C"; // Test Ultrapeak fitting environment
 // dir+="/scripts/NewGateTest.C"; // Test gating tool
-// dir+="/scripts/THnTest	.C"; // Gating THnSparse test
+// dir+="/scripts/THnTest.C"; // Gating THnSparse test
 // dir+="/scripts/EfficiencyCurves.C"; // Test automated gamma efficiency curve functions 
 
 

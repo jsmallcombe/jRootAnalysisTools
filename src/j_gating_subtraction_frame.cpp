@@ -151,6 +151,19 @@ double jGateSubtractionFrame::ScaledBackgroundSubtract(THnBase* gate,THnBase* ba
 	
 	gate->Add(back,-backfrack);
 	
+	if(uncertainfrac>0){
+		Long64_t nFilled = gate->GetNbins();
+		Int_t ndim = gate->GetNdimensions();
+		Int_t* coords = new Int_t[ndim];
+
+		for (Long64_t i = 0; i < nFilled; ++i) {
+			gate->GetBinContent(i, coords); // get x,y,z,... bin indices
+			Double_t content_back = back->GetBinContent(coords); // matching bin in back
+			gate->AddBinError2(i,content_back*backfrack*uncertainfrac);
+		}
+		// Hard to fully test, but I believe this is correct and works with Sparse,
+	}
+	
 	return backfrack;
 }
 
