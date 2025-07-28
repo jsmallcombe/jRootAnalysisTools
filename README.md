@@ -12,7 +12,7 @@ This package contains an add-on library for CERN's root analysis package.
 The primary tools are:  
 -jEnv : A graphical session manager  
 -UltraFitEnv: A graphical fitting environment to for TH1 histograms. A help file is included in the tool.  
--jgating_tool: A graphical slicer and background subtraction tool for TH2 and TH3 histograms.  
+-jGatingToolSelector: A graphical slicer and background subtraction tool for TH2, TH3 and THn histograms.  
 
 Various histogram formatting and automated fitting macros are also included and may be documented later.  
 

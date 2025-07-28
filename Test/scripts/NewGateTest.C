@@ -5,7 +5,7 @@
 // 	O=A;//yy // TH2
 // 	O=B;//ey // TH2
 	
-
+SetGlobalTH3UpdateLock(false);
 	O=A3;//ymm // TH3
 // 	O=B3;//rrr // TH3
 // 	O=S3;//rrr // THnSparse

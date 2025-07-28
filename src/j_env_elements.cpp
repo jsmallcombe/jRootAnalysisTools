@@ -41,7 +41,7 @@ void CCframe::SetClass(TClass* iClass){
 void CCframe::AddClass(TClass* iClass){
 	if(iClass){
 		fClass.push_back(iClass);
-		fNamed*=iClass->InheritsFrom("TNamed");
+		fNamed=fNamed&&iClass->InheritsFrom("TNamed");
 	}
 }
 

@@ -37,8 +37,8 @@
 \tableofcontents
 \newpage
 \section{Introduction}
-This library, designed to help working with root for analysis, contains several GUI analysis tools and useful sets of functions. An explanation of some of the major components is given here, but subclasses and functions will not be detailed.
-Within the GUI classes hover over control to view explanatory tooltip text.
+This library, designed to help working with root for analysis, contains several GUI analysis tools and useful sets of functions. An explanation of some of the major components is given here, but the subclasses and functions will not be detailed.
+Within the GUI classes, hover over controls to view explanatory tooltip.
 Various histogram presentation formatting and automated fitting macros (for spectroscopic peaks and detector efficiency curves) are also included and may be documented later. 
 
 \section{Install}
@@ -139,7 +139,7 @@ Additional \textit{TH1} comparison modes have been added which overlay the two h
 \item Swap inputs $\alpha$ and $\beta$
 \item Selected Histogram $\beta$ window/button
 \item Fraction $f$ text entry.
-\item Change between functions.
+\item Change between modes.
 \item Hide/Show error bars when drawing.
 \item Fraction $f$ slider.
 \item Result Window.
@@ -152,16 +152,15 @@ Additional \textit{TH1} comparison modes have been added which overlay the two h
 \end{center}
 
 \section{Gating and Background Subtraction Tool}
-The gating tool is designed to provide live graphical gating and background subtraction for \textit{TH2} and \textit{TH3} histograms filled with any data. 
-A new instance can be created from the jEnv toolbar or typing any of the following:
+The gating tool is designed to provide live graphical gating and background subtraction for \textit{TH2}, \textit{TH3} and  \textit{THn} histograms. 
+A new instance can be created from the jEnv toolbar or by typing any of the following functions in the terminal:
 \lstset{language=C++}
 \begin{lstlisting}
-new jgating_tool();
-new jgating_tool(TH2*);
-new jgating_tool(TH3*);
-new jgating_tool("HistogramName");
+jGatingToolSelector();
+jGatingToolSelector(TObject*);
+jGatingToolSelector("HistogramName");
 \end{lstlisting}
-where "HistogramName" is the name (not title) of a histogram open in memory. The call with no arguments will grab the most recently selected or drawn histogram. If no valid input is found a window will not appear. Please wait a moment for the window to appear when using \textit{TH3}s, particularly if they are large.
+where "HistogramName" is the name (not title) of a histogram open in memory. TOject* should be a pointer to an object of type inheriting from TH2, TH3 or THnBase (e.g. THnSparse). The call without arguments will grab the most recently selected or drawn histogram. If no valid input is found, a window will not appear. 
 \begin{center}
 \includegraphics[width=0.55\textwidth]{toolA.png}
 \end{center}
@@ -245,7 +244,8 @@ The Gate Summing Tool is used for saving the result histograms in memory after g
 
 \newpage
 \subsection{3D Gating Window}
-For the first gate on a \textit{TH3} there is significant amount of computation so this is not done live. The output of the first gate is only performed when a new projection is selected, a different background mode is selected, or when the [Update] button is pressed.
+For the first gate on a \textit{TH3} there is significant amount of computation so, by default the gate window will not execute until the [Update] button is pressed, or when the background mode is changed. If your PC can handle live updating during gate adjustment, the setting can be overridden with the global function \textit{SetGlobalTH3UpdateLock(false)}, before starting the gating tool instance.
+As the 3D tool can be too wide for some displays, the system configuration can be set such that the first gate appears as a separated window, by use of the global function \textit{SetGlobalTH3UseHead()}. 
 \begin{center}
 \includegraphics[width=0.95\textwidth]{toolE.png}
 \begin{enumerate}
@@ -254,6 +254,19 @@ For the first gate on a \textit{TH3} there is significant amount of computation 
 \end{enumerate}
 \includegraphics[width=0.6\textwidth]{toolF.png}
 \end{center}
+
+\subsection{Underflow, Overflow}
+Unlike previous versions, the decision of whether or not to include the Overlow and Underflow bins, which are excluded by default, can be set with global functions;
+\textit{SetGlobalOverflowInclude(bool)} and \textit{SetGlobalUnderflowInclude(bool)}.
+This will affect the initial projection and hence change the background subtraction fraction. 
+When setting your gates, inclusion of the Over/Underflow bins of the relevant axis can be set, regardless of the global parameters, by using the manual background mode. For ``Compton'' background overflow is always included. ``Full'' and ``Anti'' background modes will use the global settings. 
+For spectroscopic histograms (energy axes), it is recommended to include Overflow bins.
+
+\subsection{Background Fraction Error}
+A key feature of the gating tool is the correct propagation of statistical errors.
+This includes an error associated with the uncertainty in the background fraction. A global ``best guess'' value of 4\% is used.
+The value can be manually set, or turned off, with the global function \textit{SetGlobalSubtractionFractionError(0.04)}.
+The error is doubled when the manual background fraction, rather than a fit, is used.
 
 \newpage
 \section{Peak Fitting Tool}\label{sec:peakfit}
