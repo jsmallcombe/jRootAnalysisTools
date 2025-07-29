@@ -34,8 +34,9 @@
 	
 	new jSpecTool(oversub);
 	new jAngleAngel(dedx);
-	new j2DPeakFit(ydots,11);
+// 	new j2DAlphaCalibrator(ydots,11);
 	new jCompCanvas(sili);C->Draw("same");
 	new jScale();
 	new jEval();
+    new jFittingTool2D((TH2*)ydots);
 }

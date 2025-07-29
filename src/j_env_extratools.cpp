@@ -757,34 +757,34 @@ void jAngleAngel::UnUseCut() {
 
 ////////////////////////////////////////////////////////////////
 
-j2DPeakFit::j2DPeakFit(TH1* fH,double sig) : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),fHist(0),sigma(sig){
+j2DAlphaCalibrator::j2DAlphaCalibrator(TH1* fH,double sig) : TGMainFrame(gClient->GetRoot(), 100, 100,kVerticalFrame),fHist(0),sigma(sig){
 // TVirtualPad* hold=gPad;
-    SetWindowName("j2DPeakFit");
+    SetWindowName("j2DAlphaCalibrator");
     SetCleanup(kDeepCleanup);
 
 
 	fCanvas1 = new TRootEmbeddedCanvas("fit2can1",this,600,400);
     AddFrame(fCanvas1,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 1, 1, 1, 1));
     
-    fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "j2DPeakFit", this,"Fit2DPeak(Int_t,Int_t,Int_t,TObject*)");
+    fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "j2DAlphaCalibrator", this,"Fit2DPeak(Int_t,Int_t,Int_t,TObject*)");
 
     
     TGHorizontalFrame* buttons = new TGHorizontalFrame(this);       
     
         jHistCapButton *CaptureButton = new jHistCapButton(buttons,"    Capture Hist    ");
-        CaptureButton->Connect("NewHist(TH1*)","j2DPeakFit",this,"SetNewHist(TH1*)");	
+        CaptureButton->Connect("NewHist(TH1*)","j2DAlphaCalibrator",this,"SetNewHist(TH1*)");	
         buttons->AddFrame(CaptureButton);
 
         TGTextButton *MakeButton = new TGTextButton(buttons,"       SaveXY       ");
-        MakeButton->Connect("Clicked()","j2DPeakFit",this,"SaveXY()");	
+        MakeButton->Connect("Clicked()","j2DAlphaCalibrator",this,"SaveXY()");	
         buttons->AddFrame(MakeButton);
 
         MakeButton = new TGTextButton(buttons,"   CalibrateAlpha   ");
-        MakeButton->Connect("Clicked()","j2DPeakFit",this,"CalibrateAlpha()");	
+        MakeButton->Connect("Clicked()","j2DAlphaCalibrator",this,"CalibrateAlpha()");	
         buttons->AddFrame(MakeButton);
         
         MakeButton = new TGTextButton(buttons,"   Reset   ");
-        MakeButton->Connect("Clicked()","j2DPeakFit",this,"Reset()");	
+        MakeButton->Connect("Clicked()","j2DAlphaCalibrator",this,"Reset()");	
         buttons->AddFrame(MakeButton);
     
     AddFrame(buttons,new TGLayoutHints(kLHintsCenterX, 1, 1, 1, 1));
@@ -804,11 +804,11 @@ j2DPeakFit::j2DPeakFit(TH1* fH,double sig) : TGMainFrame(gClient->GetRoot(), 100
 	SetNewHist(fH);
 }
 // 
-j2DPeakFit::~j2DPeakFit(){
+j2DAlphaCalibrator::~j2DAlphaCalibrator(){
     TQObject::Disconnect(this);
 }
 
-void j2DPeakFit::SetNewHist(TH1 *fH){
+void j2DAlphaCalibrator::SetNewHist(TH1 *fH){
 	if(!fH)return;
 	if(!fH->InheritsFrom("TH2"))return;
     
@@ -822,7 +822,7 @@ void j2DPeakFit::SetNewHist(TH1 *fH){
 	gPad->Update();
 }
 
-void j2DPeakFit::Fit2DPeak(Int_t event, Int_t px, Int_t py, TObject *selected_ob){
+void j2DAlphaCalibrator::Fit2DPeak(Int_t event, Int_t px, Int_t py, TObject *selected_ob){
 
 	if(!fHist){return;}
 	if(event == kMouseLeave){return;}
@@ -857,7 +857,7 @@ void j2DPeakFit::Fit2DPeak(Int_t event, Int_t px, Int_t py, TObject *selected_ob
 	}
 }
 
-void j2DPeakFit::CalibrateAlpha(){
+void j2DAlphaCalibrator::CalibrateAlpha(){
     TGraph tmp(saveX.size(),&saveX[0],&saveY[0]);
     ((TGraph*)tmp.DrawClone("al"))->Fit(lincal);
 //     tmp.Fit(lincal);

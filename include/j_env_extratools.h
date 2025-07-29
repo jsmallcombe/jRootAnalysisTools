@@ -140,7 +140,7 @@ public:
 
 
 // 2D Gaussian semi-automated fitter, written for a very specific alpha calibration, in need of generalisation
-class j2DPeakFit : public TGMainFrame {
+class j2DAlphaCalibrator : public TGMainFrame {
 
 private:
 	TRootEmbeddedCanvas *fCanvas1;
@@ -150,8 +150,8 @@ private:
     TF2 *g2;
     TF1 *lincal;
 public:
-	j2DPeakFit(TH1* fH=0,double sig=11);
-	virtual ~j2DPeakFit();
+	j2DAlphaCalibrator(TH1* fH=0,double sig=11);
+	virtual ~j2DAlphaCalibrator();
     
 	void SetNewHist(TH1 *fH);
     void Fit2DPeak(Int_t,Int_t,Int_t,TObject*);
@@ -167,7 +167,7 @@ public:
 
     double sigma;
     
-	ClassDef(j2DPeakFit, 0)
+	ClassDef(j2DAlphaCalibrator, 0)
 };
 
 // Quick integrator by mouse click TH1

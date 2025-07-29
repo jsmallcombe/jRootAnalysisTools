@@ -152,6 +152,47 @@ double FindLocalMax(TH1* fHist,int& fPeak,int fLeft,int fRight){
 	return fRet;
 }
 
+double FindLocalMax(TH2* fHist,double& fPeakX,double& fPeakY){
+	int x=fHist->GetXaxis()->FindBin(fPeakX);
+	int y=fHist->GetYaxis()->FindBin(fPeakY);
+	double H=FindLocalMax(fHist,x,y);
+	fPeakX=fHist->GetXaxis()->GetBinCenter(x);
+	fPeakY=fHist->GetYaxis()->GetBinCenter(y);
+	return H;	
+}
+
+double FindLocalMax(TH2* fHist,int& fPeakX,int& fPeakY){
+
+	int step=3;
+	int NX=fHist->GetNbinsX();
+	int NY=fHist->GetNbinsY();
+	
+	while(true){
+		double loopmax=0;
+		int loopX=fPeakX,loopY=fPeakY;
+		for(int x=fPeakX-step;x<=fPeakX+step;x++){
+			if(x<1||x>NX)continue;
+			for(int y=fPeakY-step;y<=fPeakY+step;y++){
+				if(y<1||y>NY)continue;
+				double binN=fHist->GetBinContent(x,y);
+				if(binN>loopmax){
+					loopX=x;
+					loopY=y;
+					loopmax=binN;
+				}
+			}
+		}
+		if(loopX==fPeakX&&loopY==fPeakY){
+			return loopmax;
+		}
+		fPeakX=loopX;
+		fPeakY=loopY;
+	}
+	return 0;
+}
+
+
+
 double FindBinRangeMaxD(TH1* fHist,double& fPeak,double range){
 	TAxis* x =fHist->GetXaxis();
 	int X=x->FindBin(fPeak);

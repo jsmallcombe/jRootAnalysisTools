@@ -77,6 +77,10 @@ typedef struct jPeakDat{
 double FindLocalMax(TH1* fHist,double& fPeak);//This version is in user coordinates
 double FindLocalMax(TH1* fHist,int& fPeak,int fLeft,int fRight);//This version is in bin number
 // Range is absolute, not relative
+
+// As above for TH2s
+double FindLocalMax(TH2* fHist,double& fPeakX,double& fPeakY);//This version is in user coordinates
+double FindLocalMax(TH2* fHist,int& fPeakX,int& fPeakY);//This version is in bin number
 	
 //Absolute max in +-range
 double FindBinRangeMaxD(TH1* fHist,double& fPeak,double range);
