@@ -1,4 +1,4 @@
-#include "j_effpeaks.h"
+#include "j_fitting_effpeaks.h"
 
 
 vector<TF1*> MegaEffAuto(TGraphErrors * graph){

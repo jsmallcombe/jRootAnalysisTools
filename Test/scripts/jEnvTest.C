@@ -39,4 +39,10 @@
 	new jScale();
 	new jEval();
     new jFittingTool2D((TH2*)ydots);
+    
+//     jhistquestion* jHQ= new jhistquestion("Yes","No","Maybe");
+//     jHQ->Resize(900,900);
+//     jHQ->GetCanvas()->cd();
+//     C->DrawCopy();
+//     jHQ->WaitAnswer();
 }

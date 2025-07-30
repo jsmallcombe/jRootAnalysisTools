@@ -24,17 +24,20 @@ private:
 	TH2* fHist;
     double sigmaX,sigmaY;
     double rangeX,rangeY;
-    vector<double> saveX,saveY;
-    TF2 *g2;
+    TF2 *gf1,*gf2,*gf;
 	bool TextSlideBlock;
 	int Nslide;
 	
+//     vector<double> saveX,saveY;
+//     vector<FullFitHolder> FitRes;
+	
 	TGHSlider *fHslider1, *fHslider2;
 	TGTextEntry *fTextEntry1, *fTextEntry2;
-	TGCheckButton* fCheckY;
+	TGCheckButton* fCheckY, *fCheckRes;
 	
 	void Fit2DGaus(double x, double y);
 	void DrawHelpers(double x, double y);
+	void DrawResidual(double x, double y);
 	
 public:
 	jFittingFrame2D(TGWindow * parent=0, TH2* fH=0,double sigx=0,double sigy=0);
@@ -45,8 +48,10 @@ public:
     void Fit2DPeak(Int_t,Int_t,Int_t,TObject*);
 	
     void SaveXY(){
+		std::cout<<"Save Not Implimented"<<std::endl;
 //         saveX.push_back(X);
 //         saveY.push_back(Y);
+//         FitRes.push_back(LATESTFIT);
     };
     void Reset(){
 		SetNewHist(fHist);
@@ -74,7 +79,8 @@ public:
 		fFrame->SetNewHist(h);
 	}
 	
+	static void GlobalNew2DFittingTool(){new jFittingTool2D;}
+	
 	ClassDef(jFittingTool2D, 0)
 };
-
 #endif 

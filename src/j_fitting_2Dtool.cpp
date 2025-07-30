@@ -18,6 +18,8 @@ jFittingTool2D::jFittingTool2D(TH2* fH,double sigx,double sigy):
         MapSubwindows();
         Resize(GetDefaultSize());
         MapWindow();
+		
+	Resize(800,850);
     }
 
 jFittingTool2D::~jFittingTool2D() {
@@ -29,14 +31,14 @@ jFittingTool2D::~jFittingTool2D() {
 ////////////////////////////////////////////////////////////////
 
 jFittingFrame2D::jFittingFrame2D(TGWindow * parent,TH2* fH,double sigx,double sigy) : TGVerticalFrame(parent, 100, 100),
-	fHist(new TH2I()),sigmaX(1.0),sigmaY(1.0),rangeX(1.0),rangeY(1.0), TextSlideBlock(false), Nslide(1000)
+	fHist(new TH2I()),sigmaX(sigx),sigmaY(sigy),rangeX(1.0),rangeY(1.0), TextSlideBlock(false), Nslide(1600)
 {
 // TVirtualPad* hold=gPad;
 
 
 	fCanvas1 = new TRootEmbeddedCanvas("fit2Dcanvas1",this,600,400);
     fCanvas1->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "jFittingFrame2D", this,"Fit2DPeak(Int_t,Int_t,Int_t,TObject*)");
-	fCanvas1->GetCanvas()->SetMargin(0.12,0.04,0.12,0.05);
+	fCanvas1->GetCanvas()->SetMargin(0.14,0.02,0.14,0.02);
 	
     AddFrame(fCanvas1,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 1, 1, 1, 1));
     
@@ -53,6 +55,12 @@ jFittingFrame2D::jFittingFrame2D(TGWindow * parent,TH2* fH,double sigx,double si
         MakeButton = new TGTextButton(buttons,"   Reset   ");
         MakeButton->Connect("Clicked()","jFittingFrame2D",this,"Reset()");	
         buttons->AddFrame(MakeButton);
+		
+		fCheckRes = new TGCheckButton(buttons);// A tick box with hover text belonging to a parent frame
+		fCheckRes->SetState(kButtonUp);
+		fCheckRes->SetToolTipText("Draw Fit-Residuals in a new window.");
+
+        buttons->AddFrame(fCheckRes);
     
     AddFrame(buttons,new TGLayoutHints(kLHintsCenterX, 1, 1, 1, 1));
 	
@@ -85,6 +93,7 @@ jFittingFrame2D::jFittingFrame2D(TGWindow * parent,TH2* fH,double sigx,double si
 		
 		fCheckY = new TGCheckButton(SlideY);// A tick box with hover text belonging to a parent frame
 		fCheckY->SetState(kButtonUp);
+		fCheckY->SetToolTipText("Enable separate Y resolution.");
 		fCheckY->Connect("Clicked()","jFittingFrame2D",this,"EnableSigmaY()");//Link it signal to its slot
 		
 		SlideY->AddFrame(SlideYlab,CentY);
@@ -98,21 +107,18 @@ jFittingFrame2D::jFittingFrame2D(TGWindow * parent,TH2* fH,double sigx,double si
 	Resize(GetDefaultSize());
 	MapWindow();
 	
+    gf2 = new TF2("gf2","[5]+[0]*exp(-0.5*pow((x-[1])/[3],2))*exp(-0.5*pow((y-[2])/[4],2))");
+    gf2->SetParNames("Height","X0","Y0","Xsig","Ysig","Pol0");
+    gf2->SetContour(15);
 	
-    g2 = new TF2("g2","[5]+[0]*exp(-0.5*pow((x-[1])/[3],2))*exp(-0.5*pow((y-[2])/[4],2))");
-    g2->SetParNames("Height","X0","Y0","Xsig","Ysig","Pol0");
-    g2->SetContour(15);
+	//Only one sigma, dont forget to fix par 4=0;
+    gf1 = new TF2("gf1","[5]+[0]*exp(-0.5*pow((x-[1])/[3],2))*exp(-0.5*pow((y-[2])/[3],2))+[4]");
+    gf1->SetParNames("Height","X0","Y0","Sigma","NULL","Pol0");
+    gf1->SetContour(15);
 
-    
-	SetNewHist(fH);
+	gf=gf2;
 	
-	if(sigx){
-		fHslider1->SetPosition(Nslide*sigx/rangeX);
-	}
-	if(sigy){
-		fHslider2->SetPosition(Nslide*sigy/rangeX);
-	}
-	SetText();
+	SetNewHist(fH);
 }
 	
 // 
@@ -168,11 +174,18 @@ void jFittingFrame2D::SetNewHist(TH2 *fH){
 		fHist=(TH2*)fH->Clone("fHist2Dfit");
 		hformat(fHist);
 		
-		rangeX=0.2*(fH->GetXaxis()->GetXmax()-fH->GetXaxis()->GetXmin());
-		rangeY=0.2*(fH->GetYaxis()->GetXmax()-fH->GetYaxis()->GetXmin());
+		rangeX=0.1*(fH->GetXaxis()->GetXmax()-fH->GetXaxis()->GetXmin());
+		rangeY=0.1*(fH->GetYaxis()->GetXmax()-fH->GetYaxis()->GetXmin());
 		TextSlideBlock=true;
-		fHslider1->SetPosition(100);
-		fHslider2->SetPosition(100);
+		
+		double SSX=0.1*rangeX;
+		double SSY=0.1*rangeY;
+		if(sigmaX)SSX=sigmaX;
+		if(sigmaY)SSY=sigmaY;
+		
+		fHslider1->SetPosition(Nslide*SSX/rangeX);
+		fHslider2->SetPosition(Nslide*SSY/rangeY);
+		
 		TextSlideBlock=false;
 		SetText();
 	}
@@ -195,26 +208,36 @@ void jFittingFrame2D::Fit2DPeak(Int_t event, Int_t px, Int_t py, TObject *select
 	if(!fHist){return;}
 	if(event == kMouseLeave){return;}
 	
-	TCanvas* Can=(TCanvas*)fCanvas1->GetCanvas();
-	
-	//Click is given in pixel coordinates
-	double x =Can->AbsPixeltoX(px);
-	double y =Can->AbsPixeltoY(py);
-	
-	// Get the user input sigmas from sliders
-	sigmaX=rangeX*fHslider1->GetPosition()/Nslide;
-	sigmaY=rangeY*fHslider2->GetPosition()/Nslide;
-	if(!fCheckY->GetState())sigmaY=sigmaX;
-
 	if (event == kButton1Double){
+		TCanvas* Can=(TCanvas*)fCanvas1->GetCanvas();
+		
+		//Click is given in pixel coordinates
+		double x =Can->AbsPixeltoX(px);
+		double y =Can->AbsPixeltoY(py);
+		
+		
+		// Get the user input sigmas from sliders
+		sigmaX=rangeX*fHslider1->GetPosition()/Nslide;
+		sigmaY=rangeY*fHslider2->GetPosition()/Nslide;
+		gf=gf2;
+		if(!fCheckY->GetState()){
+			sigmaY=sigmaX;
+			gf=gf1;
+		}
+		
+		if(!sigmaX)sigmaX=1;
+		if(!sigmaY)sigmaY=1;
+
+		
 		Fit2DGaus(x,y);
 	}
 }
 
 
 void jFittingFrame2D::DrawHelpers(double x, double y){
-	
 	fCanvas1->GetCanvas()->cd();
+	gPad->Update();
+	
 	TIter next(gPad->GetListOfPrimitives());
 	TObject* obj;
 	while ((obj = next())) {
@@ -245,23 +268,31 @@ void jFittingFrame2D::DrawHelpers(double x, double y){
 
 void jFittingFrame2D::Fit2DGaus(double x, double y){
 	if(!fHist){return;}
+	fCanvas1->GetCanvas()->cd();
+	gPad->Update();
+	
+	// sigmaX are inputs taken from sliders 
 	
 	double h=FindLocalMax(fHist,x,y);
 	
-	g2->SetRange(x-sigmaX*2,y-sigmaY*2,x+sigmaX*2,y+sigmaY*2);
-	g2->SetParameters(h,x,y,sigmaX,sigmaY,h*0.01);
-	g2->SetParLimits(0,h*0.3,h*1.2);
-	g2->SetParLimits(1,x-sigmaX,x+sigmaY);
-	g2->SetParLimits(2,y-sigmaX,y+sigmaY);
-	g2->SetParLimits(3,sigmaX*0.2,sigmaY*2);
-	g2->SetParLimits(4,sigmaX*0.2,sigmaY*2);
-	g2->SetParLimits(5,0,h*0.5);
-
-// 	fHist->Fit(g2,"RQ");
-	fHist->Fit(g2,"R");
+	gf->SetRange(x-sigmaX*2,y-sigmaY*2,x+sigmaX*2,y+sigmaY*2);
+	gf->SetParameters(h,x,y,sigmaX,sigmaY,h*0.01);
+	gf->SetParLimits(0,h*0.3,h*1.2);
+	gf->SetParLimits(1,x-sigmaX,x+sigmaY);
+	gf->SetParLimits(2,y-sigmaX,y+sigmaY);
+	gf->SetParLimits(3,sigmaX*0.2,sigmaY*2);
+	gf->SetParLimits(4,sigmaX*0.2,sigmaY*2);
+	gf->SetParLimits(5,0,h*0.5);
 	
-	double X=g2->GetParameter(1);
-	double Y=g2->GetParameter(2);
+	if(gf==gf1){
+		gf->FixParameter(4,0);
+	}
+
+// 	fHist->Fit(gf,"RQ");
+	fHist->Fit(gf,"R");
+	
+	double X=gf->GetParameter(1);
+	double Y=gf->GetParameter(2);
 	
 	cout<<endl<<"Local Max  x,y = "<<x<<", "<<y<<endl;
 	cout<<"Fit Result x,y = "<<X<<", "<<Y<<endl;
@@ -269,6 +300,55 @@ void jFittingFrame2D::Fit2DGaus(double x, double y){
 	DrawHelpers(x,y);
 	
 	gPad->Update();
+	
+	if(fCheckRes->GetState()){
+		DrawResidual(x, y);
+	}
+
+}
+
+void jFittingFrame2D::DrawResidual(double x, double y){
+	if(!fHist){return;}
+	
+	double BWx=fHist->GetXaxis()->GetBinWidth(1);
+	double BWy=fHist->GetYaxis()->GetBinWidth(1);
+	int Bx=fHist->GetXaxis()->FindBin(x);
+	int By=fHist->GetYaxis()->FindBin(y);
+	int Wx=sigmaX*2/BWx;
+	int Wy=sigmaY*2/BWy;
+	int gap=3;
+	int Of=gap+1+Wy*2;
+	double pol0=gf->GetParameter(5);
+	
+	TH2D* Residuals=new TH2D("Fit2DGausResiduals","Fit2DGausResiduals",1+Wx*2,0,1,Wy*4+2+gap,0,2+(gap*0.5/Wy));
+	
+	for(int ix=1;ix-1<=Wx*2;ix++){
+		int BX=ix+Bx-Wx-1;; 
+			
+		double xLow  = fHist->GetXaxis()->GetBinLowEdge(BX);
+		double xHigh = fHist->GetXaxis()->GetBinUpEdge(BX);
+		
+		for(int iy=1;iy-1<=Wy*2;iy++){
+			int BY=iy+By-Wy-1;
+			double bc=fHist->GetBinContent(BX,BY);
+			Residuals->SetBinContent(ix,iy+Of,bc);
+			
+			
+			double yLow  = fHist->GetYaxis()->GetBinLowEdge(BY);
+			double yHigh = fHist->GetYaxis()->GetBinUpEdge(BY);
+
+			double FunctionIntengral = gf->Integral(xLow, xHigh, yLow, yHigh) /
+                         ((xHigh - xLow) * (yHigh - yLow));
+			
+			Residuals->SetBinContent(ix,iy,bc-FunctionIntengral+pol0);
+		}
+	}
+	
+	new TCanvas("","Fit2DGausResiduals",900,1000);
+	gPad->Update();
+	Residuals->DrawCopy("LEGO2");
+// 	Residuals->Draw("SURF1");
+	delete Residuals;
 }
 
 

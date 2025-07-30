@@ -52,6 +52,8 @@ public:
     void Lock();
     void Invert();
     void Norm();
+	
+	static void GlobalNewScale(){new jScale;}
 
 	ClassDef(jScale, 3)
 };
@@ -81,8 +83,10 @@ public:
 	void NewInput(TObject*);
     void Lock();
     void Input(char*);
+	
+	static void GlobalNewEval(){new jEval;}
 
-	ClassDef(jEval, 1)
+	ClassDef(jEval, 2)
 };
 
 
@@ -109,7 +113,6 @@ private:
     bool fCutSetting; // Flag to indicate if the setting cut is active
     bool fCutActive; // Flag to indicate if the setting cut is active
     
-    
     void RemoveGraphs();
     
 public:
@@ -125,7 +128,6 @@ public:
 	void MakeHist(double=0);
 	void MakeHist90(){MakeHist(TMath::Pi()*0.5);};
     
-	ClassDef(jAngleAngel, 2)
 	
     void HandleEvent(Int_t event, Int_t px, Int_t py, TObject *selected);
     void StartCutButtonPressed();
@@ -136,6 +138,10 @@ public:
     TGraph* GetCut() const {
         return fCurrentCutG;
     }
+    
+	static void GlobalNewAngleAngel(){new jAngleAngel;}
+    
+	ClassDef(jAngleAngel, 2)
 };
 
 
@@ -185,6 +191,8 @@ public:
     
 	void SetNewHist(TH1 *fH);
     void Integrate(Int_t,Int_t,Int_t,TObject*);
+	
+	static void GlobalNewIntegrator(){new jIntegrator;}
 
 	ClassDef(jIntegrator,1)
 };
