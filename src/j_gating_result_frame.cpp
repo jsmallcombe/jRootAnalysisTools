@@ -196,7 +196,7 @@ void jGateResultFrame::DrawHist(){
         
         // Update the rebin slider text
             char buf[32];
-            sprintf(buf, "%.1f", H->GetXaxis()->GetBinWidth(1));
+            snprintf(buf, sizeof(buf),"%.1f", H->GetXaxis()->GetBinWidth(1));
             TGTextBuffer* fTbh2=RebinText->GetBuffer();
             fTbh2->Clear();	fTbh2->AddText(0, buf);
             RebinText->SetCursorPosition(RebinText->GetCursorPosition());

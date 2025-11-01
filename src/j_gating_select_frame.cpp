@@ -221,8 +221,8 @@ TVirtualPad* hold=gPad;
 			fTeh2->SetDefaultSize(50,25);
 			fTeh2->SetAlignment(kTextRight);
 			// Set the data in the text buffer the text entry boxes are using
-			sprintf(buf, "%.1f", proj->GetBinCenter(1));	fTbh1->AddText(0, buf);
-			sprintf(buf, "%.1f", 5*(double)proj->GetBinWidth(1));	fTbh2->AddText(0, buf);
+			snprintf(buf, sizeof(buf),"%.1f", proj->GetBinCenter(1));	fTbh1->AddText(0, buf);
+			snprintf(buf, sizeof(buf),"%.1f", 5*(double)proj->GetBinWidth(1));	fTbh2->AddText(0, buf);
 			
 		fTeh2->Connect("ReturnPressed()", "jGateSelectFrame", this,"DoText()");
 		fTeh2->Connect("TabPressed()", "jGateSelectFrame", this,"DoText()");
@@ -254,7 +254,7 @@ TVirtualPad* hold=gPad;
 			fTeh3->SetDefaultSize(50,25);
 			fTeh3->SetAlignment (kTextRight);
 			fTeh3->SetToolTipText("Background Fraction");
-			sprintf(buf, "%.4f", backfrac);fTbh3->AddText(0, buf);
+			snprintf(buf, sizeof(buf),"%.4f", backfrac);fTbh3->AddText(0, buf);
 			fTeh3->Connect("ReturnPressed()", "jGateSelectFrame", this,"DoText()");
 			fTeh3->Connect("TabPressed()", "jGateSelectFrame", this,"DoText()");
 			fTeh3->SetEnabled(kFALSE); //The default is disabled
@@ -444,17 +444,17 @@ void jGateSelectFrame::ValuesToText() //copy control parameters to text
 {	char buf[32];
 	
 	//update the text now the sliders have moved
-	sprintf(buf, "%.1f", proj->GetBinCenter(target_bin));
+	snprintf(buf, sizeof(buf),"%.1f", proj->GetBinCenter(target_bin));
 	fTbh1->Clear();	fTbh1->AddText(0, buf);
 	fTeh1->SetCursorPosition(fTeh1->GetCursorPosition());fTeh1->Deselect();
 	gClient->NeedRedraw(fTeh1);
 	
-	sprintf(buf, "%.1f", (double)gate_range*(double)proj->GetBinWidth(1));
+	snprintf(buf, sizeof(buf),"%.1f", (double)gate_range*(double)proj->GetBinWidth(1));
 	fTbh2->Clear();	fTbh2->AddText(0, buf);
 	fTeh2->SetCursorPosition(fTeh2->GetCursorPosition());	fTeh2->Deselect();
 	gClient->NeedRedraw(fTeh2);
 
-	sprintf(buf, "%.4f", backfrac);
+	snprintf(buf, sizeof(buf),"%.4f", backfrac);
 	fTbh3->Clear();	fTbh3->AddText(0, buf);
 	fTeh3->SetCursorPosition(fTeh3->GetCursorPosition());	fTeh3->Deselect();
 	gClient->NeedRedraw(fTeh3);

@@ -509,9 +509,9 @@ void jEnv::ClosedObject(TObject* obj){
 void jEnv::Clipboard(Int_t event,Int_t x,Int_t y,TObject *o){
     if(event == kButton2Up){
         TVirtualPad* hold=gPad;
-        int clipstatus= DrawFromClipboard();
+        DrawFromClipboard();
+//         int clipstatus= DrawFromClipboard();
         gPad=hold;
-        clipstatus++;//just here to supress warning, clipstatus currently unused
     }
 }
 

@@ -352,8 +352,8 @@ TVirtualPad* hold=gPad;
 			fTeh2->SetDefaultSize(50,25);
 			fTeh2->SetAlignment(kTextRight);
 			// Set the data in the text buffer the text entry boxes are using
-			sprintf(buf, "%.1f", proj->GetBinCenter(1));	fTbh1->AddText(0, buf);
-			sprintf(buf, "%.1f", 5*(double)proj->GetBinWidth(1));	fTbh2->AddText(0, buf);
+			snprintf(buf, sizeof(buf),"%.1f", proj->GetBinCenter(1));	fTbh1->AddText(0, buf);
+			snprintf(buf, sizeof(buf),"%.1f", 5*(double)proj->GetBinWidth(1));	fTbh2->AddText(0, buf);
 			
 		fTeh2->Connect("ReturnPressed()", "j_gating_frame", this,"DoText()");
 		fTeh2->Connect("TabPressed()", "j_gating_frame", this,"DoText()");
@@ -380,7 +380,7 @@ TVirtualPad* hold=gPad;
 			fTeh3->SetDefaultSize(50,25);
 			fTeh3->SetAlignment (kTextRight);
 			fTeh3->SetToolTipText("Background Fraction");
-			sprintf(buf, "%.4f", backfrack);fTbh3->AddText(0, buf);
+			snprintf(buf, sizeof(buf),"%.4f", backfrack);fTbh3->AddText(0, buf);
 			fTeh3->Connect("ReturnPressed()", "j_gating_frame", this,"DoText()");
 			fTeh3->Connect("TabPressed()", "j_gating_frame", this,"DoText()");
 			fTeh3->SetEnabled(kFALSE); //The default is disabled
@@ -605,17 +605,17 @@ void j_gating_frame::ValuesToText() //copy control parameters to text
 {	char buf[32];
 //cout<<"ValuesToText "<<flush;
 	//update the text now the sliders have moved
-	sprintf(buf, "%.1f", proj->GetBinCenter(target_bin));
+	snprintf(buf, sizeof(buf),"%.1f", proj->GetBinCenter(target_bin));
 	fTbh1->Clear();	fTbh1->AddText(0, buf);
 	fTeh1->SetCursorPosition(fTeh1->GetCursorPosition());fTeh1->Deselect();
 	gClient->NeedRedraw(fTeh1);
 	
-	sprintf(buf, "%.1f", (double)gate_range*(double)proj->GetBinWidth(1));
+	snprintf(buf, sizeof(buf),"%.1f", (double)gate_range*(double)proj->GetBinWidth(1));
 	fTbh2->Clear();	fTbh2->AddText(0, buf);
 	fTeh2->SetCursorPosition(fTeh2->GetCursorPosition());	fTeh2->Deselect();
 	gClient->NeedRedraw(fTeh2);
 
-	sprintf(buf, "%.4f", backfrack);
+	snprintf(buf, sizeof(buf),"%.4f", backfrack);
 	fTbh3->Clear();	fTbh3->AddText(0, buf);
 	fTeh3->SetCursorPosition(fTeh3->GetCursorPosition());	fTeh3->Deselect();
 	gClient->NeedRedraw(fTeh3);
@@ -1597,7 +1597,7 @@ void jgating_tool::DoUpdate(){
     H->GetXaxis()->SetRangeUser(x1,x2);
     
     char buf[32];
-    sprintf(buf, "%.1f", H->GetXaxis()->GetBinWidth(1));
+    snprintf(buf, sizeof(buf),"%.1f", H->GetXaxis()->GetBinWidth(1));
     TGTextBuffer* fTbh2=RebinText->GetBuffer();
     fTbh2->Clear();	fTbh2->AddText(0, buf);
     RebinText->SetCursorPosition(RebinText->GetCursorPosition());

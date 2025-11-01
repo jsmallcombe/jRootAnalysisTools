@@ -292,7 +292,7 @@ void jEval:: Eval(){
 	}
     if(gg||ff){
         char buf[32];
-        sprintf(buf, "%.5f", Y);
+        snprintf(buf, sizeof(buf),"%.5f", Y);
         TGTextBuffer* fTbh2=fTeh2->GetBuffer();
         fTbh2->Clear();	fTbh2->AddText(0, buf);
         fTeh2->SetCursorPosition(fTeh2->GetCursorPosition());

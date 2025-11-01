@@ -11,10 +11,14 @@
 #define JUtility
 
 #include <iomanip>
+#include <vector>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <cstdio>
 // 
 #include <TMatrixD.h>
 #include <TMatrixDSym.h>
-#include <vector>
 #include <TF1.h>
 #include <TH1.h>
 #include <TH2.h>
@@ -22,8 +26,6 @@
 #include <TKey.h>
 #include <TFile.h>
 #include <TGraph.h>
-#include <iostream>
-#include <fstream>
 #include <TROOT.h>
 #include <TSystem.h> 
 #include <TRootEmbeddedCanvas.h>
@@ -314,7 +316,7 @@ class TH2Efficiency : public TH2D {
 		return;                                      
 	}
 	
-	
+	using TH2D::Fill; //suppress overload warnings
 	Int_t Fill(double X,double Y){return Fill(X,X,Y,Y);}
 	Int_t Fill(double X,double eX,double Y){return Fill(X,eX,Y,Y);}
 	Int_t Fill(double X,double eX,double Y,double eY){

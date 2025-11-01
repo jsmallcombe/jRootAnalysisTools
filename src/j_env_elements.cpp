@@ -4,7 +4,7 @@ int CCframe::CCframeIterator = 0;
 
 		
 CCframe::CCframe(const TGWindow* p,UInt_t w,UInt_t h,TClass* iClass):
-	TRootEmbeddedCanvas(TString("CCframe"+CCframeIterator),p,w,h,kSunkenFrame | kDoubleBorder,GetDefaultFrameBackground()),
+	TRootEmbeddedCanvas(TString::Format("CCframe%d", CCframeIterator),p,w,h,kSunkenFrame | kDoubleBorder,GetDefaultFrameBackground()),
 	fNamed(0),currentob(0),currentpad(0),currentcan(0),currenttrust(0),fName("")
 {TVirtualPad* hold=gPad;
 	AddFriend(GetCanvas());
@@ -268,7 +268,7 @@ jAddSubTool::jAddSubTool(CCframe* Frame,const TGWindow * p, UInt_t w, UInt_t h, 
 			fTeh1->SetAlignment (kTextRight);
 			fTeh1->Connect("ReturnPressed()", "jAddSubTool", this,"DoText()");//So it doesnt continually do things while typing is occurrings
 			fTeh1->Connect("TabPressed()", "jAddSubTool", this,"DoText()");
-			sprintf(buf, "%.1f", 0.0);fTbh1->AddText(0, buf);
+			snprintf(buf, sizeof(buf),"%.1f", 0.0);fTbh1->AddText(0, buf);
 			FracControl->AddFrame(fTeh1);
 			
 			addsubclick = new TGTextButton(FracControl,"     Add/Sub     ");
@@ -599,9 +599,9 @@ void jAddSubTool::UpdateText(){
         int s=floor(log10(Abinwidth)); if(s>0)s=0;
         stringstream format;
         format<<"%."<<abs(s)<<"f";
-        sprintf(buf, format.str().c_str(), fHslider1->GetPosition()*Abinwidth);
+        snprintf(buf, sizeof(buf),format.str().c_str(), fHslider1->GetPosition()*Abinwidth);
     }else{
-        sprintf(buf, "%.3f", fHslider1->GetPosition()/500.0);
+        snprintf(buf, sizeof(buf),"%.3f", fHslider1->GetPosition()/500.0);
     }  
     
 	fTbh1->Clear();	fTbh1->AddText(0, buf);
