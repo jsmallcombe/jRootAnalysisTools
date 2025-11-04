@@ -96,6 +96,8 @@ public:
     
     static FontStruct_t GetFont();
 
+	static void GlobalNewEnv(){new jEnv;}
+	
 	ClassDef(jEnv, 3)
 };
 
