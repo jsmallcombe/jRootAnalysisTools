@@ -28,7 +28,7 @@ TARG = bin/libJanalysistools.so
 # OBJECTS+= bin/build/yield.o
 # OBJECTSEX+= bin/build/yield.o
 
-main: $(TARG) bin/BuildInfo
+main: $(TARG) bin/BuildInfo docs/html
 
 date:
 	bash bin/build/date.sh $(HEAD)
@@ -50,6 +50,9 @@ bin/build/%.o: src/%.cpp include/%.h
 
 bin/build/%.o: src/*/%.cpp include/%.h
 	$(CC) $(CFLAGS) -o $@ -c $< -I$(J_INCLUDE)
+	
+docs/html :
+	@command -v doxygen >/dev/null 2>&1 && doxygen docs/Doxyfile || true
 
 clean:
 	rm -f $(J_LIB)/bin/build/*.o
@@ -57,6 +60,7 @@ clean:
 	rm -f $(J_LIB)/bin/*.*
 	rm -f $(J_LIB)/bin/BuildInfo
 	rm -f $(J_LIB)/include/jlibmaster.h
+	rm -rf $(J_LIB)/docs/html $(J_LIB)/docs/index.html
 	rm -f $(MINI)
 	rm -f $(TARG)
 	rm -f $(TARGB)
