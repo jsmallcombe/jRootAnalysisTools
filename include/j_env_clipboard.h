@@ -10,11 +10,13 @@
 #ifndef JParseClip
 #define JParseClip
 
+#include <cmath>
 #include <TClass.h>
 #include <TH1.h>
 #include <TGraphErrors.h>
 #include <TMultiGraph.h>
 #include <TCanvas.h>
+
 
 #include "j_env_clipboard_X11paste.h"
 
